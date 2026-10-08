@@ -10,3 +10,4 @@ stopwords = [
   "verify_ssl=True",         # SSL configuration parameter
   "integration_alias=None",  # Function parameter default value
 ]
+
