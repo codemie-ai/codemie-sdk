@@ -23,6 +23,7 @@ A merge to `main` never releases a package. A `python-v*` tag runs only the Pyth
 The tag is the version: `python-v0.1.665` releases `0.1.665`. The manifest (`pyproject.toml`, `package.json`) holds only the base line, `MAJOR.MINOR.0`. It is `0.1.0` today.
 
 - The tag must be a release `MAJOR.MINOR.PATCH` or release candidate `MAJOR.MINOR.PATCH-rcN` (such as `python-v0.1.665-rc0` or `node-v0.1.665-rc0`) on the same `MAJOR.MINOR` line as the manifest. Other pre-release tags, a missing part or a leading zero fails.
+- Release candidate versions (`-rcN`) are published under the `rc` dist-tag on npm (`npm install codemie-sdk@rc`), keeping `latest` pointing to stable. On PyPI, pip ignores pre-releases by default.
 - The workflow stamps the version into the build only. It does not commit a version change.
 - The Python `__version__` is read from the installed package metadata, so there is one source of truth.
 - To start a new line (a feature or breaking release), raise the base in the manifest, for example to `0.2.0`, and merge it. Then tag `python-v0.2.0`.
