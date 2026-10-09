@@ -152,14 +152,14 @@ def check(ecosystem: str, name: str, version: str, fetch=_fetch_json) -> str:
 _BASE = re.compile(r"(\d+)\.(\d+)(?:\.0)?", re.ASCII)
 _TAG_PREFIX = {"pypi": "python-v", "npm": "node-v"}
 _NUM = r"(0|[1-9]\d*)"
-_TAG_VERSION = re.compile(rf"{_NUM}\.{_NUM}\.{_NUM}", re.ASCII)
+_TAG_VERSION = re.compile(rf"{_NUM}\.{_NUM}\.{_NUM}(?:-rc{_NUM})?", re.ASCII)
 
 
 def version_from_tag(ecosystem: str, tag: str, base: str) -> str:
-    """Return the version named by `tag` (`python-vX.Y.Z` or `node-vX.Y.Z`).
+    """Return the version named by `tag` (`python-vX.Y.Z[-rcN]` or `node-vX.Y.Z-rcN`).
 
     `base` is the manifest version and must be MAJOR.MINOR or MAJOR.MINOR.0 (no pre-release).
-    The tag must be a plain release on the same MAJOR.MINOR line. No network is used.
+    The tag must be on that MAJOR.MINOR line. No network is used.
     """
     if ecosystem not in URLS:
         raise VersionError(f"unknown ecosystem: {ecosystem!r}")
@@ -170,7 +170,7 @@ def version_from_tag(ecosystem: str, tag: str, base: str) -> str:
     version = tag[len(prefix):] if tag.startswith(prefix) else ""
     r = _TAG_VERSION.fullmatch(version)
     if not r:
-        raise VersionError(f"tag must look like {prefix}MAJOR.MINOR.PATCH, got {tag!r}")
+        raise VersionError(f"tag must look like {prefix}MAJOR.MINOR.PATCH[-rcN], got {tag!r}")
     if (int(r[1]), int(r[2])) != (int(m[1]), int(m[2])):
         raise VersionError(
             f"tag {tag} is not on the manifest line {int(m[1])}.{int(m[2])}: "

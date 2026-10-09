@@ -4,8 +4,8 @@ Each package is released on its own by a GitHub Actions workflow. A release star
 
 | Package | Registry | Workflow | Tag |
 |---------|----------|----------|-----|
-| `codemie-sdk-python` | PyPI | `publish-python.yml` | `python-vX.Y.Z` |
-| `codemie-sdk` | npm | `publish-node.yml` | `node-vX.Y.Z` |
+| `codemie-sdk-python` | PyPI | `publish-python.yml` | `python-vX.Y.Z[-rcN]` |
+| `codemie-sdk` | npm | `publish-node.yml` | `node-vX.Y.Z[-rcN]` |
 
 A merge to `main` never releases a package. A `python-v*` tag runs only the Python workflow. A `node-v*` tag runs only the Node workflow. A tag with any other prefix runs neither.
 
@@ -22,7 +22,7 @@ A merge to `main` never releases a package. A `python-v*` tag runs only the Pyth
 
 The tag is the version: `python-v0.1.665` releases `0.1.665`. The manifest (`pyproject.toml`, `package.json`) holds only the base line, `MAJOR.MINOR.0`. It is `0.1.0` today.
 
-- The tag must be a plain release `MAJOR.MINOR.PATCH` on the same `MAJOR.MINOR` line as the manifest. A pre-release tag, a missing part or a leading zero fails.
+- The tag must be a release `MAJOR.MINOR.PATCH` or release candidate `MAJOR.MINOR.PATCH-rcN` (such as `python-v0.1.665-rc0` or `node-v0.1.665-rc0`) on the same `MAJOR.MINOR` line as the manifest. Other pre-release tags, a missing part or a leading zero fails.
 - The workflow stamps the version into the build only. It does not commit a version change.
 - The Python `__version__` is read from the installed package metadata, so there is one source of truth.
 - To start a new line (a feature or breaking release), raise the base in the manifest, for example to `0.2.0`, and merge it. Then tag `python-v0.2.0`.
