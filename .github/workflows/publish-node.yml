@@ -168,4 +168,4 @@ jobs:
           if [[ "$VERSION" == *-rc* ]]; then
             DIST_TAG="rc"
           fi
-          npm publish package/codemie-sdk-*.tgz --access public --tag "$DIST_TAG"
+          npm publish ./package/codemie-sdk-*.tgz --access public --tag "$DIST_TAG"
