@@ -133,6 +133,9 @@ jobs:
       && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     environment: release
+    permissions:
+      contents: read
+      id-token: write
     steps:
       # Only the version script is needed. The registry is checked again here because this job can wait for
       # approval and another release may have landed since `verify`. Checkout comes first: it clears the workspace.
@@ -145,7 +148,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: '20'
+          node-version: '22'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Download tarball
@@ -161,7 +164,6 @@ jobs:
 
       - name: Publish to npm
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           VERSION: ${{ needs.verify.outputs.version }}
         run: |
           DIST_TAG="latest"

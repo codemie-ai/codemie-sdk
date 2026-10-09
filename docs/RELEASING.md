@@ -63,4 +63,4 @@ Do this once, by a repository administrator.
 - **GitHub environment `release`.** Create it in Settings > Environments. Restrict deployments to the tags `python-v*` and `node-v*` (the manual publish runs from `main`, so also allow `main`). Add required reviewers if a second approval is wanted.
 - **Who can release.** Only people with write access can create a Release. Keep that group small.
 - **PyPI token.** Store a PyPI API token as the secret `PYPI_API_TOKEN`, preferably on the `release` environment. Only the PyPI `publish` job reads it.
-- **npm token.** Create an automation token for `codemie-sdk` and store it as the secret `NPM_TOKEN`, preferably on the `release` environment. Only the npm `publish` job reads it.
+- **npm trusted publisher.** In the `codemie-sdk` package on npmjs.com, add a trusted publisher: provider GitHub Actions, organization `codemie-ai`, repository `codemie-sdk`, workflow `publish-node.yml`, environment `release`. Allow both `npm publish` and `npm dist-tag`. No token is stored. Only the npm `publish` job has `id-token: write`.
