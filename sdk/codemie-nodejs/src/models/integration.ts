@@ -35,6 +35,7 @@ export const CredentialTypes = {
   GOOGLE_OAUTH: "GoogleOAuth",
   XWIKI: "XWiki",
   MS_TEAMS: "MSTeams",
+  MS_EXCHANGE: "MSExchange",
 } as const;
 
 export type CredentialTypesType = (typeof CredentialTypes)[keyof typeof CredentialTypes];

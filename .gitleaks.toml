@@ -9,4 +9,5 @@ description = "Allowlisted files"
 stopwords = [
   "verify_ssl=True",         # SSL configuration parameter
   "integration_alias=None",  # Function parameter default value
+  "wf_a1_jira-mcp",          # Credential key in a Python IaC test fixture, not a secret
 ]

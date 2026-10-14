@@ -6,4 +6,9 @@ describe("CredentialTypes", () => {
     expect(Object.keys(CredentialTypes)).not.toContain("ZEPHYR_SQUAD");
     expect(Object.values(CredentialTypes)).not.toContain("ZephyrSquad");
   });
+
+  it("contains MSExchange, mirroring the backend credential type", () => {
+    expect(Object.keys(CredentialTypes)).toContain("MS_EXCHANGE");
+    expect(CredentialTypes.MS_EXCHANGE).toBe("MSExchange");
+  });
 });

@@ -268,3 +268,58 @@ def test_cli_unparseable_registry_version_exits_1(monkeypatch, capsys):
     monkeypatch.setattr(cv, "_fetch_json", pypi("1.0.0", "legacy-build"))
     assert cv.main(["--ecosystem", "pypi", "--name", "x", "--version", "2.0.0"]) == 1
     assert "legacy-build" in capsys.readouterr().err
+def test_scoped_npm_name_is_url_encoded():
+    seen = []
+
+    def fetch(url):
+        seen.append(url)
+        return {"versions": {"0.1.0": {}}}
+
+    cv.check("npm", "@codemieai/cdk", "0.2.0", fetch=fetch)
+    assert seen == ["https://registry.npmjs.org/@codemieai%2Fcdk"]
+
+
+def test_unscoped_name_url_unchanged():
+    seen = []
+    cv.check("pypi", "codemie-sdk", "1.0.1", fetch=lambda u: seen.append(u) or {"releases": {}})
+    assert seen == ["https://pypi.org/pypi/codemie-sdk/json"]
+
+
+def test_custom_tag_prefix_for_cdk():
+    assert cv.version_from_tag("npm", "cdk-v0.2.1", "0.2.0", prefix="cdk-v") == "0.2.1"
+    with pytest.raises(cv.VersionError):
+        cv.version_from_tag("npm", "node-v0.2.1", "0.2.0", prefix="cdk-v")
+    with pytest.raises(cv.VersionError):
+        cv.version_from_tag("npm", "cdk-v0.2.1", "0.2.0")  # default prefix unchanged
+    with pytest.raises(cv.VersionError, match="line"):
+        cv.version_from_tag("npm", "cdk-v0.3.0", "0.2.0", prefix="cdk-v")
+
+
+def test_cli_tag_prefix(capsys):
+    rc = cv.main(["--ecosystem", "npm", "--name", "@codemieai/cdk", "--tag", "cdk-v0.2.1", "--base", "0.2.0",
+                  "--tag-prefix", "cdk-v"])
+    assert rc == 0
+    assert capsys.readouterr().out == "0.2.1\n"
+
+
+def test_cli_tag_prefix_only_works_with_tag():
+    assert run_cli("--ecosystem", "npm", "--name", "x", "--version", "1.0.0", "--tag-prefix", "cdk-v").returncode == 2
+
+
+def test_cdk_release_candidate_tag_names_a_prerelease():
+    assert cv.version_from_tag("npm", "cdk-v0.2.1-rc1", "0.2.0", prefix="cdk-v") == "0.2.1-rc1"
+    for bad in ("cdk-v0.2.1-rc", "cdk-v0.2.1-beta1", "cdk-v0.2.1-rc01", "cdk-v0.2.1-rc1-x"):
+        with pytest.raises(cv.VersionError):
+            cv.version_from_tag("npm", bad, "0.2.0", prefix="cdk-v")
+
+
+def test_check_version_accepts_mcp_prefix():
+    assert cv.version_from_tag("pypi", "mcp-assistants-v0.2.1", "0.2.0", prefix="mcp-assistants-v") == "0.2.1"
+    assert cv.version_from_tag("pypi", "mcp-workflows-v0.2.1-rc1", "0.2.0", prefix="mcp-workflows-v") == "0.2.1-rc1"
+
+
+def test_check_version_rejects_other_package_prefix():
+    for tag in ("mcp-workflows-v0.2.1", "mcp-datasources-v0.2.1", "python-v0.2.1", "mcp-assistants-v0.3.0"):
+        with pytest.raises(cv.VersionError):
+            cv.version_from_tag("pypi", tag, "0.2.0", prefix="mcp-assistants-v")
+

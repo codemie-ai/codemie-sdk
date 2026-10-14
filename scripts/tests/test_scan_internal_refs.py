@@ -142,3 +142,80 @@ def test_cache_dirs_skipped(tmp_path):
         (tmp_path / d).mkdir()
         (tmp_path / d / "x.txt").write_text(TICKET)
     assert scan.scan_tree(tmp_path) == []
+
+
+REALM = "codemie-" + "prod"
+
+
+def test_realm_rule_flags_with_file_and_line(tmp_path):
+    (tmp_path / "e.env").write_text(f"A=1\nCODEMIE_REALM={REALM}\n")
+    assert [(f.path, f.line, f.rule) for f in scan.scan_tree(tmp_path)] == [("e.env", 2, "realm")]
+
+
+def test_realm_rule_is_word_bounded():
+    assert scan.scan_text("codemie-production-ready and mycodemie-prod") == []
+
+
+def test_denylist_applies_only_when_supplied(tmp_path):
+    term = "ta" + "desk"
+    (tmp_path / "a.txt").write_text(f"hello {term.upper()}\n")
+    assert scan.scan_tree(tmp_path) == []
+    deny = tmp_path.parent / "deny.txt"
+    deny.write_text(f"# comment\n\n{term}\n")
+    found = scan.scan_tree(tmp_path, scan.load_denylist(deny))
+    assert [(f.path, f.line, f.rule) for f in found] == [("a.txt", 1, "denylist")]
+
+
+def test_denylist_missing_path_is_clear_error(tmp_path):
+    import pytest
+
+    with pytest.raises(FileNotFoundError, match="deny-list"):
+        scan.load_denylist(tmp_path / "nope.txt")
+    r = subprocess.run(
+        [sys.executable, str(SCRIPT), "--tree", str(tmp_path), "--denylist", str(tmp_path / "nope.txt")],
+        capture_output=True, text=True,
+    )
+    assert r.returncode == 2 and "deny-list" in r.stderr
+
+
+def test_denylist_cli_flag_and_env(tmp_path):
+    import os
+
+    term = "ta" + "desk"
+    tree = tmp_path / "t"
+    tree.mkdir()
+    (tree / "a.txt").write_text(term + "\n")
+    deny = tmp_path / "d.txt"
+    deny.write_text(term + "\n")
+    r = subprocess.run([sys.executable, str(SCRIPT), "--tree", str(tree), "--denylist", str(deny)],
+                       capture_output=True, text=True)
+    assert (r.returncode, r.stdout.strip()) == (1, "a.txt:1: denylist")
+    r = subprocess.run([sys.executable, str(SCRIPT), "--tree", str(tree)], capture_output=True, text=True,
+                       env={**os.environ, "CODEMIE_SCAN_DENYLIST": str(deny)})
+    assert r.returncode == 1
+
+
+
+def test_denylist_empty_or_comment_only_is_an_error(tmp_path):
+    import pytest
+
+    for body in ("", "\n\n", "# only a comment\n"):
+        f = tmp_path / "d.txt"
+        f.write_text(body)
+        with pytest.raises(ValueError, match="no patterns"):
+            scan.load_denylist(f)
+    r = subprocess.run([sys.executable, str(SCRIPT), "--tree", str(tmp_path), "--denylist", str(f)],
+                       capture_output=True, text=True)
+    assert r.returncode == 2
+
+
+def test_denylist_invalid_regex_and_empty_match_are_errors(tmp_path):
+    import pytest
+
+    f = tmp_path / "d.txt"
+    f.write_text("foo(\n")
+    with pytest.raises(ValueError, match="invalid"):
+        scan.load_denylist(f)
+    f.write_text("a*\n")
+    with pytest.raises(ValueError, match="empty"):
+        scan.load_denylist(f)

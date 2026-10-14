@@ -12,6 +12,7 @@ import json
 import re
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 
 TIMEOUT = 10
@@ -130,7 +131,7 @@ def check(ecosystem: str, name: str, version: str, fetch=_fetch_json) -> str:
     if ecosystem not in URLS:
         raise VersionError(f"unknown ecosystem: {ecosystem!r}")
     _compare(ecosystem, version, version)  # validates our own version
-    payload = fetch(URLS[ecosystem].format(name=name))
+    payload = fetch(URLS[ecosystem].format(name=urllib.parse.quote(name, safe="@")))
     if payload is None:
         return ""
     best = ""
@@ -155,8 +156,8 @@ _NUM = r"(0|[1-9]\d*)"
 _TAG_VERSION = re.compile(rf"{_NUM}\.{_NUM}\.{_NUM}(?:-rc{_NUM})?", re.ASCII)
 
 
-def version_from_tag(ecosystem: str, tag: str, base: str) -> str:
-    """Return the version named by `tag` (`python-vX.Y.Z[-rcN]` or `node-vX.Y.Z-rcN`).
+def version_from_tag(ecosystem: str, tag: str, base: str, prefix: str | None = None) -> str:
+    """Return the version named by `tag` (`python-vX.Y.Z[-rcN]` or `node-vX.Y.Z[-rcN]`; `prefix` overrides the default).
 
     `base` is the manifest version and must be MAJOR.MINOR or MAJOR.MINOR.0 (no pre-release).
     The tag must be on that MAJOR.MINOR line. No network is used.
@@ -166,7 +167,7 @@ def version_from_tag(ecosystem: str, tag: str, base: str) -> str:
     m = _BASE.fullmatch(base.strip())
     if not m:
         raise VersionError(f"base version must be MAJOR.MINOR or MAJOR.MINOR.0, got {base!r}")
-    prefix = _TAG_PREFIX[ecosystem]
+    prefix = prefix or _TAG_PREFIX[ecosystem]
     version = tag[len(prefix):] if tag.startswith(prefix) else ""
     r = _TAG_VERSION.fullmatch(version)
     if not r:
@@ -187,14 +188,15 @@ def main(argv=None) -> int:
     mode.add_argument("--tag", help="release tag (python-vX.Y.Z or node-vX.Y.Z); print the version it names")
     mode.add_argument("--version", help="version to check against the registry")
     p.add_argument("--base", help="manifest version (MAJOR.MINOR[.0]); required with --tag")
+    p.add_argument("--tag-prefix", help="tag prefix instead of the ecosystem default, for example cdk-v")
     args = p.parse_args(argv)
     if args.tag and not args.base:
         p.error("--tag needs --base")
-    if args.base and not args.tag:
-        p.error("--base only works with --tag")
+    if (args.base or args.tag_prefix) and not args.tag:
+        p.error("--base and --tag-prefix only work with --tag")
     try:
         if args.tag:
-            print(version_from_tag(args.ecosystem, args.tag, args.base))
+            print(version_from_tag(args.ecosystem, args.tag, args.base, args.tag_prefix))
             return 0
         latest = check(args.ecosystem, args.name, args.version, fetch=_fetch_json)
     except VersionError as e:

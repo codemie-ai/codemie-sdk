@@ -66,7 +66,7 @@ import { CodeMieClient } from 'codemie-sdk';
 // Initialize client with authentication parameters
 const client = new CodeMieClient({
   auth_server_url: 'https://your-keycloak-host.example.com/auth',
-  auth_realm_name: 'codemie-prod',
+  auth_realm_name: 'your-realm',
   codemie_api_domain: 'https://your-codemie-host.example.com/code-assistant-api',
   username: process.env.USERNAME,
   password: process.env.PASSWORD,
@@ -112,7 +112,7 @@ import { CodeMieClient } from 'codemie-sdk';
 
 const client = new CodeMieClient({
   auth_server_url: process.env.AUTH_SERVER_URL || 'https://your-keycloak-host.example.com/auth',
-  auth_realm_name: process.env.AUTH_REALM_NAME || 'codemie-prod',
+  auth_realm_name: process.env.AUTH_REALM_NAME || 'your-realm',
   codemie_api_domain: process.env.CODEMIE_API_DOMAIN || 'https://your-codemie-host.example.com/code-assistant-api',
   username: process.env.USERNAME,
   password: process.env.PASSWORD,

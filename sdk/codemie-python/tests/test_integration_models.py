@@ -48,6 +48,12 @@ def test_zephyr_squad_is_removed():
     assert "ZephyrSquad" not in {member.value for member in CredentialTypes}
 
 
+def test_ms_exchange_is_present():
+    """MSExchange credential type mirrors the backend enum."""
+    assert "MS_EXCHANGE" in CredentialTypes.__members__
+    assert CredentialTypes.MS_EXCHANGE.value == "MSExchange"
+
+
 @pytest.mark.skipif(
     not NODEJS_INTEGRATION_MODEL.exists(),
     reason="Node.js SDK sources are not checked out",
