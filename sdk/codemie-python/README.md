@@ -1679,7 +1679,6 @@ poetry run ruff format
 # Build package
 poetry build
 # Or make build
-
-# Publish to PyPI
-make publish
 ```
+
+Maintainers publish releases through the release workflow. See [RELEASING.md](../../docs/RELEASING.md).

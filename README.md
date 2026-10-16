@@ -14,6 +14,11 @@ pip install codemie-sdk-python
 npm install codemie-sdk
 ```
 
+## Related repositories
+
+- [codemie-cdk](https://github.com/codemie-ai/codemie-cdk): infrastructure as code for CodeMie assistants, datasources and workflows.
+- [codemie-mcp-servers](https://github.com/codemie-ai/codemie-mcp-servers): MCP servers that give AI tools access to CodeMie.
+
 ## Contributing
 
 Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md) first.
