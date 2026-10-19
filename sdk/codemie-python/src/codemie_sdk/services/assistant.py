@@ -28,9 +28,13 @@ from ..models.assistant import (
     ExportAssistantPayload,
     AssistantEvaluationRequest,
     ReactionRequest,
-    ToolCallResumeRequest, AssistantProjectFeature, AssistantProjectMappingListResponse,
+    ToolCallResumeRequest,
+    AssistantProjectFeature,
+    AssistantProjectMappingListResponse,
+    AssistantProjectMappingRequest,
 )
 from ..models.common import PaginationParams
+from ..models.conversation import BaseResponse
 from ..utils import ApiRequestHandler, TokenSource
 
 
