@@ -79,6 +79,7 @@ export const AssistantCreateParamsSchema = z
     conversation_starters: z.array(z.string()),
     shared: z.boolean().optional(),
     is_react: z.boolean().optional(),
+    hide_tool_outputs: z.boolean().optional(),
     is_global: z.boolean().optional(),
     slug: z.string().optional().nullable(),
     temperature: z.number().optional().nullable(),
