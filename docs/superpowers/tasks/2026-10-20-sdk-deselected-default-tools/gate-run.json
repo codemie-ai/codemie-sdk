@@ -1,0 +1,95 @@
+{
+  "schema": 1,
+  "branch": "feat/show-deselect-default-datasource-tools",
+  "head": "3b9be9c49d19da8034afb4e7dd1aa13c2f0b0634",
+  "runner": "custom",
+  "started_at": "2026-10-20T10:03:20Z",
+  "completed_at": "2026-10-20T10:03:30Z",
+  "status": "PASSED",
+  "drift_detected": false,
+  "gates": [
+    {
+      "id": "py-lint",
+      "source": "ci",
+      "status": "PASS",
+      "duration_ms": 1177,
+      "command": "poetry run ruff check .",
+      "exit_code": 0
+    },
+    {
+      "id": "py-format",
+      "source": "ci",
+      "status": "PASS",
+      "duration_ms": 600,
+      "command": "poetry run ruff format --check .",
+      "exit_code": 0
+    },
+    {
+      "id": "py-unit",
+      "source": "ci",
+      "status": "PASS",
+      "duration_ms": 1382,
+      "command": "poetry run pytest tests/",
+      "exit_code": 0
+    },
+    {
+      "id": "py-build",
+      "source": "ci",
+      "status": "PASS",
+      "duration_ms": 940,
+      "command": "poetry build",
+      "exit_code": 0
+    },
+    {
+      "id": "node-lint",
+      "source": "ci",
+      "status": "PASS",
+      "duration_ms": 500,
+      "command": "npm run lint",
+      "exit_code": 0
+    },
+    {
+      "id": "node-unit",
+      "source": "ci",
+      "status": "PASS",
+      "duration_ms": 3225,
+      "command": "npm test",
+      "exit_code": 0
+    },
+    {
+      "id": "node-build",
+      "source": "ci",
+      "status": "PASS",
+      "duration_ms": 1111,
+      "command": "npm run build",
+      "exit_code": 0
+    },
+    {
+      "id": "internal-refs",
+      "source": "ci",
+      "status": "PASS",
+      "duration_ms": 579,
+      "command": "python3 scripts/scan_internal_refs.py --tree .",
+      "exit_code": 0
+    },
+    {
+      "id": "tooling-tests",
+      "source": "ci",
+      "status": "SKIPPED",
+      "duration_ms": 45,
+      "command": "python3 -m pytest scripts/tests",
+      "exit_code": 1,
+      "notes": "No module named pytest for python3; install with: python3 -m pip install pytest pyyaml. CI will run it."
+    },
+    {
+      "id": "gitleaks",
+      "source": "ci",
+      "status": "SKIPPED",
+      "duration_ms": 18,
+      "command": "gitleaks detect --redact -v --config .gitleaks.toml",
+      "exit_code": 127,
+      "notes": "gitleaks binary not installed (command not found); install gitleaks 8.30.1 to run locally. Only CI settles it."
+    }
+  ],
+  "failures": {}
+}

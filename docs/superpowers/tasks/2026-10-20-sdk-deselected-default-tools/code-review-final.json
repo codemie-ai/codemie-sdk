@@ -1,0 +1,31 @@
+{
+  "decision": "approve",
+  "rationale": "Edge-case and acceptance lenses ran; all story criteria and spec items pass. 5 edge-case candidates dismissed as noise (speculative null/undefined paths outside spec, dead fallback branch); 0 deferred. Standards intentionally omitted by profile.",
+  "confidence": "high",
+  "risk_flags": [],
+  "business_review": [
+    {"kind": "story-ac", "item": "1. Python create with the field set sends it, and returned Assistant exposes it", "status": "pass", "notes": "Covered by create and read-model tests"},
+    {"kind": "story-ac", "item": "2. Python update with a changed list sends it, and returned Assistant exposes it", "status": "pass", "notes": "test_update_sends_changed_list"},
+    {"kind": "story-ac", "item": "3. Python request without the field omits the key; read without field yields []", "status": "pass", "notes": "None default with exclude_none; default_factory=list"},
+    {"kind": "story-ac", "item": "4. Node create, update, read behave as 1-3", "status": "pass", "notes": "Schema optional, get/getBySlug/getVersion default to []"},
+    {"kind": "story-ac", "item": "5. Explicit [] is sent in both SDKs", "status": "pass", "notes": "Python and Node explicit-empty tests"},
+    {"kind": "story-ac", "item": "6. Backend rejection surfaces as existing error type", "status": "pass", "notes": "Propagation tests in both SDKs"},
+    {"kind": "story-ac", "item": "7. Tool listing with default datasource tools returned unchanged", "status": "pass", "notes": "Regression tests in both SDKs"},
+    {"kind": "spec", "item": "Read models default to [] when backend omits", "status": "pass", "notes": "Python models l.275,432; Node models l.103,177"},
+    {"kind": "spec", "item": "Request models optional with no default; Node must not add key when undefined", "status": "pass", "notes": "Omit tests present"},
+    {"kind": "spec", "item": "Node mapper passes field through in both directions", "status": "pass", "notes": "Mapper does not strip the field"},
+    {"kind": "spec", "item": "Python field declared explicitly under extra=ignore", "status": "pass", "notes": "Declared on all three models"},
+    {"kind": "spec", "item": "No client-side validation of names or variant conflicts", "status": "pass", "notes": "Plain list[str] / z.array(z.string())"},
+    {"kind": "spec", "item": "Tool listing: no code change", "status": "pass", "notes": "No getTools/get_tools change"},
+    {"kind": "spec", "item": "Python service rebuild carries field so version restore keeps it", "status": "pass", "notes": "services/assistant.py:322-324; rollback test"},
+    {"kind": "spec", "item": "Docs: field added to each SDK README", "status": "pass", "notes": "Both READMEs updated"},
+    {"kind": "spec", "item": "Tests: Python payload/read-model tests; Node service and schema tests", "status": "pass", "notes": "Added"},
+    {"kind": "spec", "item": "Non-goals respected (no IaC, validation, new methods, E2E)", "status": "pass", "notes": "Diff limited to models, schemas, services, READMEs, tests"}
+  ],
+  "standards_review": [
+    {"kind": "commit-format", "status": "na", "notes": "Standards audit not part of balanced-profile run for this round"},
+    {"kind": "code-quality", "status": "na", "notes": "Standards audit not part of balanced-profile run for this round"},
+    {"kind": "security", "status": "na", "notes": "Standards audit not part of balanced-profile run for this round"}
+  ],
+  "findings": []
+}
