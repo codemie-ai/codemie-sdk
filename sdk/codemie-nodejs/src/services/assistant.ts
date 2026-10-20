@@ -84,14 +84,16 @@ export class AssistantService {
    * Get assistant by ID.
    */
   async get(assistantId: string): Promise<Assistant> {
-    return this.api.get<Assistant>(`/v1/assistants/id/${assistantId}`);
+    const assistant = await this.api.get<Assistant>(`/v1/assistants/id/${assistantId}`);
+    return { ...assistant, deselected_default_tools: assistant.deselected_default_tools ?? [] };
   }
 
   /**
    * Get assistant by slug.
    */
   async getBySlug(slug: string): Promise<Assistant> {
-    return this.api.get<Assistant>(`/v1/assistants/slug/${slug}`);
+    const assistant = await this.api.get<Assistant>(`/v1/assistants/slug/${slug}`);
+    return { ...assistant, deselected_default_tools: assistant.deselected_default_tools ?? [] };
   }
 
   /**
@@ -193,9 +195,10 @@ export class AssistantService {
    * Get a specific assistant version by number.
    */
   async getVersion(assistantId: string, versionNumber: number): Promise<AssistantVersion> {
-    return this.api.get<AssistantVersion>(
+    const version = await this.api.get<AssistantVersion>(
       `/v1/assistants/${assistantId}/versions/${versionNumber}`,
     );
+    return { ...version, deselected_default_tools: version.deselected_default_tools ?? [] };
   }
 
   /**

@@ -48,6 +48,7 @@ describe("AssistantService", () => {
     mcp_servers: [],
     assistant_ids: [],
     nested_assistants: [],
+    deselected_default_tools: [],
   };
 
   beforeEach(() => {
@@ -145,6 +146,26 @@ describe("AssistantService", () => {
       expect(result).toEqual(mockAssistant);
     });
 
+    it("should default deselected_default_tools to [] when absent", async () => {
+      const { deselected_default_tools: _omit, ...withoutField } = mockAssistant;
+      apiHandler.get.mockResolvedValue(withoutField);
+
+      const result = await service.get("1");
+
+      expect(result.deselected_default_tools).toEqual([]);
+    });
+
+    it("should return deselected_default_tools when present", async () => {
+      apiHandler.get.mockResolvedValue({
+        ...mockAssistant,
+        deselected_default_tools: ["search_kb"],
+      });
+
+      const result = await service.get("1");
+
+      expect(result.deselected_default_tools).toEqual(["search_kb"]);
+    });
+
     it("should handle not found error", async () => {
       const error = new NotFoundError("Assistant", "non-existent");
       apiHandler.get.mockRejectedValue(error);
@@ -165,6 +186,26 @@ describe("AssistantService", () => {
 
       expect(apiHandler.get).toHaveBeenCalledWith("/v1/assistants/slug/test-assistant");
       expect(result).toEqual(slugAssistant);
+    });
+
+    it("should default deselected_default_tools to [] when absent", async () => {
+      const { deselected_default_tools: _omit, ...withoutField } = slugAssistant;
+      apiHandler.get.mockResolvedValue(withoutField);
+
+      const result = await service.getBySlug("test-assistant");
+
+      expect(result.deselected_default_tools).toEqual([]);
+    });
+
+    it("should return deselected_default_tools when present", async () => {
+      apiHandler.get.mockResolvedValue({
+        ...slugAssistant,
+        deselected_default_tools: ["search_code_repo"],
+      });
+
+      const result = await service.getBySlug("test-assistant");
+
+      expect(result.deselected_default_tools).toEqual(["search_code_repo"]);
     });
 
     it("should handle not found error", async () => {
@@ -191,6 +232,35 @@ describe("AssistantService", () => {
       ],
       skip_integration_validation: false,
     };
+
+    it("should send deselected_default_tools when set", async () => {
+      apiHandler.post.mockResolvedValue({ id: "123" });
+      await service.create({ ...createRequest, deselected_default_tools: ["search_kb"] });
+      const body = apiHandler.post.mock.calls[0][1] as Record<string, unknown>;
+      expect(body.deselected_default_tools).toEqual(["search_kb"]);
+    });
+
+    it("should send an explicit empty deselected_default_tools", async () => {
+      apiHandler.post.mockResolvedValue({ id: "123" });
+      await service.create({ ...createRequest, deselected_default_tools: [] });
+      const body = apiHandler.post.mock.calls[0][1] as Record<string, unknown>;
+      expect(body.deselected_default_tools).toEqual([]);
+    });
+
+    it("should omit deselected_default_tools when unset", async () => {
+      apiHandler.post.mockResolvedValue({ id: "123" });
+      await service.create(createRequest);
+      const body = apiHandler.post.mock.calls[0][1] as Record<string, unknown>;
+      expect("deselected_default_tools" in body).toBe(false);
+    });
+
+    it("should propagate backend rejection unchanged", async () => {
+      const error = new ApiError("Invalid deselected_default_tools");
+      apiHandler.post.mockRejectedValue(error);
+      await expect(
+        service.create({ ...createRequest, deselected_default_tools: ["nope"] }),
+      ).rejects.toBe(error);
+    });
 
     it("should create new assistant", async () => {
       const mockResponse = { id: "123", success: true };
@@ -283,6 +353,27 @@ describe("AssistantService", () => {
       ],
       skip_integration_validation: false,
     };
+
+    it("should send changed deselected_default_tools on update", async () => {
+      apiHandler.put.mockResolvedValue({ success: true });
+      await service.update("123", { ...updateRequest, deselected_default_tools: ["search_kb"] });
+      const body = apiHandler.put.mock.calls[0][1] as Record<string, unknown>;
+      expect(body.deselected_default_tools).toEqual(["search_kb"]);
+    });
+
+    it("should send an explicit empty deselected_default_tools on update", async () => {
+      apiHandler.put.mockResolvedValue({ success: true });
+      await service.update("123", { ...updateRequest, deselected_default_tools: [] });
+      const body = apiHandler.put.mock.calls[0][1] as Record<string, unknown>;
+      expect(body.deselected_default_tools).toEqual([]);
+    });
+
+    it("should omit deselected_default_tools on update when unset", async () => {
+      apiHandler.put.mockResolvedValue({ success: true });
+      await service.update("123", updateRequest);
+      const body = apiHandler.put.mock.calls[0][1] as Record<string, unknown>;
+      expect("deselected_default_tools" in body).toBe(false);
+    });
 
     it("should update existing assistant", async () => {
       const mockResponse = { success: true };
@@ -380,6 +471,24 @@ describe("AssistantService", () => {
 
       expect(apiHandler.get).toHaveBeenCalledWith("/v1/assistants/tools");
       expect(result).toEqual(mockTools);
+    });
+
+    it("should return default datasource tools unchanged", async () => {
+      const datasourceTools: ToolKitDetails[] = [
+        {
+          toolkit: "datasource",
+          label: "Datasource",
+          settings_config: false,
+          is_external: false,
+          tools: ["search_kb", "search_code_repo", "get_repository_file_tree"].map((name) => ({
+            name,
+            settings_config: false,
+          })),
+        },
+      ];
+      apiHandler.get.mockResolvedValue(datasourceTools);
+      const result = await service.getTools();
+      expect(result).toEqual(datasourceTools);
     });
 
     it("should handle empty tools list", async () => {

@@ -493,3 +493,42 @@ describe("AssistantCreateParamsSchema API-echo nulls", () => {
     ).toThrow();
   });
 });
+
+describe("AssistantCreateParamsSchema deselected_default_tools", () => {
+  const base = {
+    name: "A",
+    description: "D",
+    system_prompt: "P",
+    project: "proj",
+    context: [],
+    llm_model_type: "gpt-4",
+    toolkits: [],
+    conversation_starters: [],
+    assistant_ids: [],
+    mcp_servers: [],
+  };
+
+  it("accepts a list of tool names", () => {
+    const parsed = AssistantCreateParamsSchema.parse({
+      ...base,
+      deselected_default_tools: ["search_kb"],
+    });
+    expect(parsed.deselected_default_tools).toEqual(["search_kb"]);
+  });
+
+  it("accepts an empty list", () => {
+    const parsed = AssistantUpdateParamsSchema.parse({ ...base, deselected_default_tools: [] });
+    expect(parsed.deselected_default_tools).toEqual([]);
+  });
+
+  it("leaves the key absent when omitted", () => {
+    const parsed = AssistantCreateParamsSchema.parse(base);
+    expect("deselected_default_tools" in parsed).toBe(false);
+  });
+
+  it("rejects non-string items", () => {
+    expect(() =>
+      AssistantCreateParamsSchema.parse({ ...base, deselected_default_tools: [1] }),
+    ).toThrow();
+  });
+});
