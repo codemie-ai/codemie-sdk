@@ -111,6 +111,7 @@ export const AssistantCreateParamsSchema = z
       .optional()
       .nullable(),
     skip_integration_validation: z.boolean().optional().default(false),
+    deselected_default_tools: z.array(z.string()).optional(),
   })
   .readonly();
 // In order to make sure that default values are applied correctly, we use z.input here
