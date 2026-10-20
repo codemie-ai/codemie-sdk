@@ -272,6 +272,7 @@ class Assistant(AssistantBase):
         description="Number of times this assistant has been cloned in the Marketplace",
     )
     tool_permissions: ToolPermissionsConfig | None = None
+    deselected_default_tools: list[str] = Field(default_factory=list)
 
 
 class AssistantRequestBase(AssistantBase):
@@ -308,6 +309,7 @@ class AssistantRequestBase(AssistantBase):
     prompt_variables: list[PromptVariable] = Field(default_factory=list)
     skip_integration_validation: bool | None = Field(default=False)
     tool_permissions: ToolPermissionsConfig | None = None
+    deselected_default_tools: list[str] | None = None
 
 
 class AssistantCreateRequest(AssistantRequestBase):
@@ -427,6 +429,7 @@ class AssistantVersion(BaseModel):
     mcp_servers: list[MCPServerDetails] = Field(default_factory=list)
     assistant_ids: list[str] = Field(default_factory=list)
     prompt_variables: list[PromptVariable] = Field(default_factory=list)
+    deselected_default_tools: list[str] = Field(default_factory=list)
 
 
 class ChatRole(str, Enum):
