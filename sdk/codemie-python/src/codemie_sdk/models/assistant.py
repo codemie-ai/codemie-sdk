@@ -292,6 +292,7 @@ class Assistant(AssistantBase):
     )
     shared: bool = False
     is_react: bool = False
+    hide_tool_outputs: bool = False
     is_global: bool = False
     created_date: datetime | None = None
     updated_date: datetime | None = None
@@ -354,6 +355,7 @@ class AssistantRequestBase(AssistantBase):
     )
     shared: bool = False
     is_react: bool = False
+    hide_tool_outputs: bool = False
     is_global: bool | None = False
     categories: list[str] = Field(
         default_factory=list,
