@@ -259,6 +259,10 @@ prebuilt_assistant = client.assistants.get_prebuilt_by_slug("assistant-slug")
 tools = client.assistants.get_tools()
 ```
 
+#### Deselected Default Tools
+
+`deselected_default_tools` (list of default datasource tool names opted out, e.g. `["search_kb"]`) is available on assistant create/update requests and on `Assistant` / `AssistantVersion` responses (defaults to `[]`). Omit it on update to leave the current value unchanged; pass `[]` to clear it.
+
 #### Prompt Variables Support
 
 The SDK supports assistant-level prompt variables that the backend already exposes via the `prompt_variables` field.

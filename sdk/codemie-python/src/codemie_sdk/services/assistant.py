@@ -328,6 +328,9 @@ class AssistantService:
                     toolkits=version.toolkits
                     if hasattr(version, "toolkits")
                     else assistant.toolkits,
+                    deselected_default_tools=version.deselected_default_tools
+                    if hasattr(version, "deselected_default_tools")
+                    else assistant.deselected_default_tools,
                     shared=assistant.shared,
                     is_react=assistant.is_react,
                     is_global=assistant.is_global,
