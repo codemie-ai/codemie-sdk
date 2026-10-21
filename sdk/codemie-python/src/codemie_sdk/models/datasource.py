@@ -3,14 +3,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Tuple
 
-from pydantic import (
-    AliasChoices,
-    BaseModel,
-    Field,
-    model_validator,
-    ConfigDict,
-    field_validator,
-)
+from pydantic import BaseModel, Field, model_validator, ConfigDict, field_validator
 
 from .common import TokensUsage, User
 
@@ -402,9 +395,7 @@ class CodeAnalysisDataSourceRequest(BaseModel):
     description: str | None = Field(None, description="Datasource description")
     project_name: str = Field(..., description="Project name")
     project_space_visible: bool = Field(
-        False,
-        validation_alias=AliasChoices("project_space_visible", "projectSpaceVisible"),
-        serialization_alias="project_space_visible",
+        False, description="Make the datasource visible to the whole project"
     )
     branch: str | None = Field(None, description="Git branch")
     api_url: str = Field(..., description="Repository URL")
@@ -424,9 +415,7 @@ class CodeExplorationDataSourceRequest(BaseModel):
     description: str | None = Field(None, description="Datasource description")
     project_name: str = Field(..., description="Project name")
     project_space_visible: bool = Field(
-        False,
-        validation_alias=AliasChoices("project_space_visible", "projectSpaceVisible"),
-        serialization_alias="project_space_visible",
+        False, description="Make the datasource visible to the whole project"
     )
     code_analysis_datasource_ids: list[str] = Field(
         ...,

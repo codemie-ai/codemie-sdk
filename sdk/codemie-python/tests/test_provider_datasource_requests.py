@@ -42,22 +42,14 @@ REQUESTS = [
 
 
 @pytest.mark.parametrize("model, fields", REQUESTS)
-@pytest.mark.parametrize("input_key", ["project_space_visible", "projectSpaceVisible"])
-def test_project_space_visible_is_serialized_in_snake_case(model, fields, input_key):
-    request = model(**fields, **{input_key: True})
+@pytest.mark.parametrize("value", [True, False])
+def test_project_space_visible_is_sent_in_snake_case(model, fields, value):
+    request = model(**fields, project_space_visible=value)
 
     payload = request.model_dump(by_alias=True, exclude_none=True)
 
-    assert payload["project_space_visible"] is True
+    assert payload["project_space_visible"] is value
     assert "projectSpaceVisible" not in payload
-
-
-@pytest.mark.parametrize("model, fields", REQUESTS)
-@pytest.mark.parametrize("input_key", ["project_space_visible", "projectSpaceVisible"])
-def test_both_input_spellings_are_accepted(model, fields, input_key):
-    request = model(**fields, **{input_key: True})
-
-    assert request.project_space_visible is True
 
 
 @pytest.mark.parametrize("model, fields", REQUESTS)
