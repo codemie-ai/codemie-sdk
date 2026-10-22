@@ -1,10 +1,16 @@
+from unittest.mock import patch
+
+import pytest
+
 from codemie_sdk.models.assistant import MCPServerDetails
 from codemie_sdk.models.skill import (
     SkillCreateRequest,
     SkillDetailResponse,
+    SkillImportRequest,
     SkillUpdateRequest,
     SkillVisibility,
 )
+from codemie_sdk.services.skill import SkillService
 
 
 def _hand_written_server():
@@ -46,3 +52,51 @@ def test_skill_detail_response_exposes_mcp_servers():
         mcp_servers=[_hand_written_server()],
     )
     assert response.mcp_servers[0].name == "custom-server"
+
+
+def _service_with_mock_api():
+    with patch("codemie_sdk.services.skill.ApiRequestHandler") as handler_cls:
+        service = SkillService("https://api.example.com", "token")
+    return service, handler_cls.return_value
+
+
+@pytest.mark.parametrize("visibility", [SkillVisibility.PROJECT, SkillVisibility.PUBLIC])
+def test_skill_service_create_sends_visibility(visibility):
+    service, api = _service_with_mock_api()
+    service.create(
+        SkillCreateRequest(
+            name="s", description="d", content="c", project="p", visibility=visibility
+        )
+    )
+    args, kwargs = api.post.call_args
+    assert args[0] == "/v1/skills"
+    assert kwargs["json_data"]["visibility"] == visibility.value
+
+
+@pytest.mark.parametrize("visibility", [SkillVisibility.PROJECT, SkillVisibility.PUBLIC])
+def test_skill_service_update_sends_visibility(visibility):
+    service, api = _service_with_mock_api()
+    service.update("s1", SkillUpdateRequest(visibility=visibility))
+    args, kwargs = api.put.call_args
+    assert args[0] == "/v1/skills/s1"
+    assert kwargs["json_data"]["visibility"] == visibility.value
+
+
+def test_skill_service_update_omits_visibility_when_unset():
+    service, api = _service_with_mock_api()
+    service.update("s1", SkillUpdateRequest(name="s"))
+    _, kwargs = api.put.call_args
+    assert "visibility" not in kwargs["json_data"]
+
+
+@pytest.mark.parametrize("visibility", [SkillVisibility.PROJECT, SkillVisibility.PUBLIC])
+def test_skill_service_import_sends_visibility(visibility):
+    service, api = _service_with_mock_api()
+    service.import_skill(
+        SkillImportRequest(
+            file_content="Zm9v", filename="s.md", project="p", visibility=visibility
+        )
+    )
+    args, kwargs = api.post.call_args
+    assert args[0] == "/v1/skills/import"
+    assert kwargs["json_data"]["visibility"] == visibility.value
