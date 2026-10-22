@@ -60,7 +60,9 @@ def _service_with_mock_api():
     return service, handler_cls.return_value
 
 
-@pytest.mark.parametrize("visibility", [SkillVisibility.PROJECT, SkillVisibility.PUBLIC])
+@pytest.mark.parametrize(
+    "visibility", [SkillVisibility.PROJECT, SkillVisibility.PUBLIC]
+)
 def test_skill_service_create_sends_visibility(visibility):
     service, api = _service_with_mock_api()
     service.create(
@@ -73,7 +75,9 @@ def test_skill_service_create_sends_visibility(visibility):
     assert kwargs["json_data"]["visibility"] == visibility.value
 
 
-@pytest.mark.parametrize("visibility", [SkillVisibility.PROJECT, SkillVisibility.PUBLIC])
+@pytest.mark.parametrize(
+    "visibility", [SkillVisibility.PROJECT, SkillVisibility.PUBLIC]
+)
 def test_skill_service_update_sends_visibility(visibility):
     service, api = _service_with_mock_api()
     service.update("s1", SkillUpdateRequest(visibility=visibility))
@@ -89,7 +93,9 @@ def test_skill_service_update_omits_visibility_when_unset():
     assert "visibility" not in kwargs["json_data"]
 
 
-@pytest.mark.parametrize("visibility", [SkillVisibility.PROJECT, SkillVisibility.PUBLIC])
+@pytest.mark.parametrize(
+    "visibility", [SkillVisibility.PROJECT, SkillVisibility.PUBLIC]
+)
 def test_skill_service_import_sends_visibility(visibility):
     service, api = _service_with_mock_api()
     service.import_skill(
