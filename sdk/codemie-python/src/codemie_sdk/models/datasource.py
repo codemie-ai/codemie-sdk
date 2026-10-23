@@ -417,10 +417,12 @@ class CodeExplorationDataSourceRequest(BaseModel):
     project_space_visible: bool = Field(
         False, description="Make the datasource visible to the whole project"
     )
-    code_analysis_datasource_ids: list[str] = Field(
-        ...,
+    code_analysis_datasource_ids: list[str] | None = Field(
+        None,
         alias="code_analysis_datasource_ids",
-        description="List of CodeAnalysisToolkit datasource IDs",
+        description="List of CodeAnalysisToolkit datasource IDs. Optional: the "
+        "combined AICE provider creates a CodeExplorationToolkit datasource from "
+        "name/description alone, with no separate CodeAnalysisToolkit datasources.",
     )
 
 
