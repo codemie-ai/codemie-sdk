@@ -52,6 +52,14 @@ def test_project_space_visible_is_sent_in_snake_case(model, fields, value):
     assert "projectSpaceVisible" not in payload
 
 
+def test_code_analysis_datasource_request_warns_deprecated():
+    """CodeAnalysisDataSourceRequest targets the standalone
+    CodeAnalysisServiceProvider, superseded by the combined AICE provider
+    (CodeExplorationDataSourceRequest)."""
+    with pytest.warns(DeprecationWarning, match="CodeExplorationDataSourceRequest"):
+        CodeAnalysisDataSourceRequest(**ANALYSIS_FIELDS)
+
+
 @pytest.mark.parametrize("model, fields", REQUESTS)
 def test_project_space_visible_defaults_to_false_in_payload(model, fields):
     payload = model(**fields).model_dump(by_alias=True, exclude_none=True)
