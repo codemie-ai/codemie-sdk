@@ -2,6 +2,8 @@
 
 <img src="assets/codemie-logo.svg" alt="CodeMie" width="96" />
 
+-- some change
+
 # CodeMie SDK
 
 **Official Python and TypeScript client SDKs for the CodeMie platform.**
