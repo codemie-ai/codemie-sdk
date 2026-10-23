@@ -79,6 +79,7 @@ export interface AssistantDataItem {
   context: (ContextItem | string)[];
   tools: ToolItem[];
   conversation_starters: string[];
+  hide_tool_outputs?: boolean;
 }
 
 export interface ConversationDetailsData {
@@ -97,6 +98,7 @@ export interface AssistantDetailsData {
   context: (ContextItem | string)[];
   tools: ToolItem[];
   conversation_starters: string[];
+  hide_tool_outputs?: boolean;
 }
 
 export interface ConversationDetails {

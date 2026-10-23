@@ -106,6 +106,7 @@ export interface Assistant extends AssistantBase {
   creator: string;
   is_global: boolean;
   is_react: boolean;
+  hide_tool_outputs?: boolean;
   llm_model_type?: string;
   mcp_servers: MCPServerDetails[];
   nested_assistants: Partial<Assistant>[];
