@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import json
 import mimetypes
-from typing import Literal, Tuple, Any
+from urllib.parse import quote, urlencode
+from typing import Callable, Literal, Tuple, Any
 from pathlib import Path
 
 from ..models.common import PaginationParams
@@ -13,17 +14,74 @@ from ..models.datasource import (
     DataSourceType,
     DataSourceStatus,
     BaseDataSourceRequest,
-    CodeDataSourceRequest,
-    UpdateCodeDataSourceRequest,
     BaseUpdateDataSourceRequest,
     FileDataSourceRequest,
     UpdateFileDataSourceRequest,
     CodeAnalysisDataSourceRequest,
     CodeExplorationDataSourceRequest,
     ElasticsearchStatsResponse,
+    ProviderDataSourceRequest,
+    UpdateProviderDataSourceRequest,
 )
 from ..models.assistant import AssistantListResponse
 from ..utils import ApiRequestHandler, TokenSource
+
+
+def _application_route(request: BaseDataSourceRequest) -> str:
+    return f"/v1/application/{quote(request.project_name, safe='')}/index"
+
+
+def _svn_route(request: BaseDataSourceRequest) -> str:
+    return f"/v1/application/{quote(request.project_name, safe='')}/index/svn"
+
+
+def _knowledge_base_route(segment: str) -> Callable[[BaseDataSourceRequest], str]:
+    return lambda _request: f"/v1/index/knowledge_base/{segment}"
+
+
+# Explicit route table: base endpoint per datasource type (used by create and update).
+_ROUTES: dict[DataSourceType, Callable[[BaseDataSourceRequest], str]] = {
+    DataSourceType.CODE: _application_route,
+    DataSourceType.SVN: _svn_route,
+    DataSourceType.CONFLUENCE: _knowledge_base_route("confluence"),
+    DataSourceType.JIRA: _knowledge_base_route("jira"),
+    DataSourceType.FILE: _knowledge_base_route("file"),
+    DataSourceType.XRAY: _knowledge_base_route("xray"),
+    DataSourceType.GOOGLE: _knowledge_base_route("google"),
+    DataSourceType.GIT_FAQ: _knowledge_base_route("git_faq"),
+    DataSourceType.AZURE_DEVOPS_WIKI: _knowledge_base_route("azure_devops_wiki"),
+    DataSourceType.AZURE_DEVOPS_WORK_ITEM: _knowledge_base_route(
+        "azure_devops_work_item"
+    ),
+    DataSourceType.SHAREPOINT: _knowledge_base_route("sharepoint"),
+    DataSourceType.XWIKI: _knowledge_base_route("xwiki"),
+}
+
+# Types whose update endpoint addresses the datasource by name in the path.
+_NAME_IN_UPDATE_PATH = frozenset({DataSourceType.CODE, DataSourceType.SVN})
+
+
+def _create_endpoint(request: BaseDataSourceRequest) -> str:
+    route = _ROUTES.get(request.type)
+    if route is None:
+        raise ValueError(f"Unsupported datasource type: {request.type}")
+    return route(request)
+
+
+def _update_endpoint(request: BaseDataSourceRequest) -> str:
+    endpoint = _create_endpoint(request)
+    if request.type in _NAME_IN_UPDATE_PATH:
+        endpoint = f"{endpoint}/{quote(request.name, safe='')}"
+    return endpoint
+
+
+def _agree(explicit: str | None, from_request: str, name: str) -> str:
+    """Use the request's value unless an explicit argument disagrees with it."""
+    if explicit is not None and explicit != from_request:
+        raise ValueError(
+            f"{name} argument {explicit!r} differs from the request's {from_request!r}"
+        )
+    return from_request
 
 
 class DatasourceService:
@@ -48,11 +106,7 @@ class DatasourceService:
         Returns:
             dict: Response from the server containing operation status
         """
-        if isinstance(request, CodeDataSourceRequest):
-            endpoint = f"/v1/application/{request.project_name}/index"
-        else:
-            # All other datasources follow the same pattern
-            endpoint = f"/v1/index/knowledge_base/{request.type.name.lower()}"
+        endpoint = _create_endpoint(request)
 
         return self._api.post(
             endpoint,
@@ -145,10 +199,7 @@ class DatasourceService:
         Returns:
             dict: Response from the server containing operation status
         """
-        if isinstance(request, UpdateCodeDataSourceRequest):
-            endpoint = f"/v1/application/{request.project_name}/index/{request.name}"
-        else:
-            endpoint = f"/v1/index/knowledge_base/{request.type.name.lower()}"
+        endpoint = _update_endpoint(request)
 
         # Extract reindex params
         params = {
@@ -270,28 +321,60 @@ class DatasourceService:
 
     def create_provider_datasource(
         self,
-        toolkit_id: str,
-        provider_name: str,
-        request: CodeAnalysisDataSourceRequest | CodeExplorationDataSourceRequest,
+        toolkit_id: str | None = None,
+        provider_name: str | None = None,
+        request: (
+            CodeAnalysisDataSourceRequest
+            | CodeExplorationDataSourceRequest
+            | ProviderDataSourceRequest
+            | None
+        ) = None,
     ) -> dict:
         """Create a provider-based datasource.
 
         Args:
-            toolkit_id: ID of the toolkit to use
-            provider_name: Name of the provider
-            request: Provider datasource creation request (CodeAnalysisDataSourceRequest or CodeExplorationDataSourceRequest)
+            toolkit_id: ID of the toolkit to use (taken from a ProviderDataSourceRequest if omitted)
+            provider_name: Name of the provider (taken from a ProviderDataSourceRequest if omitted)
+            request: Provider datasource creation request (CodeAnalysisDataSourceRequest,
+                CodeExplorationDataSourceRequest or ProviderDataSourceRequest)
 
         Returns:
             dict: Response from the server containing operation status
         """
-        endpoint = (
-            f"/v1/index/provider?toolkit_id={toolkit_id}&provider_name={provider_name}"
-        )
+        if request is None:
+            raise ValueError("request is required")
+        if isinstance(request, ProviderDataSourceRequest):
+            toolkit_id = _agree(toolkit_id, request.toolkit_id, "toolkit_id")
+            provider_name = _agree(
+                provider_name, request.provider_name, "provider_name"
+            )
+            body = request.to_body()
+        else:
+            body = request.model_dump(by_alias=True, exclude_none=True)
+        if not toolkit_id or not provider_name:
+            raise ValueError("toolkit_id and provider_name are required")
+        query = urlencode({"toolkit_id": toolkit_id, "provider_name": provider_name})
+        endpoint = f"/v1/index/provider?{query}"
 
-        return self._api.post(
-            endpoint,
+        return self._api.post(endpoint, dict, json_data=body)
+
+    def update_provider_datasource(
+        self, index_info_id: str, request: UpdateProviderDataSourceRequest
+    ) -> dict:
+        """Update a provider-based datasource.
+
+        Args:
+            index_info_id: ID of the provider datasource
+            request: Update request; description and project_space_visible are
+                always sent, merged with the provider settings.
+
+        Returns:
+            dict: Response from the server containing operation status
+        """
+        return self._api.put(
+            f"/v1/index/provider/{quote(index_info_id, safe='')}",
             dict,
-            json_data=request.model_dump(by_alias=True, exclude_none=True),
+            json_data=request.to_body(),
         )
 
     def health_check(
