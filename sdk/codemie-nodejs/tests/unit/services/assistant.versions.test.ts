@@ -40,6 +40,7 @@ describe("AssistantService versions", () => {
         toolkits: [],
         mcp_servers: [],
         assistant_ids: [],
+        deselected_default_tools: [],
       },
     ];
 
@@ -63,6 +64,7 @@ describe("AssistantService versions", () => {
       toolkits: [],
       mcp_servers: [],
       assistant_ids: [],
+      deselected_default_tools: [],
     };
 
     apiHandler.get.mockResolvedValue(version);
@@ -71,6 +73,31 @@ describe("AssistantService versions", () => {
 
     expect(apiHandler.get).toHaveBeenCalledWith("/v1/assistants/assistant-123/versions/3");
     expect(result).toEqual(version);
+  });
+
+  it("getVersion should default deselected_default_tools to [] when absent", async () => {
+    apiHandler.get.mockResolvedValue({
+      version_number: 3,
+      created_date: new Date().toISOString(),
+      system_prompt: "v3",
+    });
+
+    const result = await service.getVersion("assistant-123", 3);
+
+    expect(result.deselected_default_tools).toEqual([]);
+  });
+
+  it("getVersion should return deselected_default_tools when present", async () => {
+    apiHandler.get.mockResolvedValue({
+      version_number: 3,
+      created_date: new Date().toISOString(),
+      system_prompt: "v3",
+      deselected_default_tools: ["search_kb"],
+    });
+
+    const result = await service.getVersion("assistant-123", 3);
+
+    expect(result.deselected_default_tools).toEqual(["search_kb"]);
   });
 
   it("compareVersions should call correct endpoint", async () => {
