@@ -518,6 +518,23 @@ Datasources can have the following statuses:
 - `FETCHING`: Fetching data from source
 - `IN_PROGRESS`: Processing/indexing in progress
 
+#### Datasource Limitations
+
+- **This SDK cannot rename or move a datasource.** An update addresses a datasource by its project and name
+  (provider datasources by their id), so the SDK has no way to change either; the platform supports a project
+  move, but the SDK does not expose it yet. A different name addresses a different datasource, or is not found.
+  The search index and any assistant that uses the datasource refer to it by that name, so they would stop
+  matching after a rename. To "rename", create a new datasource, point your assistants at it, then delete the
+  old one.
+- **File datasources are not supported by the Infrastructure-as-Code tooling** built on this SDK. Creating
+  one needs the file contents uploaded together with the request, which a declarative document cannot carry.
+  Use `create_file_datasource(...)` with the files directly instead.
+- **Some updates overwrite what they omit.** An SVN update is written in full by the platform, so
+  `UpdateSvnDataSourceRequest` requires the visibility flag (`shared_with_project`), `prompt`, `files_filter`
+  and `docs_generation`; pass the current values (`None` clears a nullable one). A SharePoint update with
+  `full_reindex=True` on an OAuth datasource (`oauth_codemie` / `oauth_custom`) needs `access_token`. An Xray
+  update does not take `embedding_model`: the platform sets it only on create.
+
 #### Best Practices for Datasources
 
 1. **Naming Convention**:
