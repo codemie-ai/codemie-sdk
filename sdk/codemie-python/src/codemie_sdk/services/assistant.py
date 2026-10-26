@@ -36,10 +36,7 @@ from ..models.assistant import (
 from ..models.common import PaginationParams
 from ..models.conversation import BaseResponse
 from ..utils import ApiRequestHandler, TokenSource
-
-
-def _first_not_none(preferred, fallback):
-    return fallback if preferred is None else preferred
+from ..utils.values import first_not_none
 
 
 class AssistantService:
@@ -334,7 +331,9 @@ class AssistantService:
                     assistant_ids=version.assistant_ids
                     if hasattr(version, "assistant_ids")
                     else assistant.assistant_ids,
-                    skill_ids=_first_not_none(version.skill_ids, assistant.skill_ids),
+                    # None on the version means "not reported": keep the
+                    # current assistant's skills rather than clearing them.
+                    skill_ids=first_not_none(version.skill_ids, assistant.skill_ids),
                 )
                 update_resp = self.update(assistant_id, update_req)
                 resp = update_resp.model_dump()
