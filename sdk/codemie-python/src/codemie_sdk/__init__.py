@@ -185,6 +185,12 @@ from .models.usage_attribution import (
     UsageAttributionSettingsResponse,
 )
 from .services.usage_attribution import UsageAttributionService
+from .models.workflow import (
+    WorkflowRevisionCreatedBy,
+    WorkflowRevision,
+    WorkflowVersionHistoryResponse,
+    WorkflowRollbackRequest,
+)
 
 try:
     __version__ = _pkg_version("codemie-sdk-python")
@@ -329,4 +335,8 @@ __all__ = [
     "UsageAttributionTableResponse",
     "UsageAttributionSettingsResponse",
     "UsageAttributionService",
+    "WorkflowRevisionCreatedBy",
+    "WorkflowRevision",
+    "WorkflowVersionHistoryResponse",
+    "WorkflowRollbackRequest",
 ]
