@@ -172,7 +172,6 @@ from .models.a2a import (
     AgentProvider,
     AgentInterface,
     AgentCapabilities,
-    AgentAuthentication,
     AgentSkill,
 )
 from .services.a2a import A2AService
@@ -310,7 +309,6 @@ __all__ = [
     "AgentProvider",
     "AgentInterface",
     "AgentCapabilities",
-    "AgentAuthentication",
     "AgentSkill",
     "A2AService",
 ]

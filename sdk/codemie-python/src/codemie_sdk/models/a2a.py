@@ -1,4 +1,4 @@
-"""A2A (agent-to-agent) models; AgentCard accepts both v1.0 and legacy (v0.3) cards."""
+"""A2A (agent-to-agent) models (protocol v1.0)."""
 
 from typing import Any
 
@@ -15,7 +15,7 @@ class AgentProvider(BaseModel):
 
 
 class AgentInterface(BaseModel):
-    """A transport interface the agent exposes (A2A v1.0)."""
+    """A transport interface the agent exposes."""
 
     model_config = ConfigDict(extra="ignore")
 
@@ -32,16 +32,6 @@ class AgentCapabilities(BaseModel):
     streaming: bool = False
     pushNotifications: bool = False
     extendedAgentCard: bool = False
-    stateTransitionHistory: bool = False
-
-
-class AgentAuthentication(BaseModel):
-    """Authentication schemes advertised by a legacy (v0.3) A2A agent card."""
-
-    model_config = ConfigDict(extra="ignore")
-
-    schemes: list[str]
-    credentials: str | None = None
 
 
 class AgentSkill(BaseModel):
@@ -65,7 +55,7 @@ class AgentCard(BaseModel):
 
     name: str
     description: str | None = None
-    supportedInterfaces: list[AgentInterface] = []
+    supportedInterfaces: list[AgentInterface]
     provider: AgentProvider | None = None
     version: str
     documentationUrl: str | None = None
@@ -75,13 +65,10 @@ class AgentCard(BaseModel):
     defaultInputModes: list[str] = []
     defaultOutputModes: list[str] = []
     skills: list[AgentSkill]
-    # Legacy (v0.3) fields, absent from v1.0 cards
-    url: str | None = None
-    authentication: AgentAuthentication | None = None
 
     @property
     def protocol_version(self) -> str | None:
-        """Protocol version of the first advertised interface, or None for legacy cards."""
+        """Protocol version of the first advertised interface."""
         if self.supportedInterfaces:
             return self.supportedInterfaces[0].protocolVersion
         return None

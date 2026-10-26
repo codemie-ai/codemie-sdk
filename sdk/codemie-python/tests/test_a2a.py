@@ -40,15 +40,7 @@ V1_CARD = {
     ],
 }
 
-LEGACY_CARD = {
-    "name": "assistant",
-    "description": "Legacy card",
-    "url": "https://api.example.com/v1/a2a/assistants/a1",
-    "version": "1.0.0",
-    "capabilities": {"streaming": True, "stateTransitionHistory": True},
-    "authentication": {"schemes": ["bearer"]},
-    "skills": [{"id": "conversation", "name": "Conversation"}],
-}
+CARD_PATH = "/v1/a2a/assistants/a1/.well-known/agent-card.json"
 
 
 def _http_error(status, body):
@@ -59,26 +51,21 @@ def _http_error(status, body):
 
 
 class FakeApi:
-    def __init__(self, responses):
-        self._responses = dict(responses)
+    def __init__(self, result):
+        self._result = result
         self.calls = []
 
     def get(self, endpoint, response_model, wrap_response=True):
         self.calls.append(endpoint)
-        result = self._responses[endpoint]
-        if isinstance(result, Exception):
-            raise result
-        return response_model.model_validate(result)
+        if isinstance(self._result, Exception):
+            raise self._result
+        return response_model.model_validate(self._result)
 
 
-def _service(responses):
+def _service(result):
     service = A2AService("https://api.example.com", "token")
-    service._api = FakeApi(responses)
+    service._api = FakeApi(result)
     return service
-
-
-NEW = "/v1/a2a/assistants/a1/.well-known/agent-card.json"
-OLD = "/v1/a2a/assistants/a1/.well-known/agent.json"
 
 
 def test_parses_v1_card():
@@ -88,50 +75,23 @@ def test_parses_v1_card():
     assert card.supportedInterfaces[0].protocolBinding == "JSONRPC"
     assert card.capabilities.extendedAgentCard is True
     assert "bearer" in card.securitySchemes
-    assert card.url is None
-
-
-def test_parses_legacy_card():
-    card = AgentCard.model_validate(LEGACY_CARD)
-
-    assert card.protocol_version is None
-    assert card.url == LEGACY_CARD["url"]
-    assert card.authentication.schemes == ["bearer"]
-    assert card.capabilities.stateTransitionHistory is True
 
 
 def test_get_agent_card_uses_v1_path():
-    service = _service({NEW: V1_CARD})
+    service = _service(V1_CARD)
 
     card = service.get_agent_card("a1")
 
     assert card.protocol_version == "1.0"
-    assert service._api.calls == [NEW]
+    assert service._api.calls == [CARD_PATH]
 
 
-def test_get_agent_card_falls_back_when_v1_route_missing():
-    service = _service(
-        {NEW: _http_error(404, {"detail": "Not Found"}), OLD: LEGACY_CARD}
-    )
-
-    card = service.get_agent_card("a1")
-
-    assert card.url == LEGACY_CARD["url"]
-    assert service._api.calls == [NEW, OLD]
-
-
-@pytest.mark.parametrize(
-    "status, body",
-    [
-        (404, {"detail": "Assistant with id a1 wasn't found"}),
-        (403, {"detail": "You don't have permission to access this assistant."}),
-    ],
-)
-def test_get_agent_card_does_not_fall_back_on_real_errors(status, body):
-    service = _service({NEW: _http_error(status, body), OLD: LEGACY_CARD})
+@pytest.mark.parametrize("status", [403, 404])
+def test_get_agent_card_propagates_errors(status):
+    service = _service(_http_error(status, {"detail": "error"}))
 
     with pytest.raises(HTTPError) as exc_info:
         service.get_agent_card("a1")
 
     assert exc_info.value.response.status_code == status
-    assert service._api.calls == [NEW]
+    assert service._api.calls == [CARD_PATH]
