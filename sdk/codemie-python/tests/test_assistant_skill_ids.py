@@ -1,7 +1,5 @@
 import datetime
-from types import SimpleNamespace
 
-import pytest
 import requests
 
 from codemie_sdk.models.assistant import (
@@ -100,8 +98,25 @@ def test_update_without_skills_omits_key():
 
 
 def test_models_expose_skill_ids():
-    assert Assistant.model_validate(_assistant_payload(skill_ids=["s1"])).skill_ids == ["s1"]
-    assert AssistantVersion.model_validate(_version_payload(skill_ids=["s2"])).skill_ids == ["s2"]
+    assert Assistant.model_validate(_assistant_payload(skill_ids=["s1"])).skill_ids == [
+        "s1"
+    ]
+    assert AssistantVersion.model_validate(
+        _version_payload(skill_ids=["s2"])
+    ).skill_ids == ["s2"]
     assert Assistant.model_validate(_assistant_payload()).skill_ids is None
     assert AssistantVersion.model_validate(_version_payload()).skill_ids is None
 
+
+def test_rollback_fallback_uses_version_skill_ids():
+    api = RecordingApi(
+        version_extra={"skill_ids": ["v"]}, assistant_extra={"skill_ids": ["c"]}
+    )
+    _service(api).rollback_to_version("a1", 1)
+    assert api.bodies[0]["skill_ids"] == ["v"]
+
+
+def test_rollback_fallback_falls_back_to_current_skill_ids():
+    api = RecordingApi(assistant_extra={"skill_ids": ["c"]})
+    _service(api).rollback_to_version("a1", 1)
+    assert api.bodies[0]["skill_ids"] == ["c"]

@@ -38,6 +38,10 @@ from ..models.conversation import BaseResponse
 from ..utils import ApiRequestHandler, TokenSource
 
 
+def _first_not_none(preferred, fallback):
+    return fallback if preferred is None else preferred
+
+
 class AssistantService:
     """Service for managing CodeMie assistants."""
 
@@ -330,6 +334,7 @@ class AssistantService:
                     assistant_ids=version.assistant_ids
                     if hasattr(version, "assistant_ids")
                     else assistant.assistant_ids,
+                    skill_ids=_first_not_none(version.skill_ids, assistant.skill_ids),
                 )
                 update_resp = self.update(assistant_id, update_req)
                 resp = update_resp.model_dump()
