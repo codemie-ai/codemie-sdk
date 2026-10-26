@@ -175,6 +175,12 @@ from .models.a2a import (
     AgentSkill,
 )
 from .services.a2a import A2AService
+from .models.workflow import (
+    WorkflowRevisionCreatedBy,
+    WorkflowRevision,
+    WorkflowVersionHistoryResponse,
+    WorkflowRollbackRequest,
+)
 
 try:
     __version__ = _pkg_version("codemie-sdk-python")
@@ -311,4 +317,8 @@ __all__ = [
     "AgentAuthentication",
     "AgentSkill",
     "A2AService",
+    "WorkflowRevisionCreatedBy",
+    "WorkflowRevision",
+    "WorkflowVersionHistoryResponse",
+    "WorkflowRollbackRequest",
 ]
