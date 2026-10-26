@@ -1,6 +1,10 @@
 import { WorkflowMapper } from "../mappers/workflow.mapper";
 import type { AnyJson, PaginatedResponse, AuthConfig } from "../models/common";
-import type { Workflow, WorkflowResponse } from "../models/workflow";
+import type {
+  Workflow,
+  WorkflowResponse,
+  WorkflowVersionHistoryResponse,
+} from "../models/workflow";
 import {
   WorkflowCreateParamsSchema,
   type WorkflowCreateParams,
@@ -8,6 +12,7 @@ import {
   type WorkflowEvaluationParams,
   WorkflowListParamsSchema,
   type WorkflowListParams,
+  WorkflowRollbackParamsSchema,
   WorkflowUpdateParamsSchema,
   type WorkflowUpdateParams,
 } from "../schemas/workflow";
@@ -115,6 +120,32 @@ export class WorkflowService {
   async evaluate(workflowId: string, _params: WorkflowEvaluationParams): Promise<AnyJson> {
     const params = WorkflowEvaluationParamsSchema.parse(_params);
     return this.api.post(`/v1/workflows/${workflowId}/evaluate`, params);
+  }
+
+  /**
+   * Get revision history for a workflow.
+   */
+  async listVersions(workflowId: string): Promise<WorkflowVersionHistoryResponse> {
+    return this.api.get<WorkflowVersionHistoryResponse>(`/v1/workflows/${workflowId}/versions`);
+  }
+
+  /**
+   * Roll the workflow back to a prior revision by positional index.
+   * revision_index is 0-based into the revisions[] array returned by listVersions.
+   */
+  async rollback(
+    workflowId: string,
+    revisionIndex: number,
+    changeNotes?: string,
+  ): Promise<{ message: string }> {
+    const params = WorkflowRollbackParamsSchema.parse({
+      revision_index: revisionIndex,
+      ...(changeNotes !== undefined ? { change_notes: changeNotes } : {}),
+    });
+    return this.api.post<{ message: string }>(
+      `/v1/workflows/${workflowId}/versions/rollback`,
+      params,
+    );
   }
 
   /**
