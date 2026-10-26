@@ -13,6 +13,8 @@ from ..models.workflow import (
     WorkflowEvaluationRequest,
     WorkflowGeneratorRequest,
     WorkflowGeneratorResponse,
+    WorkflowVersionHistoryResponse,
+    WorkflowRollbackRequest,
     Workflow,
 )
 from ..utils import ApiRequestHandler, TokenSource
@@ -278,6 +280,51 @@ class WorkflowService:
         """
         return self._api.post(
             f"/v1/workflows/{workflow_id}/marketplace/unpublish", dict
+        )
+
+    def list_versions(self, workflow_id: str) -> WorkflowVersionHistoryResponse:
+        """Get revision history for a workflow.
+
+        Args:
+            workflow_id: ID of the workflow.
+
+        Returns:
+            WorkflowVersionHistoryResponse containing the full revision list.
+        """
+        return self._api.get(
+            f"/v1/workflows/{workflow_id}/versions",
+            WorkflowVersionHistoryResponse,
+            wrap_response=False,
+        )
+
+    def rollback(
+        self,
+        workflow_id: str,
+        revision_index: int,
+        change_notes: str | None = None,
+    ) -> dict:
+        """Roll the workflow back to a prior revision by positional index.
+
+        revision_index is 0-based into the revisions[] list returned by list_versions.
+        The index is positional — it shifts on every save or rollback, so always fetch
+        the list fresh before rolling back.
+
+        Args:
+            workflow_id: ID of the workflow.
+            revision_index: 0-based index into the revision history.
+            change_notes: Optional audit note stored on the displaced current config.
+
+        Returns:
+            dict with a 'message' key confirming the rollback.
+        """
+        body = WorkflowRollbackRequest(
+            revision_index=revision_index,
+            change_notes=change_notes,
+        )
+        return self._api.post(
+            f"/v1/workflows/{workflow_id}/versions/rollback",
+            dict,
+            json_data=body.model_dump(exclude_none=True),
         )
 
     def executions(self, workflow_id: str) -> WorkflowExecutionService:
