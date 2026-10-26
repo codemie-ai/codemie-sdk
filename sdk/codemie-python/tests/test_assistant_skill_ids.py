@@ -120,3 +120,11 @@ def test_rollback_fallback_falls_back_to_current_skill_ids():
     api = RecordingApi(assistant_extra={"skill_ids": ["c"]})
     _service(api).rollback_to_version("a1", 1)
     assert api.bodies[0]["skill_ids"] == ["c"]
+
+
+def test_rollback_fallback_empty_version_skill_ids_clears():
+    api = RecordingApi(
+        version_extra={"skill_ids": []}, assistant_extra={"skill_ids": ["c"]}
+    )
+    _service(api).rollback_to_version("a1", 1)
+    assert api.bodies[0]["skill_ids"] == []
