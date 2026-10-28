@@ -174,3 +174,41 @@ class WorkflowGeneratorResponse(BaseModel):
 
     workflow_config: WorkflowGeneratorConfig
     workflow_id: str | None = None
+
+
+class WorkflowRevisionCreatedBy(User):
+    """Creator info on a workflow revision.
+
+    The backend sends ``user_id`` (``UserEntity``); ``User`` also maps a legacy ``id`` onto it.
+    """
+
+
+class WorkflowRevision(BaseModel):
+    """A single workflow revision entry in the history list."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    yaml_config: str
+    date: datetime
+    created_by: WorkflowRevisionCreatedBy | None = None
+    change_notes: str | None = None
+
+
+class WorkflowVersionHistoryResponse(BaseModel):
+    """Response for GET /v1/workflows/{id}/versions."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    workflow_id: str
+    workflow_name: str
+    total_revisions: int
+    revisions: list[WorkflowRevision]
+
+
+class WorkflowRollbackRequest(BaseModel):
+    """Request body for POST /v1/workflows/{id}/versions/rollback."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    revision_index: int = Field(..., ge=0)
+    change_notes: str | None = None
