@@ -27,14 +27,45 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  verify:
+  resolve:
+    name: Resolve base version
     if: >-
       github.event_name == 'workflow_dispatch'
       || startsWith(github.event.release.tag_name, 'node-v')
-    name: Verify and pack
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.version.outputs.version }}
+      base-version: ${{ steps.base.outputs.base-version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            sdk/codemie-nodejs/package.json
+          sparse-checkout-cone-mode: false
+
+      - name: Read base version
+        id: base
+        run: |
+          BASE_VERSION=$(node -p "require('./sdk/codemie-nodejs/package.json').version")
+          echo "base-version=$BASE_VERSION" >> "$GITHUB_OUTPUT"
+
+  check-version:
+    name: Check release version
+    needs: resolve
+    uses: codemie-ai/ci-workflows/.github/workflows/reusable-release-version-check.yml@main
+    with:
+      ecosystem: npm
+      package-name: codemie-sdk
+      tag: ${{ github.event.release.tag_name || inputs.tag }}
+      base-version: ${{ needs.resolve.outputs.base-version }}
+
+  verify:
+    name: Verify and pack
+    needs: [resolve, check-version]
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ needs.check-version.outputs.version }}
     defaults:
       run:
         working-directory: sdk/codemie-nodejs
@@ -50,29 +81,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Require the tag on the released commit
-        id: tagcommit
-        if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.dry_run == false && inputs.publish == 'publish')
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
-        run: |
-          TAGGED=$(git rev-parse -q --verify "refs/tags/$RELEASE_TAG^{commit}") || {
-            echo "Tag $RELEASE_TAG does not exist"; exit 1
-          }
-          if [ "$TAGGED" != "$GITHUB_SHA" ]; then
-            echo "Tag $RELEASE_TAG points to $TAGGED, not to the run commit $GITHUB_SHA"; exit 1
-          fi
-          echo "tagged=$TAGGED" >> "$GITHUB_OUTPUT"
-
-      - name: Require the tagged commit on main
-        if: github.event_name == 'release'
-        env:
-          TAGGED: ${{ steps.tagcommit.outputs.tagged }}
-        run: |
-          if ! git merge-base --is-ancestor "$TAGGED" origin/main; then
-            echo "The tagged commit $TAGGED is not on main"; exit 1
-          fi
-
       - name: Require main for a real publish
         if: github.event_name == 'workflow_dispatch' && inputs.dry_run == false && inputs.publish == 'publish'
         run: |
@@ -80,20 +88,9 @@ jobs:
             echo "A real publish must run from main, not $GITHUB_REF"; exit 1
           fi
 
-      # The tag names the version. The manifest holds only the base line (MAJOR.MINOR) and the tag must be on it.
-      - name: Read the version from the tag
-        id: version
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
-        run: |
-          BASE=$(node -p "require('./package.json').version")
-          VERSION=$(python3 ../../scripts/release/check_version.py --ecosystem npm --name codemie-sdk --tag "$RELEASE_TAG" --base "$BASE")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Releasing codemie-sdk $VERSION" >> "$GITHUB_STEP_SUMMARY"
-
       - name: Stamp the version
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ needs.check-version.outputs.version }}
         run: npm version "$VERSION" --no-git-tag-version --allow-same-version
 
       # The Node.js SDK has no committed lock file, so `npm ci` cannot be used.
@@ -109,11 +106,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Check version against npm
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-        run: python3 ../../scripts/release/check_version.py --ecosystem npm --name codemie-sdk --version "$VERSION"
-
       - name: Pack tarball
         run: mkdir -p "$RUNNER_TEMP/pack" && npm pack --pack-destination "$RUNNER_TEMP/pack" && cp "$RUNNER_TEMP"/pack/*.tgz "$GITHUB_WORKSPACE/"
 
@@ -126,7 +118,7 @@ jobs:
 
   publish:
     name: Publish to npm
-    needs: verify
+    needs: [check-version, verify]
     if: >-
       github.event_name == 'release' || (github.event_name == 'workflow_dispatch'
       && inputs.dry_run == false && inputs.publish == 'publish'
@@ -137,14 +129,6 @@ jobs:
       contents: read
       id-token: write
     steps:
-      # Only the version script is needed. The registry is checked again here because this job can wait for
-      # approval and another release may have landed since `verify`. Checkout comes first: it clears the workspace.
-      - name: Check out the version script
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          sparse-checkout: scripts/release
-
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -157,14 +141,9 @@ jobs:
           name: node-package
           path: package/
 
-      - name: Check the version against the registry again
-        env:
-          VERSION: ${{ needs.verify.outputs.version }}
-        run: python3 scripts/release/check_version.py --ecosystem npm --name codemie-sdk --version "$VERSION"
-
       - name: Publish to npm
         env:
-          VERSION: ${{ needs.verify.outputs.version }}
+          VERSION: ${{ needs.check-version.outputs.version }}
         run: |
           DIST_TAG="latest"
           if [[ "$VERSION" == *-rc* ]]; then
