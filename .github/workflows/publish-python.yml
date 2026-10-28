@@ -21,30 +21,23 @@ on:
 permissions:
   contents: read
 
+env:
+  CI_WORKFLOWS_REF: main
+
 # One run per tag. A fixed group would keep only the newest pending run and cancel the ones in between.
 concurrency:
   group: publish-python-${{ github.event.release.tag_name || inputs.tag }}
   cancel-in-progress: false
 
 jobs:
-  check-version:
-    name: Check release version
+  verify:
     if: >-
       github.event_name == 'workflow_dispatch'
       || startsWith(github.event.release.tag_name, 'python-v')
-    uses: codemie-ai/ci-workflows/.github/workflows/reusable-release-version-check.yml@main
-    with:
-      ecosystem: pypi
-      package-name: codemie-sdk-python
-      tag: ${{ github.event.release.tag_name || inputs.tag }}
-      manifest-path: sdk/codemie-python/pyproject.toml
-
-  verify:
     name: Verify and build
-    needs: [check-version]
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ needs.check-version.outputs.version }}
+      version: ${{ steps.version.outputs.version }}
     defaults:
       run:
         working-directory: sdk/codemie-python
@@ -55,13 +48,28 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
-      - name: Setup Python
-        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: '3.12'
+      - name: Require the tag on the released commit
+        id: tagcommit
+        if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.dry_run == false && inputs.publish == 'publish')
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          TAGGED=$(git rev-parse -q --verify "refs/tags/$RELEASE_TAG^{commit}") || {
+            echo "Tag $RELEASE_TAG does not exist"; exit 1
+          }
+          if [ "$TAGGED" != "$GITHUB_SHA" ]; then
+            echo "Tag $RELEASE_TAG points to $TAGGED, not to the run commit $GITHUB_SHA"; exit 1
+          fi
+          echo "tagged=$TAGGED" >> "$GITHUB_OUTPUT"
 
-      - name: Install Poetry
-        run: pipx install poetry
+      - name: Require the tagged commit on main
+        if: github.event_name == 'release'
+        env:
+          TAGGED: ${{ steps.tagcommit.outputs.tagged }}
+        run: |
+          if ! git merge-base --is-ancestor "$TAGGED" origin/main; then
+            echo "The tagged commit $TAGGED is not on main"; exit 1
+          fi
 
       - name: Require main for a real publish
         if: github.event_name == 'workflow_dispatch' && inputs.dry_run == false && inputs.publish == 'publish'
@@ -70,11 +78,47 @@ jobs:
             echo "A real publish must run from main, not $GITHUB_REF"; exit 1
           fi
 
+      - name: Checkout version check script
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: codemie-ai/ci-workflows
+          ref: ${{ env.CI_WORKFLOWS_REF }}
+          path: .ci-workflows-temp
+          sparse-checkout: scripts/release/check_version.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Setup version check script
+        run: |
+          mkdir -p "${RUNNER_TEMP}/scripts"
+          cp "${GITHUB_WORKSPACE}/.ci-workflows-temp/scripts/release/check_version.py" "${RUNNER_TEMP}/scripts/check_version.py"
+          rm -rf "${GITHUB_WORKSPACE}/.ci-workflows-temp"
+
+      - name: Setup Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      # The tag names the version. The manifest holds only the base line (MAJOR.MINOR) and the tag must be on it.
+      - name: Read the version from the tag
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          BASE=$(poetry version --short)
+          VERSION=$(python3 "${RUNNER_TEMP}/scripts/check_version.py" --ecosystem pypi --name codemie-sdk-python --tag "$RELEASE_TAG" --base "$BASE")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Releasing codemie-sdk-python $VERSION" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Stamp the version
         env:
-          VERSION: ${{ needs.check-version.outputs.version }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: poetry version "$VERSION"
 
+      # The package has no committed lock file; dependencies are always resolved fresh.
       - name: Install dependencies
         run: poetry install --no-interaction
 
@@ -83,6 +127,11 @@ jobs:
 
       - name: Unit tests
         run: poetry run pytest tests/
+
+      - name: Check version against PyPI
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: python3 "${RUNNER_TEMP}/scripts/check_version.py" --ecosystem pypi --name codemie-sdk-python --version "$VERSION"
 
       - name: Build package
         run: poetry build
@@ -96,7 +145,7 @@ jobs:
 
   publish:
     name: Publish to PyPI
-    needs: [check-version, verify]
+    needs: verify
     if: >-
       github.event_name == 'release' || (github.event_name == 'workflow_dispatch'
       && inputs.dry_run == false && inputs.publish == 'publish'
@@ -107,11 +156,32 @@ jobs:
       contents: read
       id-token: write
     steps:
+      - name: Checkout version check script
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: codemie-ai/ci-workflows
+          ref: ${{ env.CI_WORKFLOWS_REF }}
+          path: .ci-workflows-temp
+          sparse-checkout: scripts/release/check_version.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Setup version check script
+        run: |
+          mkdir -p "${RUNNER_TEMP}/scripts"
+          cp "${GITHUB_WORKSPACE}/.ci-workflows-temp/scripts/release/check_version.py" "${RUNNER_TEMP}/scripts/check_version.py"
+          rm -rf "${GITHUB_WORKSPACE}/.ci-workflows-temp"
+
       - name: Download distributions
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: python-dist
           path: dist/
+
+      - name: Check the version against the registry again
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: python3 "${RUNNER_TEMP}/scripts/check_version.py" --ecosystem pypi --name codemie-sdk-python --version "$VERSION"
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
