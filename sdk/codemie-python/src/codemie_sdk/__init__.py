@@ -104,6 +104,9 @@ from .models.analytics import (
     CliAnalyticsRepositoriesResponse,
 )
 from .services.customer_config_service import CustomerConfigService
+from .services.toolkit_policy import ToolkitPolicyService
+from .models.toolkit_policy import ApprovedToolkit, ToolkitPolicy
+from .exceptions import ToolkitNotApprovedError
 from .services.vendor_assistant import VendorAssistantService
 from .services.vendor_workflow import VendorWorkflowService
 from .services.vendor_knowledgebase import VendorKnowledgeBaseService
@@ -274,6 +277,10 @@ __all__ = [
     "CliAnalyticsRepositoriesResponse",
     "AnalyticsService",
     "CustomerConfigService",
+    "ToolkitPolicyService",
+    "ApprovedToolkit",
+    "ToolkitPolicy",
+    "ToolkitNotApprovedError",
     "MermaidDiagramRequest",
     "MermaidDiagramResponse",
     "ContentType",

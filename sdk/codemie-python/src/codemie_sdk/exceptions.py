@@ -1,5 +1,7 @@
 """Custom exceptions for the CodeMie SDK."""
 
+import requests
+
 
 class CodeMieError(Exception):
     """Base exception for all CodeMie SDK errors."""
@@ -40,4 +42,43 @@ class NotFoundError(ApiError):
         """
         super().__init__(
             message=f"{resource_type} with {resource_id} not found", status_code=404
+        )
+
+
+POLICY_LABEL = "toolkit-management policy"
+
+
+class ToolkitNotApprovedError(requests.HTTPError):
+    """Raised when a save is refused because a toolkit or tool is not approved.
+
+    Subclasses ``requests.HTTPError`` so existing ``except requests.HTTPError``
+    handlers keep working.
+    """
+
+    policy = POLICY_LABEL
+
+    def __init__(
+        self,
+        message: str,
+        toolkit: str | None = None,
+        tool: str | None = None,
+        response: requests.Response | None = None,
+    ):
+        """Initialize the error.
+
+        Args:
+            message: Verbatim server message
+            toolkit: Refused toolkit name
+            tool: Refused tool name (None for toolkit-level refusals)
+            response: Original HTTP response
+        """
+        self.message = message
+        self.toolkit = toolkit
+        self.tool = tool
+        self.status_code = response.status_code if response is not None else 400
+        target = (
+            f"tool '{tool}' in toolkit '{toolkit}'" if tool else f"toolkit '{toolkit}'"
+        )
+        super().__init__(
+            f"{message} ({target}; refused by {self.policy})", response=response
         )

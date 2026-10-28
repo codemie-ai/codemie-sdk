@@ -8,15 +8,55 @@ from typing import (
     get_origin,
     get_args,
 )
+import re
 import requests
 import logging
 from functools import wraps
+
+from ..exceptions import ToolkitNotApprovedError
 
 T = TypeVar("T")
 
 TokenSource = str | Callable[[], str]
 
 logger = logging.getLogger(__name__)
+
+
+_NOT_APPROVED_MARKER = "is not approved by platform policy"
+_TOOL_RE = re.compile(r"Tool '([^']+)' in toolkit '([^']+)'")
+_TOOLKIT_RE = re.compile(r"Toolkit '([^']+)'")
+
+
+def _raise_for_status(response: requests.Response) -> None:
+    """Like ``response.raise_for_status()`` but raises ToolkitNotApprovedError
+    for the 400 refusals produced by the toolkit-management policy."""
+    if response.status_code == 400:
+        message = None
+        try:
+            body = response.json()
+            if isinstance(body, dict):
+                error = body.get("error")
+                if isinstance(error, dict):
+                    message = error.get("message")
+                if message is None:
+                    message = body.get("message")
+        except Exception:
+            message = None
+        if isinstance(message, str) and _NOT_APPROVED_MARKER in message:
+            tool_match = _TOOL_RE.search(message)
+            if tool_match:
+                raise ToolkitNotApprovedError(
+                    message,
+                    toolkit=tool_match.group(2),
+                    tool=tool_match.group(1),
+                    response=response,
+                )
+            toolkit_match = _TOOLKIT_RE.search(message)
+            if toolkit_match:
+                raise ToolkitNotApprovedError(
+                    message, toolkit=toolkit_match.group(1), response=response
+                )
+    response.raise_for_status()
 
 
 def log_request(func):
@@ -180,7 +220,7 @@ class ApiRequestHandler:
             params=params,
             verify=self._verify_ssl,
         )
-        response.raise_for_status()
+        _raise_for_status(response)
 
         if response_model is None or response_model is requests.Response:
             return response
@@ -232,7 +272,7 @@ class ApiRequestHandler:
             stream=stream,
         )
         if raise_on_error:
-            response.raise_for_status()
+            _raise_for_status(response)
 
         if stream:
             return response
@@ -276,7 +316,7 @@ class ApiRequestHandler:
             files=files,
             verify=self._verify_ssl,
         )
-        response.raise_for_status()
+        _raise_for_status(response)
 
         return self._parse_response(response, response_model, wrap_response)
 
@@ -310,7 +350,7 @@ class ApiRequestHandler:
             files=files,
             verify=self._verify_ssl,
         )
-        response.raise_for_status()
+        _raise_for_status(response)
 
         return self._parse_response(response, response_model, wrap_response)
 
@@ -348,7 +388,7 @@ class ApiRequestHandler:
             params=params,
             verify=self._verify_ssl,
         )
-        response.raise_for_status()
+        _raise_for_status(response)
         return self._parse_response(response, response_model, wrap_response)
 
     @log_request
@@ -380,7 +420,7 @@ class ApiRequestHandler:
             params=params,
             verify=self._verify_ssl,
         )
-        response.raise_for_status()
+        _raise_for_status(response)
         return self._parse_response(response, response_model, wrap_response)
 
     @log_request
@@ -412,6 +452,6 @@ class ApiRequestHandler:
             json=json_data,
             verify=self._verify_ssl,
         )
-        response.raise_for_status()
+        _raise_for_status(response)
 
         return self._parse_response(response, response_model, wrap_response)
