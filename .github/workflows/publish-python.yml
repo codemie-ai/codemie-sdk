@@ -78,21 +78,10 @@ jobs:
             echo "A real publish must run from main, not $GITHUB_REF"; exit 1
           fi
 
-      - name: Checkout version check script
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: codemie-ai/ci-workflows
-          ref: ${{ env.CI_WORKFLOWS_REF }}
-          path: .ci-workflows-temp
-          sparse-checkout: scripts/release/check_version.py
-          sparse-checkout-cone-mode: false
-          persist-credentials: false
-
-      - name: Setup version check script
+      - name: Download version check script
         run: |
-          mkdir -p "${RUNNER_TEMP}/scripts"
-          cp "${GITHUB_WORKSPACE}/.ci-workflows-temp/scripts/release/check_version.py" "${RUNNER_TEMP}/scripts/check_version.py"
-          rm -rf "${GITHUB_WORKSPACE}/.ci-workflows-temp"
+          mkdir -p scripts/release
+          curl -fsSL "https://raw.githubusercontent.com/codemie-ai/ci-workflows/${{ env.CI_WORKFLOWS_REF }}/scripts/release/check_version.py" -o scripts/release/check_version.py
 
       - name: Setup Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
@@ -109,7 +98,7 @@ jobs:
           RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
         run: |
           BASE=$(poetry version --short)
-          VERSION=$(python3 "${RUNNER_TEMP}/scripts/check_version.py" --ecosystem pypi --name codemie-sdk-python --tag "$RELEASE_TAG" --base "$BASE")
+          VERSION=$(python3 ../../scripts/release/check_version.py --ecosystem pypi --name codemie-sdk-python --tag "$RELEASE_TAG" --base "$BASE")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Releasing codemie-sdk-python $VERSION" >> "$GITHUB_STEP_SUMMARY"
 
@@ -131,7 +120,7 @@ jobs:
       - name: Check version against PyPI
         env:
           VERSION: ${{ steps.version.outputs.version }}
-        run: python3 "${RUNNER_TEMP}/scripts/check_version.py" --ecosystem pypi --name codemie-sdk-python --version "$VERSION"
+        run: python3 ../../scripts/release/check_version.py --ecosystem pypi --name codemie-sdk-python --version "$VERSION"
 
       - name: Build package
         run: poetry build
@@ -156,21 +145,10 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - name: Checkout version check script
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: codemie-ai/ci-workflows
-          ref: ${{ env.CI_WORKFLOWS_REF }}
-          path: .ci-workflows-temp
-          sparse-checkout: scripts/release/check_version.py
-          sparse-checkout-cone-mode: false
-          persist-credentials: false
-
-      - name: Setup version check script
+      - name: Download version check script
         run: |
-          mkdir -p "${RUNNER_TEMP}/scripts"
-          cp "${GITHUB_WORKSPACE}/.ci-workflows-temp/scripts/release/check_version.py" "${RUNNER_TEMP}/scripts/check_version.py"
-          rm -rf "${GITHUB_WORKSPACE}/.ci-workflows-temp"
+          mkdir -p scripts/release
+          curl -fsSL "https://raw.githubusercontent.com/codemie-ai/ci-workflows/${{ env.CI_WORKFLOWS_REF }}/scripts/release/check_version.py" -o scripts/release/check_version.py
 
       - name: Download distributions
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -181,7 +159,7 @@ jobs:
       - name: Check the version against the registry again
         env:
           VERSION: ${{ needs.verify.outputs.version }}
-        run: python3 "${RUNNER_TEMP}/scripts/check_version.py" --ecosystem pypi --name codemie-sdk-python --version "$VERSION"
+        run: python3 scripts/release/check_version.py --ecosystem pypi --name codemie-sdk-python --version "$VERSION"
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
