@@ -27,42 +27,21 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  resolve:
-    name: Resolve base version
+  check-version:
+    name: Check release version
     if: >-
       github.event_name == 'workflow_dispatch'
       || startsWith(github.event.release.tag_name, 'node-v')
-    runs-on: ubuntu-latest
-    outputs:
-      base-version: ${{ steps.base.outputs.base-version }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          sparse-checkout: |
-            sdk/codemie-nodejs/package.json
-          sparse-checkout-cone-mode: false
-
-      - name: Read base version
-        id: base
-        run: |
-          BASE_VERSION=$(node -p "require('./sdk/codemie-nodejs/package.json').version")
-          echo "base-version=$BASE_VERSION" >> "$GITHUB_OUTPUT"
-
-  check-version:
-    name: Check release version
-    needs: resolve
     uses: codemie-ai/ci-workflows/.github/workflows/reusable-release-version-check.yml@main
     with:
       ecosystem: npm
       package-name: codemie-sdk
       tag: ${{ github.event.release.tag_name || inputs.tag }}
-      base-version: ${{ needs.resolve.outputs.base-version }}
+      manifest-path: sdk/codemie-nodejs/package.json
 
   verify:
     name: Verify and pack
-    needs: [resolve, check-version]
+    needs: [check-version]
     runs-on: ubuntu-latest
     outputs:
       version: ${{ needs.check-version.outputs.version }}

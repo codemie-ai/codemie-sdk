@@ -27,52 +27,21 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  resolve:
-    name: Resolve base version
+  check-version:
+    name: Check release version
     if: >-
       github.event_name == 'workflow_dispatch'
       || startsWith(github.event.release.tag_name, 'python-v')
-    runs-on: ubuntu-latest
-    outputs:
-      base-version: ${{ steps.base.outputs.base-version }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          sparse-checkout: |
-            sdk/codemie-python/pyproject.toml
-          sparse-checkout-cone-mode: false
-
-      - name: Read base version
-        id: base
-        run: |
-          BASE_VERSION=$(python3 -c '
-          import pathlib
-          try:
-              import tomllib
-              data = tomllib.loads(pathlib.Path("sdk/codemie-python/pyproject.toml").read_text())
-              print(data["tool"]["poetry"]["version"])
-          except Exception:
-              import re
-              text = pathlib.Path("sdk/codemie-python/pyproject.toml").read_text()
-              print(re.search(r"^version\s*=\s*[\x22\x27]([^\x22\x27]+)[\x22\x27]", text, re.M).group(1))
-          ')
-          echo "base-version=$BASE_VERSION" >> "$GITHUB_OUTPUT"
-
-  check-version:
-    name: Check release version
-    needs: resolve
     uses: codemie-ai/ci-workflows/.github/workflows/reusable-release-version-check.yml@main
     with:
       ecosystem: pypi
       package-name: codemie-sdk-python
       tag: ${{ github.event.release.tag_name || inputs.tag }}
-      base-version: ${{ needs.resolve.outputs.base-version }}
+      manifest-path: sdk/codemie-python/pyproject.toml
 
   verify:
     name: Verify and build
-    needs: [resolve, check-version]
+    needs: [check-version]
     runs-on: ubuntu-latest
     outputs:
       version: ${{ needs.check-version.outputs.version }}
