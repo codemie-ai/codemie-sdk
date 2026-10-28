@@ -211,6 +211,37 @@ class AnalyticsService:
             wrap_response=False,
         )
 
+    def get_budget_usage(self) -> TabularResponse:
+        """Get the caller's budget usage.
+
+        Returns:
+            TabularResponse with the caller's personal budget rows followed by one
+            row per budget category of each project they belong to, each with
+            current spending, reset date, budget limit and percentage used
+        """
+        return self._api.get(
+            "/v1/analytics/budget_usage",
+            TabularResponse,
+            wrap_response=False,
+        )
+
+    def get_user_project_spending(self, users: str) -> TabularResponse:
+        """Get a user's spend broken down by project (admin view).
+
+        Args:
+            users: Email of the target user
+
+        Returns:
+            TabularResponse with one row per project the user belongs to, holding
+            spend and configured limit per budget category
+        """
+        return self._api.get(
+            "/v1/analytics/user-project-spending",
+            TabularResponse,
+            params={"users": users},
+            wrap_response=False,
+        )
+
     def get_llms_usage(
         self, params: PaginatedAnalyticsQueryParams | None = None
     ) -> TabularResponse:
