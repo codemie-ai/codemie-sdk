@@ -186,7 +186,30 @@ response = client.assistants.chat(
 )
 ```
 
-7. **Chat with Assistant by slug (with MCP header propagation)**
+7. **Multi-turn conversations (maintaining history)**
+```python
+import uuid
+from codemie_sdk.models.assistant import AssistantChatRequest
+
+# Generate one session ID and reuse it for every turn.
+# If you omit conversation_id, each call starts a brand-new server conversation
+# and the assistant has no memory of prior turns.
+session_id = str(uuid.uuid4())
+
+resp1 = client.assistants.chat(
+    "assistant-id",
+    AssistantChatRequest(text="My name is Alice.", conversation_id=session_id),
+)
+print(resp1.generated)  # "Nice to meet you, Alice!"
+
+resp2 = client.assistants.chat(
+    "assistant-id",
+    AssistantChatRequest(text="What is my name?", conversation_id=session_id),
+)
+print(resp2.generated)  # "Your name is Alice."
+```
+
+8. **Chat with Assistant by slug (with MCP header propagation)**
 ```python
 chat_request = AssistantChatRequest(
     text="Your message here",

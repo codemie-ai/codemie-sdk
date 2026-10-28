@@ -2,6 +2,7 @@
 
 import mimetypes
 from pathlib import Path
+from urllib.parse import urlparse
 
 from ..models.file_operation import FileBulkCreateResponse
 from ..utils import ApiRequestHandler, TokenSource
@@ -82,3 +83,21 @@ class FileOperationService:
             wrap_response=False,
         )
         return response.content
+
+    def get_file_by_url(self, url: str) -> bytes:
+        """Download a file using the full URL from an assistant response.
+
+        File URLs embedded in assistant responses (``/v1/files/<file_id>``)
+        require bearer-token authentication. This method extracts the file_id
+        and fetches the content with authentication.
+
+        Args:
+            url: Full file URL from an assistant response
+
+        Returns:
+            bytes: File content
+        """
+        file_id = urlparse(url).path.rstrip("/").rsplit("/", 1)[-1]
+        if not file_id:
+            raise ValueError(f"Could not extract file ID from URL: {url!r}")
+        return self.get_file(file_id)

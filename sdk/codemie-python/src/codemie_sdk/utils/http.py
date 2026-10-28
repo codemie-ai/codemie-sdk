@@ -7,7 +7,9 @@ from typing import (
     Callable,
     get_origin,
     get_args,
+    Union,
 )
+import json
 import requests
 import logging
 from functools import wraps
@@ -17,6 +19,46 @@ T = TypeVar("T")
 TokenSource = str | Callable[[], str]
 
 logger = logging.getLogger(__name__)
+
+
+def _extract_pydantic_model(response_model: Type[Any]) -> Type[Any] | None:
+    """Extract the underlying Pydantic model class from a generic type.
+
+    Handles parameterized generics like list[Model], Optional[Model], etc.
+    Returns the model class if it has model_validate, otherwise None.
+
+    Args:
+        response_model: The type annotation (may be generic or plain class)
+
+    Returns:
+        The Pydantic model class, or None if not found
+    """
+    # Check if it's already a Pydantic model
+    if callable(getattr(response_model, "model_validate", None)):
+        return response_model
+
+    # Handle generic types (list[Model], Optional[Model], Union[Model, None], etc.)
+    origin = get_origin(response_model)
+    if origin is not None:
+        args = get_args(response_model)
+        if not args:
+            return None
+
+        # For list[Model], take the first arg
+        if origin is list:
+            inner_model = args[0]
+            if callable(getattr(inner_model, "model_validate", None)):
+                return inner_model
+
+        # For Optional[Model] or Union[Model, None], find the non-None type
+        if origin is Union:
+            for arg in args:
+                if arg is type(None):  # noqa: E721
+                    continue
+                if callable(getattr(arg, "model_validate", None)):
+                    return arg
+
+    return None
 
 
 def log_request(func):
@@ -93,16 +135,54 @@ class ApiRequestHandler:
                 headers["Authorization"] = f"Bearer {token_value}"
         return headers
 
+    def _consume_stream(self, response: requests.Response) -> dict:
+        """Consume a streaming response and return the terminal chunk as a dict.
+
+        Wire format: JSON objects, either newline-separated or concatenated.
+        The terminal chunk has ``"last": true`` and ``"generated"`` set to the
+        full response text.
+
+        Known limitation: if the connection ends before a ``"last": true``
+        chunk arrives, this returns the last chunk seen as-is, with no
+        signal that the response is incomplete. Callers cannot currently
+        distinguish a complete answer from one truncated mid-stream.
+        """
+        last_chunk: dict = {}
+        decoder = json.JSONDecoder()
+        buf = ""
+        try:
+            for raw in response.iter_content(chunk_size=None, decode_unicode=True):
+                buf += raw.decode("utf-8") if isinstance(raw, bytes) else raw
+                buf = buf.lstrip()
+                while buf:
+                    try:
+                        obj, idx = decoder.raw_decode(buf)
+                        buf = buf[idx:].lstrip()
+                        if isinstance(obj, dict):
+                            last_chunk = obj
+                            if obj.get("last"):
+                                # Drain remaining bytes to avoid connection pool issues
+                                for _ in response.iter_content(
+                                    chunk_size=None, decode_unicode=True
+                                ):
+                                    pass
+                                return last_chunk
+                    except json.JSONDecodeError:
+                        break  # incomplete chunk — wait for more data
+        finally:
+            response.close()
+        return last_chunk
+
     def _parse_response(
         self,
-        response: requests.Response,
+        response: "requests.Response | dict",
         response_model: Type[T],
         wrap_response: bool = True,
     ) -> T:
         """Parse response data into model, handling both single models and lists.
 
         Args:
-            response: Response from requests
+            response: Response from requests, or a pre-parsed dict (from streaming)
             response_model: Type to parse into (can be a single model or list[model])
             wrap_response: Whether response is wrapped in 'data' field
 
@@ -110,15 +190,18 @@ class ApiRequestHandler:
             Parsed response object or list of objects
         """
         try:
-            # Handle empty responses (e.g., 204 No Content for DELETE operations)
-            if not response.content or response.status_code == 204:
-                logger.debug(f"Empty response with status {response.status_code}")
-                if response_model is dict:
-                    return {}
-                return None
+            if isinstance(response, dict):
+                response_data = response
+            else:
+                # Handle empty responses (e.g., 204 No Content for DELETE operations)
+                if not response.content or response.status_code == 204:
+                    logger.debug(f"Empty response with status {response.status_code}")
+                    if response_model is dict:
+                        return {}
+                    return None
 
-            response_data = response.json()
-            logger.debug(f"Received response with status {response.status_code}")
+                response_data = response.json()
+                logger.debug(f"Received response with status {response.status_code}")
             logger.debug(f"Response datasource_type: {type(response_data)}")
 
             # Handle data wrapper for dict responses only
@@ -142,6 +225,13 @@ class ApiRequestHandler:
                     return response_data
 
                 return [model_class.model_validate(item) for item in response_data]
+            elif origin is Union:
+                non_none_args = [
+                    a for a in get_args(response_model) if a is not type(None)
+                ]
+                if non_none_args:
+                    return non_none_args[0].model_validate(response_data)
+                return None
             else:
                 # Handle single model
                 return response_model.model_validate(response_data)
@@ -235,6 +325,15 @@ class ApiRequestHandler:
             response.raise_for_status()
 
         if stream:
+            # Check if response_model is or contains a Pydantic model
+            # Handles plain models, list[Model], Optional[Model], Union[Model, None], etc.
+            model_class = _extract_pydantic_model(response_model)
+            if model_class is not None:
+                return self._parse_response(
+                    self._consume_stream(response),
+                    response_model,
+                    wrap_response=False,
+                )
             return response
 
         if response_model is None or response_model is requests.Response:
