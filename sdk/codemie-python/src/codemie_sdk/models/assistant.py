@@ -272,6 +272,18 @@ class Assistant(AssistantBase):
         description="Number of times this assistant has been cloned in the Marketplace",
     )
     tool_permissions: ToolPermissionsConfig | None = None
+    marketplace_status: str | None = Field(
+        default=None,
+        description="Marketplace review status (DRAFT, PENDING_REVIEW, APPROVED, REJECTED, WITHDRAWN)",
+    )
+    is_verified: bool | None = Field(
+        default=None,
+        description="True once a reviewer approved the assistant for the marketplace",
+    )
+    marketplace_decision_reason: str | None = Field(
+        default=None,
+        description="Reason given by the reviewer who rejected the assistant",
+    )
 
 
 class AssistantRequestBase(AssistantBase):
