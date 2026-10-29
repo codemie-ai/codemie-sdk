@@ -137,5 +137,3 @@ jobs:
     with:
       artifact-name: python-dist
       packages-dir: dist/
-    secrets:
-      pypi-api-token: ${{ secrets.PYPI_API_TOKEN }}
