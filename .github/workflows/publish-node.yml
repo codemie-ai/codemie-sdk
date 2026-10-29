@@ -138,6 +138,3 @@ jobs:
     with:
       artifact-name: node-package
       dist-tag: ${{ contains(needs.verify.outputs.version, '-rc') && 'rc' || 'latest' }}
-      node-version: '24'
-    secrets:
-      npm-token: ${{ secrets.NPM_TOKEN }}
