@@ -42,11 +42,6 @@ def _version_payload(**extra):
     }
 
 
-class AssistantWithPrompts(Assistant):
-    # the rollback fallback reads user_prompts, which the read model ignores
-    user_prompts: list[str] = []
-
-
 class RecordingApi:
     def __init__(self, version_extra=None, assistant_extra=None):
         self.bodies = []
@@ -68,9 +63,7 @@ class RecordingApi:
             return AssistantVersion.model_validate(
                 _version_payload(**self.version_extra)
             )
-        return AssistantWithPrompts.model_validate(
-            _assistant_payload(**self.assistant_extra)
-        )
+        return Assistant.model_validate(_assistant_payload(**self.assistant_extra))
 
 
 def _service(api):
@@ -89,6 +82,24 @@ def test_update_sends_skill_ids():
     api = RecordingApi()
     _service(api).update("a1", AssistantUpdateRequest(**BASE, skill_ids=["s1"]))
     assert api.bodies[0]["skill_ids"] == ["s1"]
+
+
+def test_create_without_skills_omits_key():
+    api = RecordingApi()
+    _service(api).create(AssistantCreateRequest(**BASE))
+    assert "skill_ids" not in api.bodies[0]
+
+
+def test_create_sends_empty_skill_ids():
+    api = RecordingApi()
+    _service(api).create(AssistantCreateRequest(**BASE, skill_ids=[]))
+    assert api.bodies[0]["skill_ids"] == []
+
+
+def test_update_sends_empty_skill_ids():
+    api = RecordingApi()
+    _service(api).update("a1", AssistantUpdateRequest(**BASE, skill_ids=[]))
+    assert api.bodies[0]["skill_ids"] == []
 
 
 def test_update_without_skills_omits_key():

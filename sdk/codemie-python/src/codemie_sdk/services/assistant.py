@@ -320,7 +320,6 @@ class AssistantService:
                     toolkits=version.toolkits
                     if hasattr(version, "toolkits")
                     else assistant.toolkits,
-                    user_prompts=assistant.user_prompts,
                     shared=assistant.shared,
                     is_react=assistant.is_react,
                     is_global=assistant.is_global,
