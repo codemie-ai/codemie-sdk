@@ -145,11 +145,6 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - name: Download version check script
-        run: |
-          mkdir -p scripts/release
-          curl -fsSL "https://raw.githubusercontent.com/codemie-ai/ci-workflows/${{ env.CI_WORKFLOWS_REF }}/scripts/release/check_version.py" -o scripts/release/check_version.py
-
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -161,11 +156,6 @@ jobs:
         with:
           name: node-package
           path: package/
-
-      - name: Check the version against the registry again
-        env:
-          VERSION: ${{ needs.verify.outputs.version }}
-        run: python3 scripts/release/check_version.py --ecosystem npm --name codemie-sdk --version "$VERSION"
 
       - name: Publish to npm
         env:

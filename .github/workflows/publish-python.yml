@@ -145,21 +145,11 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - name: Download version check script
-        run: |
-          mkdir -p scripts/release
-          curl -fsSL "https://raw.githubusercontent.com/codemie-ai/ci-workflows/${{ env.CI_WORKFLOWS_REF }}/scripts/release/check_version.py" -o scripts/release/check_version.py
-
       - name: Download distributions
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: python-dist
           path: dist/
-
-      - name: Check the version against the registry again
-        env:
-          VERSION: ${{ needs.verify.outputs.version }}
-        run: python3 scripts/release/check_version.py --ecosystem pypi --name codemie-sdk-python --version "$VERSION"
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
