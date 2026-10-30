@@ -123,6 +123,7 @@ class AssistantDataItem(BaseModel):
     context: list[ContextItem | str] | None = None
     tools: list[ToolItem] | None = None
     conversation_starters: list[str] = []
+    hide_tool_outputs: bool = False
 
 
 class ConversationDetailsData(BaseModel):
@@ -145,6 +146,7 @@ class AssistantDetailsData(BaseModel):
     context: list[ContextItem | str]
     tools: list[ToolItem]
     conversation_starters: list[str]
+    hide_tool_outputs: bool = False
 
 
 class ConversationCreateRequest(BaseModel):
