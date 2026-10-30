@@ -78,7 +78,7 @@ describe("AssistantCreateParamsSchema mcp_servers.config", () => {
 
   it("preserves extended mcp config fields on create params", () => {
     const parsed = AssistantCreateParamsSchema.parse(base);
-    expect(parsed.mcp_servers[0].config).toEqual({
+    expect(parsed.mcp_servers?.[0].config).toEqual({
       url: "https://mcp.example.com",
       headers: { "X-Api-Key": "k" },
       type: "streamable-http",
@@ -105,7 +105,7 @@ describe("AssistantCreateParamsSchema mcp_servers.config", () => {
       ],
     });
 
-    expect(parsed.mcp_servers[0].config).toEqual({
+    expect(parsed.mcp_servers?.[0].config).toEqual({
       url: "https://mcp.example.com/mcp",
       headers: { Authorization: "Bearer token" },
       type: "streamable-http",
@@ -127,6 +127,37 @@ const VALID = {
   assistant_ids: [],
   mcp_servers: [],
 };
+
+describe("assistant create and update required fields", () => {
+  it("requires description and project on create", () => {
+    expect(() => AssistantCreateParamsSchema.parse({ ...VALID, description: undefined })).toThrow();
+    expect(() => AssistantCreateParamsSchema.parse({ ...VALID, project: undefined })).toThrow();
+  });
+
+  it("allows an omitted update description but rejects null", () => {
+    expect(
+      AssistantUpdateParamsSchema.parse({ ...VALID, description: undefined }).description,
+    ).toBeUndefined();
+    expect(() =>
+      AssistantUpdateParamsSchema.parse({ ...VALID, description: null }),
+    ).toThrow();
+  });
+
+  it("requires project on update", () => {
+    expect(() => AssistantUpdateParamsSchema.parse({ ...VALID, project: undefined })).toThrow();
+  });
+
+  it("preserves headroom_config and disabled_context_tools on update", () => {
+    const parsed = AssistantUpdateParamsSchema.parse({
+      ...VALID,
+      headroom_config: { compress_tool_outputs: false },
+      disabled_context_tools: ["search_kb"],
+    });
+
+    expect(parsed.headroom_config).toEqual({ compress_tool_outputs: false });
+    expect(parsed.disabled_context_tools).toEqual(["search_kb"]);
+  });
+});
 
 describe("hide_tool_outputs", () => {
   it("accepts true and false on create", () => {
@@ -205,7 +236,7 @@ describe("AssistantCreateParamsSchema mcp_servers pass-through", () => {
 
   it("forwards an undeclared key on an mcp_servers item", () => {
     const parsed = AssistantCreateParamsSchema.parse(base);
-    expect(parsed.mcp_servers[0]).toMatchObject({
+    expect(parsed.mcp_servers?.[0]).toMatchObject({
       name: "remote",
       enabled: true,
       future_backend_field: "x",
@@ -214,7 +245,7 @@ describe("AssistantCreateParamsSchema mcp_servers pass-through", () => {
 
   it("forwards an undeclared key inside mcp_servers[].config", () => {
     const parsed = AssistantCreateParamsSchema.parse(base);
-    expect(parsed.mcp_servers[0].config).toMatchObject({
+    expect(parsed.mcp_servers?.[0].config).toMatchObject({
       url: "https://mcp.example.com",
       future_config_field: "y",
     });
@@ -261,20 +292,20 @@ describe("AssistantUpdateParamsSchema mcp_servers top-level fields", () => {
           enabled: true,
           mcp_config_id: null,
           integration_alias: null,
-          resolve_dynamic_values_in_arguments: null,
+          resolve_dynamic_values_in_arguments: false,
           tools: null,
           config: null,
         },
       ],
     });
 
-    expect(parsed.mcp_servers[0]).toMatchObject({
+    expect(parsed.mcp_servers?.[0]).toMatchObject({
       name: "RI-logs",
       description: "Download, unzip and grep log files",
       enabled: true,
       mcp_config_id: null,
       integration_alias: null,
-      resolve_dynamic_values_in_arguments: null,
+      resolve_dynamic_values_in_arguments: false,
       tools: null,
       config: null,
     });
@@ -304,7 +335,7 @@ describe("AssistantUpdateParamsSchema mcp_servers top-level fields", () => {
       ],
     });
 
-    expect(parsed.mcp_servers[0]).toEqual({
+    expect(parsed.mcp_servers?.[0]).toEqual({
       name: "RI-logs",
       description: "Download, unzip and grep log files",
       enabled: true,
@@ -335,7 +366,7 @@ describe("AssistantUpdateParamsSchema mcp_servers top-level fields", () => {
       ],
     });
 
-    expect(parsed.mcp_servers[0]).toMatchObject({
+    expect(parsed.mcp_servers?.[0]).toMatchObject({
       name: "RI-logs",
       enabled: true,
       use_custom_config: true,
@@ -451,7 +482,7 @@ describe("AssistantCreateParamsSchema API-echo nulls", () => {
     expect(parsed.icon_url).toBeNull();
     expect(parsed.temperature).toBeNull();
     expect(parsed.top_p).toBeNull();
-    expect(parsed.mcp_servers[0]).toMatchObject({
+    expect(parsed.mcp_servers?.[0]).toMatchObject({
       mcp_config_id: "a6395977-3598-4a0a-bfb3-08463d484575",
       mcp_connect_url: null,
       tools_tokens_size_limit: null,
@@ -489,7 +520,7 @@ describe("AssistantCreateParamsSchema API-echo nulls", () => {
       ],
     });
 
-    expect(parsed.mcp_servers[0].config).toMatchObject({
+    expect(parsed.mcp_servers?.[0].config).toMatchObject({
       command: "npx",
       url: null,
       type: null,
@@ -499,9 +530,8 @@ describe("AssistantCreateParamsSchema API-echo nulls", () => {
     });
   });
 
-  // One guard for the whole class of bug: an assistant exactly as the API hands it back,
-  // with a null in every place the backend model permits one, must survive assistants.update().
-  it("accepts a full API response with a null in every nullable field", () => {
+  // Response-only nulls do not widen required Codemie request fields.
+  it("accepts a represented Codemie request with nullable fields", () => {
     const fromApi = {
       name: "A",
       description: "D",
@@ -509,7 +539,7 @@ describe("AssistantCreateParamsSchema API-echo nulls", () => {
       system_prompt: "P",
       project: "proj",
       slug: null,
-      llm_model_type: null,
+      llm_model_type: "gpt-4",
       temperature: null,
       top_p: null,
       conversation_starters: [],
@@ -545,7 +575,7 @@ describe("AssistantCreateParamsSchema API-echo nulls", () => {
     };
 
     expect(() => AssistantUpdateParamsSchema.parse(fromApi)).not.toThrow();
-    expect(AssistantCreateParamsSchema.parse(fromApi).mcp_servers[0].description).toBeNull();
+    expect(AssistantCreateParamsSchema.parse(fromApi).mcp_servers?.[0].description).toBeNull();
   });
 
   it("still rejects a config carrying both url and command after the null widening", () => {
