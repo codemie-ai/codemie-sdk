@@ -7,6 +7,7 @@ import type {
   BaseModelResponse,
   ToolKitDetails,
   AssistantCreateResponse,
+  AssistantCreateApiResponse,
   AssistantUpdateResponse,
 } from "../models/assistant";
 import type { AnyJson, AuthConfig, PaginatedResponse } from "../models/common";
@@ -107,7 +108,8 @@ export class AssistantService {
     }
 
     const validatedParams = AssistantCreateParamsSchema.parse(params);
-    return this.api.post<AssistantCreateResponse>("/v1/assistants", validatedParams);
+    const response = await this.api.post<AssistantCreateApiResponse>("/v1/assistants", validatedParams);
+    return AssistantMapper.mapCreateResponse(response);
   }
 
   /**

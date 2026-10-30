@@ -206,6 +206,15 @@ export interface AssistantCreateResponse {
   validation?: IntegrationValidationResult;
 }
 
+/** Wire responses differ between platform versions; services expose assistant_id. */
+export interface AssistantCreateApiResponse {
+  message: string;
+  assistant_id?: string | null;
+  assistantId?: string | null;
+  id?: string | null;
+  validation?: IntegrationValidationResult;
+}
+
 export interface AssistantUpdateResponse {
   message: string;
   validation?: IntegrationValidationResult;

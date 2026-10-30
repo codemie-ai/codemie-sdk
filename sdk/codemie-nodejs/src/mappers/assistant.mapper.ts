@@ -1,7 +1,20 @@
-import type { BaseModelApiResponse, BaseModelResponse } from "../models";
+import type {
+  AssistantCreateApiResponse,
+  AssistantCreateResponse,
+  BaseModelApiResponse,
+  BaseModelResponse,
+} from "../models";
 import { omitUndefined } from "../utils/helpers";
 
 export class AssistantMapper {
+  static mapCreateResponse(response: AssistantCreateApiResponse): AssistantCreateResponse {
+    const { assistant_id, ...rest } = response;
+    const identifier = [assistant_id, response.assistantId, response.id].find(
+      (value) => typeof value === "string" && value.trim().length > 0,
+    );
+    return { ...rest, ...(identifier ? { assistant_id: identifier.trim() } : {}) };
+  }
+
   static mapBaseModelApiResponse(response: BaseModelApiResponse): BaseModelResponse {
     return omitUndefined({
       generated: response.generated,
