@@ -223,17 +223,10 @@ const params: AssistantUpdateParams = {
   name: "Updated Name",
   description: "Updated description",
   system_prompt: "Updated instructions",
-  project: "my_project",
-  llm_model_type: "gpt-4",
-  context: [],
-  conversation_starters: [],
-  mcp_servers: [],
-  assistant_ids: [],
-  toolkits: []
+  llm_model_type: "gpt-4"
 };
 await client.assistants.update("assistant-id", params);
 ```
-
 5. **Delete Assistant**
 ```typescript
 await client.assistants.delete("assistant-id");
