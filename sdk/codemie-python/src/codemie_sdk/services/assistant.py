@@ -36,6 +36,7 @@ from ..models.assistant import (
 from ..models.common import PaginationParams
 from ..models.conversation import BaseResponse
 from ..utils import ApiRequestHandler, TokenSource
+from ..utils.values import first_not_none
 
 
 class AssistantService:
@@ -319,7 +320,6 @@ class AssistantService:
                     toolkits=version.toolkits
                     if hasattr(version, "toolkits")
                     else assistant.toolkits,
-                    user_prompts=assistant.user_prompts,
                     shared=assistant.shared,
                     is_react=assistant.is_react,
                     is_global=assistant.is_global,
@@ -330,6 +330,9 @@ class AssistantService:
                     assistant_ids=version.assistant_ids
                     if hasattr(version, "assistant_ids")
                     else assistant.assistant_ids,
+                    # None on the version means "not reported": keep the
+                    # current assistant's skills rather than clearing them.
+                    skill_ids=first_not_none(version.skill_ids, assistant.skill_ids),
                 )
                 update_resp = self.update(assistant_id, update_req)
                 resp = update_resp.model_dump()

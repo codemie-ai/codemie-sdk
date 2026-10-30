@@ -248,6 +248,7 @@ class Assistant(AssistantBase):
     display_name: str | None = None
     mcp_servers: list[MCPServerDetails] = Field(default_factory=list)
     assistant_ids: list[str] = Field(default_factory=list)
+    skill_ids: list[str] | None = None
     enabled_builtin_subagents: list[str] = Field(default_factory=list)
     version_count: int | None = None
     prompt_variables: list[PromptVariable] | None = Field(default=None)
@@ -304,6 +305,7 @@ class AssistantRequestBase(AssistantBase):
     tools_tokens_size_limit: int | None = None
     mcp_servers: list[MCPServerDetails] = Field(default_factory=list)
     assistant_ids: list[str] = Field(default_factory=list)
+    skill_ids: list[str] | None = None
     enabled_builtin_subagents: list[str] | None = None
     prompt_variables: list[PromptVariable] = Field(default_factory=list)
     skip_integration_validation: bool | None = Field(default=False)
@@ -426,6 +428,7 @@ class AssistantVersion(BaseModel):
     toolkits: list[ToolKitDetails] = Field(default_factory=list)
     mcp_servers: list[MCPServerDetails] = Field(default_factory=list)
     assistant_ids: list[str] = Field(default_factory=list)
+    skill_ids: list[str] | None = None
     prompt_variables: list[PromptVariable] = Field(default_factory=list)
 
 
