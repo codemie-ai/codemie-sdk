@@ -215,9 +215,10 @@ class AnalyticsService:
         """Get the caller's budget usage.
 
         Returns:
-            TabularResponse with the caller's personal budget rows followed by one
-            row per budget category of each project they belong to, each with
-            current spending, reset date, budget limit and percentage used
+            TabularResponse with one row per budget category: the default
+            project's rows first, then the caller's personal rows, then the
+            other projects the caller belongs to. Each row has current
+            spending, reset date, budget limit and percentage used
         """
         return self._api.get(
             "/v1/analytics/budget_usage",
