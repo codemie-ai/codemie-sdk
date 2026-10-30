@@ -1,6 +1,5 @@
 """Models for assistant-related data structures."""
 
-import uuid
 from datetime import datetime
 from enum import Enum
 from typing import Any, Type, Optional, List, Union, Dict
@@ -469,7 +468,8 @@ class AssistantChatRequest(BaseModel):
     """Model for chat request to assistant."""
 
     conversation_id: str | None = Field(
-        default_factory=lambda: str(uuid.uuid4()), description="Conversation identifier"
+        default=None,
+        description="Conversation identifier. Pass the same value across calls to maintain history.",
     )
     text: str = Field(description="User's input")
     content_raw: str | None = Field(default="", description="Raw content input")
@@ -552,8 +552,8 @@ class VirtualAssistantChatRequest(BaseModel):
 
     # --- Chat parameters ---
     conversation_id: Optional[str] = Field(
-        default_factory=lambda: str(uuid.uuid4()),
-        description="Conversation identifier. Auto-generated if omitted.",
+        default=None,
+        description="Conversation identifier. Pass the same value across calls to maintain history.",
     )
     text: Optional[str] = Field(default=None, description="User message text.")
     content_raw: Optional[str] = Field(default="")
@@ -597,7 +597,7 @@ class BaseModelResponse(BaseModel):
         default=None, alias="taskId", description="Background task identifier"
     )
     # Error handling fields
-    success: bool = Field(
+    success: bool | None = Field(
         default=True, description="Whether the agent execution was successful"
     )
     agent_error: AgentErrorDetails | None = Field(

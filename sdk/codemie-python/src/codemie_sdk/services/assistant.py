@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 import json
 from pathlib import Path
-from typing import Union, Any, Literal, Optional, Dict
+from typing import Any, Literal, Optional, Dict
 from pydantic import BaseModel
 from copy import deepcopy
 
@@ -30,9 +30,10 @@ from ..models.assistant import (
     ReactionRequest,
     ToolCallResumeRequest,
     AssistantProjectFeature,
-    AssistantProjectMappingListResponse,
     AssistantProjectMappingRequest,
+    AssistantProjectMappingListResponse,
 )
+from ..models.file_operation import FileResponse
 from ..models.common import PaginationParams
 from ..models.conversation import BaseResponse
 from ..utils import ApiRequestHandler, TokenSource
@@ -346,7 +347,7 @@ class AssistantService:
         assistant_id: str,
         request: AssistantChatRequest,
         headers: dict[str, str] | None = None,
-    ) -> Union[requests.Response, BaseModelResponse]:
+    ) -> BaseModelResponse:
         """Send a chat request to an assistant.
 
         Args:
@@ -373,7 +374,7 @@ class AssistantService:
             stream=request.stream,
             extra_headers=headers,
         )
-        if not request.stream and pydantic_schema:
+        if pydantic_schema:
             # we do conversion to the BaseModel here because self._parse_response don't see actual request model,
             # where reflected desired output format for structured output
             response.generated = pydantic_schema.model_validate(response.generated)
@@ -385,7 +386,7 @@ class AssistantService:
         assistant_id: str,
         version_number: int,
         request: AssistantChatRequest,
-    ) -> Union[requests.Response, BaseModelResponse]:
+    ) -> BaseModelResponse:
         """Send a chat request to a specific assistant version.
 
         Uses the stable chat endpoint with an explicit `version` parameter to
@@ -418,7 +419,7 @@ class AssistantService:
             json_data=payload,
             stream=request.stream,
         )
-        if not request.stream and pydantic_schema:
+        if pydantic_schema:
             response.generated = pydantic_schema.model_validate(response.generated)
 
         return response
@@ -428,7 +429,7 @@ class AssistantService:
         assistant_slug: str,
         request: AssistantChatRequest,
         headers: dict[str, str] | None = None,
-    ) -> Union[requests.Response, BaseModelResponse]:
+    ) -> BaseModelResponse:
         """Send a chat request to an assistant by slug.
 
         Args:
@@ -455,7 +456,7 @@ class AssistantService:
             stream=request.stream,
             extra_headers=headers,
         )
-        if not request.stream and pydantic_schema:
+        if pydantic_schema:
             response.generated = pydantic_schema.model_validate(response.generated)
 
         return response
@@ -464,7 +465,7 @@ class AssistantService:
         self,
         request: VirtualAssistantChatRequest,
         headers: Optional[Dict[str, str]] = None,
-    ) -> Union[requests.Response, BaseModelResponse]:
+    ) -> BaseModelResponse:
         """Run inference using an inline (virtual) assistant definition.
 
         No database assistant record is required. History is never persisted.
@@ -492,14 +493,17 @@ class AssistantService:
             stream=request.stream,
             extra_headers=headers,
         )
-        if not request.stream and pydantic_schema:
+        if pydantic_schema:
             response.generated = pydantic_schema.model_validate(response.generated)
 
         return response
 
-    def upload_file_to_chat(self, file_path: Path):
-        """Upload a file to assistant chat and return the response containing file_url."""
+    def upload_file_to_chat(self, file_path: Path) -> FileResponse:
+        """Upload a file to assistant chat and return the response containing file_url.
 
+        Use ``client.files.get_file_by_url(response.file_url)`` to download
+        the file with authentication.
+        """
         with open(file_path, "rb") as file:
             files = [
                 (
@@ -512,7 +516,7 @@ class AssistantService:
                     ),
                 ),
             ]
-            response = self._api.post_multipart("/v1/files/", dict, files=files)
+            response = self._api.post_multipart("/v1/files/", FileResponse, files=files)
 
         return response
 
