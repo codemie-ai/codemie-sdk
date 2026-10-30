@@ -1,12 +1,23 @@
+import logging
 import re
 import warnings
 from datetime import datetime
 from enum import Enum
-from typing import Tuple
+from typing import Any, Callable, Literal, Tuple
 
-from pydantic import BaseModel, Field, model_validator, ConfigDict, field_validator
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 from .common import TokensUsage, User
+
+logger = logging.getLogger(__name__)
 
 
 class CodeDataSourceType(str, Enum):
@@ -33,6 +44,10 @@ class DataSourceType(str, Enum):
     AZURE_DEVOPS_WORK_ITEM = "knowledge_base_azure_devops_work_item"
     SHAREPOINT = "knowledge_base_sharepoint"
     XWIKI = "knowledge_base_xwiki"
+    # Request routing only: the backend stores SVN datasources with the index_type
+    # the caller picked (code / summary / chunk-summary) and vcs_type="svn", so
+    # filtering list() by SVN returns nothing.
+    SVN = "svn"
 
 
 class DataSourceStatus(str, Enum):
@@ -135,8 +150,112 @@ class XWiki(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
 
+class Svn(BaseModel):
+    """Model for SVN repository datasource fields.
+
+    Note: the backend PUT resets omitted prompt, files_filter, project_space_visible
+    and docs_generation to defaults, so send them on every update. The update
+    request uses the camelCase names the backend update endpoint reads.
+    """
+
+    link: str = Field(..., min_length=1, max_length=1000)
+    branch: str = Field("trunk", min_length=1, max_length=1000)
+    files_filter: str | None = None
+    embeddings_model: str | None = None
+    prompt: str | None = None
+    docs_generation: bool | None = None
+
+    model_config = ConfigDict(extra="ignore")
+
+
+class SharePoint(BaseModel):
+    """Model for SharePoint-specific request fields."""
+
+    site_url: str = Field(..., pattern=r"^https://\S+$", max_length=1000)
+    include_pages: bool | None = None
+    include_documents: bool | None = None
+    include_lists: bool | None = None
+    max_file_size_mb: int | None = Field(None, ge=1, le=500)
+    files_filter: str | None = None
+    auth_type: Literal["integration", "oauth_codemie", "oauth_custom"] | None = None
+    oauth_client_id: str | None = None
+    oauth_tenant_id: str | None = None
+    access_token: str | None = Field(None, repr=False)
+    embedding_model: str | None = None
+
+    model_config = ConfigDict(extra="ignore")
+
+
+class Xray(BaseModel):
+    """Model for Xray-specific fields"""
+
+    jql: str = Field(..., min_length=1)
+    embedding_model: str | None = None
+
+    model_config = ConfigDict(extra="ignore")
+
+
+class SvnInfo(BaseModel):
+    """Typed read of the SVN settings stored on a datasource (vcs_type=svn)."""
+
+    link: str | None = None
+    branch: str | None = None
+    files_filter: str | None = None
+    embeddings_model: str | None = None
+    prompt: str | None = None
+    docs_generation: bool | None = None
+
+    model_config = ConfigDict(extra="ignore")
+
+
+class SharePointInfo(BaseModel):
+    """Typed read of the nested SharePoint config (credentials are not exposed)."""
+
+    site_url: str | None = None
+    include_pages: bool | None = None
+    include_documents: bool | None = None
+    include_lists: bool | None = None
+    max_file_size_mb: int | None = None
+    files_filter: str | None = None
+    auth_type: str | None = None
+    oauth_client_id: str | None = None
+    oauth_tenant_id: str | None = None
+
+    model_config = ConfigDict(extra="ignore")
+
+
+class XrayInfo(BaseModel):
+    """Typed read of the nested Xray config."""
+
+    jql: str | None = None
+
+    model_config = ConfigDict(extra="ignore")
+
+
+class ProviderFields(BaseModel):
+    """Typed read of provider datasource settings.
+
+    Sensitive params are encrypted at rest, so a read can return ciphertext rather
+    than the secret. On update, send ``**********`` for a secret to keep the stored
+    value.
+    """
+
+    provider_id: str | None = None
+    toolkit_id: str | None = None
+    base_params: dict[str, Any] = Field(default_factory=dict)
+    create_params: dict[str, Any] = Field(default_factory=dict)
+
+    model_config = ConfigDict(extra="ignore")
+
+    @field_validator("base_params", "create_params", mode="before")
+    def null_params_as_empty(cls, value):
+        return {} if value is None else value
+
+
 class Code(BaseModel):
     """Model for code repository datasource creation"""
+
+    model_config = ConfigDict(populate_by_name=True)
 
     link: str | None = Field(..., min_length=1, max_length=1000)
     branch: str | None = Field(..., min_length=1, max_length=1000)
@@ -155,6 +274,32 @@ class GitFaq(BaseModel):
     branch: str | None = Field(..., min_length=1, max_length=1000)
     files_filter: str | None = Field(None)
     embedding_model: str | None = Field(None)
+
+
+class CodeInfo(BaseModel):
+    """Typed read of a code datasource's settings; every field is optional."""
+
+    link: str | None = None
+    branch: str | None = None
+    index_type: CodeDataSourceType | None = None
+    files_filter: str | None = None
+    embeddings_model: str | None = None
+    summarization_model: str | None = None
+    prompt: str | None = None
+    docs_generation: bool | None = None
+
+    model_config = ConfigDict(extra="ignore")
+
+
+class GitFaqInfo(BaseModel):
+    """Typed read of a Git FAQ datasource's settings; every field is optional."""
+
+    link: str | None = None
+    branch: str | None = None
+    files_filter: str | None = None
+    embedding_model: str | None = None
+
+    model_config = ConfigDict(extra="ignore")
 
 
 class BaseDataSourceRequest(BaseModel):
@@ -280,6 +425,61 @@ class XWikiDataSourceRequest(BaseDataSourceRequest, XWiki):
         return ["space"]
 
 
+class SvnDataSourceRequest(BaseDataSourceRequest, Svn):
+    """Model for SVN datasource creation requests"""
+
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    index_type: CodeDataSourceType = Field(..., alias="indexType")
+    # Used by the summary and chunk-summary index types; the backend falls back
+    # to its default model when omitted.
+    summarization_model: str | None = Field(None, alias="summarizationModel")
+
+    def __init__(self, **data):
+        super().__init__(type=DataSourceType.SVN, **data)
+
+    @classmethod
+    def required_fields(cls) -> list[str]:
+        return ["link"]
+
+
+class SharePointDataSourceRequest(BaseDataSourceRequest, SharePoint):
+    """Model for SharePoint datasource creation requests"""
+
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    @model_validator(mode="after")
+    def validate_oauth_access_token(self):
+        if (
+            self.auth_type in ("oauth_codemie", "oauth_custom")
+            and not self.access_token
+        ):
+            raise ValueError(
+                "access_token is required when auth_type is 'oauth_codemie' or 'oauth_custom'"
+            )
+        return self
+
+    def __init__(self, **data):
+        super().__init__(type=DataSourceType.SHAREPOINT, **data)
+
+    @classmethod
+    def required_fields(cls) -> list[str]:
+        return ["site_url"]
+
+
+class XrayDataSourceRequest(BaseDataSourceRequest, Xray):
+    """Model for Xray datasource creation requests"""
+
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    def __init__(self, **data):
+        super().__init__(type=DataSourceType.XRAY, **data)
+
+    @classmethod
+    def required_fields(cls) -> list[str]:
+        return ["jql"]
+
+
 class BaseUpdateDataSourceRequest(BaseDataSourceRequest):
     """Mixin update-specific reindex fields"""
 
@@ -387,6 +587,81 @@ class UpdateXWikiDataSourceRequest(BaseUpdateDataSourceRequest, XWiki):
         super().__init__(type=DataSourceType.XWIKI, **data)
 
 
+class UpdateSvnDataSourceRequest(BaseUpdateDataSourceRequest, Svn):
+    """Model for SVN datasource updates (camelCase keys, as the backend reads them)"""
+
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    # The backend writes these four on every update, sent or not (a missing
+    # visibility flag becomes True, a missing prompt / filter / docs flag is
+    # wiped), so the caller states each one. ``None`` is allowed for the
+    # nullable three and means "clear it"; it is not sent.
+    shared_with_project: bool = Field(
+        ...,
+        validation_alias=AliasChoices(
+            "projectSpaceVisible", "project_space_visible", "shared_with_project"
+        ),
+        serialization_alias="projectSpaceVisible",
+    )
+    prompt: str | None = Field(...)
+    files_filter: str | None = Field(..., alias="filesFilter")
+    docs_generation: bool | None = Field(..., alias="docsGeneration")
+    # Optional on update: the backend overwrites the stored link / branch when sent.
+    link: str | None = Field(None, min_length=1, max_length=1000)
+    branch: str | None = Field(None, min_length=1, max_length=1000)
+    embeddings_model: str | None = Field(None, alias="embeddingsModel")
+
+    def __init__(self, **data):
+        super().__init__(type=DataSourceType.SVN, **data)
+
+
+class UpdateSharePointDataSourceRequest(BaseUpdateDataSourceRequest, SharePoint):
+    """Model for SharePoint datasource updates (site_url is optional: omit to keep it)"""
+
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    site_url: str | None = Field(None, pattern=r"^https://\S+$", max_length=1000)
+    # None keeps the stored value (the backend update treats a missing flag so).
+    shared_with_project: bool | None = Field(None, alias="project_space_visible")
+
+    @model_validator(mode="after")
+    def validate_oauth_reindex_token(self):
+        # The backend saves the update first and only then refuses a reindex of an
+        # OAuth datasource without a token (422), leaving a partial apply. Only an
+        # explicit auth_type can be checked here; a stored OAuth type with
+        # auth_type omitted still needs the token on every full_reindex.
+        if (
+            self.full_reindex
+            and self.auth_type in ("oauth_codemie", "oauth_custom")
+            and not self.access_token
+        ):
+            raise ValueError(
+                "access_token is required for full_reindex when auth_type is "
+                "'oauth_codemie' or 'oauth_custom'"
+            )
+        return self
+
+    def __init__(self, **data):
+        super().__init__(type=DataSourceType.SHAREPOINT, **data)
+
+
+class UpdateXrayDataSourceRequest(BaseUpdateDataSourceRequest):
+    """Model for Xray datasource updates.
+
+    Does not extend ``Xray``: the backend update ignores ``embedding_model`` (it is
+    create-only), so it is rejected here instead of being sent and dropped.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    jql: str = Field(..., min_length=1)
+    # None keeps the stored value (the backend update treats a missing flag so).
+    shared_with_project: bool | None = Field(None, alias="project_space_visible")
+
+    def __init__(self, **data):
+        super().__init__(type=DataSourceType.XRAY, **data)
+
+
 class CodeAnalysisDataSourceRequest(BaseModel):
     """Model for provider-based datasource creation requests.
 
@@ -400,7 +675,7 @@ class CodeAnalysisDataSourceRequest(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     name: str = Field(..., description="Datasource name")
-    description: str | None = Field(None, description="Datasource description")
+    description: str = Field("", description="Datasource description")
     project_name: str = Field(..., description="Project name")
     project_space_visible: bool = Field(
         False, description="Make the datasource visible to the whole project"
@@ -430,7 +705,7 @@ class CodeExplorationDataSourceRequest(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     name: str = Field(..., description="Datasource name")
-    description: str | None = Field(None, description="Datasource description")
+    description: str = Field("", description="Datasource description")
     project_name: str = Field(..., description="Project name")
     project_space_visible: bool = Field(
         False, description="Make the datasource visible to the whole project"
@@ -442,6 +717,46 @@ class CodeExplorationDataSourceRequest(BaseModel):
         "combined AICE provider creates a CodeExplorationToolkit datasource from "
         "name/description alone, with no separate CodeAnalysisToolkit datasources.",
     )
+
+
+class _ProviderRequestBase(BaseModel):
+    """Shared fields and body of the provider create and update requests."""
+
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+
+    # The backend writes name, project_name, description and
+    # project_space_visible from the body on every update without a None check,
+    # so all four are required (a missing one is stored as NULL and the save fails).
+    name: str = Field(..., min_length=1)
+    project_name: str = Field(..., min_length=1)
+    description: str
+    project_space_visible: bool
+    settings: dict[str, Any] = Field(default_factory=dict)
+
+    def to_body(self) -> dict[str, Any]:
+        """Body with name, project_name, description and project_space_visible
+        merged with settings."""
+        return {
+            **self.settings,
+            "name": self.name,
+            "project_name": self.project_name,
+            "description": self.description,
+            "project_space_visible": self.project_space_visible,
+        }
+
+
+class UpdateProviderDataSourceRequest(_ProviderRequestBase):
+    """Typed update request for provider datasources."""
+
+
+class ProviderDataSourceRequest(_ProviderRequestBase):
+    """Typed create request for provider datasources.
+
+    provider_name and toolkit_id are sent as query params, not in the body.
+    """
+
+    provider_name: str
+    toolkit_id: str
 
 
 class DataSource(BaseModel):
@@ -464,6 +779,8 @@ class DataSource(BaseModel):
     created_date: datetime = Field(None, alias="date")
     created_by: User
     shared_with_project: bool = Field(None, alias="project_space_visible")
+    cron_expression: str | None = None
+    timezone: str | None = None
     update_date: datetime
     error_message: str | None = Field(None, alias="text")
     user_abilities: list[str]
@@ -471,8 +788,8 @@ class DataSource(BaseModel):
     processed_documents: list[str] | None = Field(None, alias="processed_files")
     tokens_usage: TokensUsage | None = Field(None)
     # Code specific fields
-    code: Code | None = None
-    git_faq: GitFaq | None = None
+    code: CodeInfo | None = None
+    git_faq: GitFaqInfo | None = None
     # Jira specific fields
     jira: Jira | None = None
     # Confluence specific fields
@@ -485,6 +802,27 @@ class DataSource(BaseModel):
     azure_devops_work_item: AzureDevOpsWorkItem | None = None
     # xWiki specific fields
     xwiki: XWiki | None = None
+    # SVN, SharePoint, Xray and provider specific fields
+    svn: SvnInfo | None = None
+    sharepoint: SharePointInfo | None = None
+    xray: XrayInfo | None = None
+    provider: ProviderFields | None = None
+
+    @field_validator(
+        "code", "git_faq", "svn", "sharepoint", "xray", "provider", mode="wrap"
+    )
+    def tolerate_unreadable_sub_object(cls, value, handler, info):
+        # One stored record with an unexpected shape must not break the whole read.
+        try:
+            return handler(value)
+        except ValidationError as error:
+            logger.warning(
+                "Ignoring unreadable %s settings of datasource %s: %s",
+                info.field_name,
+                info.data.get("id"),
+                error.errors(include_url=False, include_input=False),
+            )
+            return None
 
     @model_validator(mode="before")
     def before_init(cls, values):
@@ -497,32 +835,87 @@ class DataSource(BaseModel):
         else:
             values["status"] = DataSourceStatus.IN_PROGRESS
 
-        if values.get("index_type") in [
+        builder = _INDEX_TYPE_BUILDERS.get(values.get("index_type"))
+        if builder:
+            builder(values)
+        if values.get("provider_fields"):
+            values["provider"] = values["provider_fields"]
+        return values
+
+
+def _picked(values: dict, model: type[BaseModel]) -> dict:
+    return {name: values[name] for name in model.model_fields if name in values}
+
+
+def _build_processing_info(values: dict) -> None:
+    complete_state = values.get("complete_state", 0)
+    if complete_state is not None:
+        values["processing_info"] = {"documents_count_key": complete_state}
+
+
+def _sub_object_builder(
+    key: str,
+    source: Callable[[dict], dict],
+) -> Callable[[dict], None]:
+    def build(values: dict) -> None:
+        values[key] = source(values)
+
+    return build
+
+
+def _present(values: dict, names: tuple[str, ...]) -> dict:
+    return {name: values[name] for name in names if values.get(name) is not None}
+
+
+def _git_faq_source(values: dict) -> dict:
+    data = _present(values, ("link", "branch", "files_filter"))
+    if values.get("embeddings_model") is not None:
+        data["embedding_model"] = values["embeddings_model"]
+    return data
+
+
+_CODE_FIELDS = (
+    "link",
+    "branch",
+    "index_type",
+    "files_filter",
+    "embeddings_model",
+    "summarization_model",
+    "prompt",
+    "docs_generation",
+)
+
+
+def _code_source(values: dict) -> dict:
+    return _present(values, _CODE_FIELDS)
+
+
+_build_git_faq = _sub_object_builder("git_faq", _git_faq_source)
+_build_code_info = _sub_object_builder("code", _code_source)
+
+
+def _build_code(values: dict) -> None:
+    _build_code_info(values)
+    # SVN datasources are stored with a code index_type and vcs_type="svn".
+    if values.get("vcs_type") == "svn":
+        values["svn"] = _picked(values, SvnInfo)
+
+
+# index_type -> builder that derives typed sub-objects from the flat payload.
+_INDEX_TYPE_BUILDERS: dict[str, Callable[[dict], None]] = {
+    **{
+        index_type: _build_processing_info
+        for index_type in (
             DataSourceType.CONFLUENCE,
             DataSourceType.JIRA,
             DataSourceType.GOOGLE,
             DataSourceType.AZURE_DEVOPS_WIKI,
             DataSourceType.AZURE_DEVOPS_WORK_ITEM,
             DataSourceType.XWIKI,
-        ]:
-            complete_state = values.get("complete_state", 0)
-            if complete_state is not None:
-                values["processing_info"] = {"documents_count_key": complete_state}
-        elif values.get("index_type") == DataSourceType.GIT_FAQ:
-            values["git_faq"] = {
-                "link": values.get("link"),
-                "branch": values.get("branch"),
-                "files_filter": values.get("files_filter"),
-                "setting_id": values.get("setting_id"),
-            }
-        elif values.get("index_type") == DataSourceType.CODE:
-            values["code"] = {
-                "link": values.get("link"),
-                "branch": values.get("branch"),
-                "files_filter": values.get("files_filter"),
-                "summarization_prompt": values.get("prompt"),
-                "summarization_model": values.get("summarization_model"),
-                "summarization_docs_generation": values.get("docs_generation"),
-                "embeddings_model": values.get("embeddings_model"),
-            }
-        return values
+        )
+    },
+    DataSourceType.GIT_FAQ: _build_git_faq,
+    DataSourceType.CODE: _build_code,
+    DataSourceType.SUMMARY: _build_code,
+    DataSourceType.CHUNK_SUMMARY: _build_code,
+}
