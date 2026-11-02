@@ -14,6 +14,8 @@
 
 """Serialization tests for assistant models embedding undated integrations."""
 
+import json
+
 from codemie_sdk.models.assistant import (
     MCPServerDetails,
     ToolDetails,
@@ -25,7 +27,7 @@ from codemie_sdk.models.integration import CredentialTypes, Integration
 def _undated() -> Integration:
     return Integration(
         project_name="demo",
-        credential_type=next(iter(CredentialTypes)),
+        credential_type=CredentialTypes.JIRA,
         credential_values=[],
     )
 
@@ -33,7 +35,9 @@ def _undated() -> Integration:
 def test_tool_details_with_undated_integration_serializes():
     tool = ToolDetails(name="t", settings=_undated())
 
-    assert tool.model_dump_json()
+    settings = json.loads(tool.model_dump_json())["settings"]
+    assert settings["date"] is None
+    assert settings["update_date"] is None
 
 
 def test_toolkit_details_with_undated_integration_serializes():
@@ -41,7 +45,9 @@ def test_toolkit_details_with_undated_integration_serializes():
         toolkit="kit", tools=[ToolDetails(name="t")], settings=_undated()
     )
 
-    assert toolkit.model_dump_json()
+    settings = json.loads(toolkit.model_dump_json())["settings"]
+    assert settings["date"] is None
+    assert settings["update_date"] is None
 
 
 def test_mcp_server_details_with_undated_integration_serializes():
@@ -49,7 +55,9 @@ def test_mcp_server_details_with_undated_integration_serializes():
         name="srv", description=None, enabled=True, settings=_undated()
     )
 
-    assert server.model_dump_json()
+    settings = json.loads(server.model_dump_json())["settings"]
+    assert settings["date"] is None
+    assert settings["update_date"] is None
 
 
 def test_exclude_none_omits_unset_dates():

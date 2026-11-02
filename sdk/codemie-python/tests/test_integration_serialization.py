@@ -22,7 +22,7 @@ from codemie_sdk.models.integration import CredentialTypes, Integration
 def _make(**kwargs) -> Integration:
     return Integration(
         project_name="demo",
-        credential_type=next(iter(CredentialTypes)),
+        credential_type=CredentialTypes.JIRA,
         credential_values=[],
         **kwargs,
     )
