@@ -329,8 +329,6 @@ class AssistantService:
                     assistant_ids=version.assistant_ids
                     if hasattr(version, "assistant_ids")
                     else assistant.assistant_ids,
-                    # None on the version means "not reported": keep the
-                    # current assistant's skills rather than clearing them.
                     skill_ids=assistant.skill_ids
                     if version.skill_ids is None
                     else version.skill_ids,
