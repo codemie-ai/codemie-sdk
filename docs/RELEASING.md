@@ -36,22 +36,24 @@ The `verify` job has no secrets. It fails, and nothing is published, when:
 - the release commit is not on `main`;
 - for a manual publish, the tag does not exist or does not point to the dispatched commit;
 - the tag prefix, format or line does not match;
-- the version is equal to or lower than the highest published version (`scripts/release/check_version.py --version`);
+- the version is equal to or lower than the highest published version (`check_version.py --version` from `codemie-ai/ci-workflows`);
 - lint, tests or the build fail.
 
 The `publish` job runs the version check again right before the upload, because it can wait for approval and another release may land in between.
 
 A timeout, network error, malformed registry response or a published version that cannot be parsed stops the release. The gate fails closed. A package that is not on the registry yet (HTTP 404) passes. Pre-release versions on the registry follow PEP 440 for PyPI and semantic versioning for npm.
 
-`scripts/release/check_version.py --tag <tag> --base <MAJOR.MINOR[.0]>` prints the version a tag names and uses no network.
+`check_version.py --tag <tag> --base <MAJOR.MINOR[.0]>` prints the version a tag names and uses no network.
 
 ## Dry run
 
-Local, with no credentials and no publish. It reads the live registry, stamps a copy of the package, runs lint and tests, and builds:
+Local version check, with no credentials and no publish. It reads the live registry:
 
 ```bash
-scripts/release/dry_run.sh python python-v0.1.665   # needs poetry
-scripts/release/dry_run.sh node node-v0.1.665       # needs node and npm
+curl -fsSL https://raw.githubusercontent.com/codemie-ai/ci-workflows/main/scripts/release/check_version.py \
+  | python3 -I - --ecosystem pypi --name codemie-sdk-python --version 0.1.707   # Python
+curl -fsSL https://raw.githubusercontent.com/codemie-ai/ci-workflows/main/scripts/release/check_version.py \
+  | python3 -I - --ecosystem npm --name codemie-sdk --version 0.1.699           # Node.js
 ```
 
 In GitHub, start the workflow with `workflow_dispatch` and give the `tag` input. It builds and checks only (`dry_run` is on by default). To publish from a manual run, set `dry_run` off, type `publish` in the `publish` input, and start the run from `main`. A run from another branch, or without all three, does not publish. A manual publish needs the tag to exist and to point to the commit it runs from. It creates no Release, so use a Release for real releases.
