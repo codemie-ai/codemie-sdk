@@ -616,7 +616,14 @@ class UpdateSvnDataSourceRequest(BaseUpdateDataSourceRequest, Svn):
 
 
 class UpdateSharePointDataSourceRequest(BaseUpdateDataSourceRequest, SharePoint):
-    """Model for SharePoint datasource updates (site_url is optional: omit to keep it)"""
+    """Model for SharePoint datasource updates (site_url is optional: omit to keep it).
+
+    The OAuth ``access_token`` check for ``full_reindex`` only sees an explicit
+    ``auth_type``. When ``auth_type`` is omitted to keep the stored value, the SDK
+    cannot know it, so pass ``access_token`` on every ``full_reindex`` of an OAuth
+    datasource: the backend saves the update first and refuses the reindex
+    afterwards (422), leaving a partial update.
+    """
 
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
@@ -675,7 +682,15 @@ class CodeAnalysisDataSourceRequest(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     name: str = Field(..., description="Datasource name")
-    description: str = Field("", description="Datasource description")
+    # The backend needs a string to create the datasource, so an omitted or
+    # None description becomes "".
+    description: str | None = Field("", description="Datasource description")
+
+    @field_validator("description", mode="before")
+    @classmethod
+    def _none_description_is_empty(cls, value):
+        return "" if value is None else value
+
     project_name: str = Field(..., description="Project name")
     project_space_visible: bool = Field(
         False, description="Make the datasource visible to the whole project"
@@ -705,7 +720,15 @@ class CodeExplorationDataSourceRequest(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     name: str = Field(..., description="Datasource name")
-    description: str = Field("", description="Datasource description")
+    # The backend needs a string to create the datasource, so an omitted or
+    # None description becomes "".
+    description: str | None = Field("", description="Datasource description")
+
+    @field_validator("description", mode="before")
+    @classmethod
+    def _none_description_is_empty(cls, value):
+        return "" if value is None else value
+
     project_name: str = Field(..., description="Project name")
     project_space_visible: bool = Field(
         False, description="Make the datasource visible to the whole project"

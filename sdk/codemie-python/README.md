@@ -534,6 +534,10 @@ Datasources can have the following statuses:
   and `docs_generation`; pass the current values (`None` clears a nullable one). A SharePoint update with
   `full_reindex=True` on an OAuth datasource (`oauth_codemie` / `oauth_custom`) needs `access_token`. An Xray
   update does not take `embedding_model`: the platform sets it only on create.
+- **SVN datasources are not found by `list(datasource_types=[DataSourceType.SVN])`.** `DataSourceType.SVN` only
+  selects the request route. The platform stores an SVN datasource with the index type you picked (`code`,
+  `summary` or `chunk-summary`) and `vcs_type="svn"`, so filtering by `SVN` returns an empty list. Filter by the
+  code index types and use `datasource.svn`, which is set only for SVN datasources, to tell them apart.
 
 #### Best Practices for Datasources
 

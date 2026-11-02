@@ -133,6 +133,25 @@ def test_legacy_provider_create_sends_the_keys_the_backend_reads(request_):
     assert body["description"] == ""
 
 
+@pytest.mark.parametrize(
+    "model, fields",
+    [
+        (
+            CodeExplorationDataSourceRequest,
+            {"name": "n", "project_name": "p"},
+        ),
+        (
+            CodeAnalysisDataSourceRequest,
+            {"name": "n", "project_name": "p", "api_url": "u", "access_token": "t"},
+        ),
+    ],
+    ids=["code_exploration", "code_analysis"],
+)
+def test_legacy_provider_request_accepts_a_none_description_as_empty(model, fields):
+    # description=None was valid before the default was added; the backend needs a string.
+    assert model(**fields, description=None).description == ""
+
+
 def test_legacy_provider_create_sends_an_explicit_visibility_and_description():
     service = _service()
     request = CodeAnalysisDataSourceRequest(

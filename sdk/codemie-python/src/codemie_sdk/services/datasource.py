@@ -27,12 +27,10 @@ from ..models.assistant import AssistantListResponse
 from ..utils import ApiRequestHandler, TokenSource
 
 
-def _application_route(request: BaseDataSourceRequest) -> str:
-    return f"/v1/application/{quote(request.project_name, safe='')}/index"
-
-
-def _svn_route(request: BaseDataSourceRequest) -> str:
-    return f"/v1/application/{quote(request.project_name, safe='')}/index/svn"
+def _application_route(suffix: str = "") -> Callable[[BaseDataSourceRequest], str]:
+    return lambda request: (
+        f"/v1/application/{quote(request.project_name, safe='')}/index{suffix}"
+    )
 
 
 def _knowledge_base_route(segment: str) -> Callable[[BaseDataSourceRequest], str]:
@@ -41,8 +39,8 @@ def _knowledge_base_route(segment: str) -> Callable[[BaseDataSourceRequest], str
 
 # Explicit route table: base endpoint per datasource type (used by create and update).
 _ROUTES: dict[DataSourceType, Callable[[BaseDataSourceRequest], str]] = {
-    DataSourceType.CODE: _application_route,
-    DataSourceType.SVN: _svn_route,
+    DataSourceType.CODE: _application_route(),
+    DataSourceType.SVN: _application_route("/svn"),
     DataSourceType.CONFLUENCE: _knowledge_base_route("confluence"),
     DataSourceType.JIRA: _knowledge_base_route("jira"),
     DataSourceType.FILE: _knowledge_base_route("file"),
