@@ -54,16 +54,14 @@ The tag is `<prefix>X.Y.Z` or `<prefix>X.Y.Z-rcN`. The workflow fails closed if 
 
 ## 3. Dry run
 
-Run the version check against the registry. It needs no credentials, publishes nothing and needs only `python3` and network access.
+Run the local dry run. It needs no credentials and publishes nothing. Python needs `poetry`, Node.js needs `node` and `npm`.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/codemie-ai/ci-workflows/main/scripts/release/check_version.py \
-  | python3 -I - --ecosystem pypi --name codemie-sdk-python --version X.Y.Z   # Python
-curl -fsSL https://raw.githubusercontent.com/codemie-ai/ci-workflows/main/scripts/release/check_version.py \
-  | python3 -I - --ecosystem npm --name codemie-sdk --version X.Y.Z           # Node.js
+scripts/release/dry_run.sh python python-vX.Y.Z
+scripts/release/dry_run.sh node node-vX.Y.Z
 ```
 
-If the check fails, stop. Report the error. Do not continue. Lint, tests and the build run in the `verify` job of the publish workflow.
+If the dry run fails, stop. Report the failing step. Do not continue.
 
 ## 4. Release notes
 

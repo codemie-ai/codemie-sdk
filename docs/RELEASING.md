@@ -47,13 +47,11 @@ A timeout, network error, malformed registry response or a published version tha
 
 ## Dry run
 
-Local version check, with no credentials and no publish. It reads the live registry:
+Local, with no credentials and no publish. It reads the live registry, stamps a copy of the package, runs lint and tests, and builds:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/codemie-ai/ci-workflows/main/scripts/release/check_version.py \
-  | python3 -I - --ecosystem pypi --name codemie-sdk-python --version 0.1.707   # Python
-curl -fsSL https://raw.githubusercontent.com/codemie-ai/ci-workflows/main/scripts/release/check_version.py \
-  | python3 -I - --ecosystem npm --name codemie-sdk --version 0.1.699           # Node.js
+scripts/release/dry_run.sh python python-v0.1.665   # needs poetry
+scripts/release/dry_run.sh node node-v0.1.665       # needs node and npm
 ```
 
 In GitHub, start the workflow with `workflow_dispatch` and give the `tag` input. It builds and checks only (`dry_run` is on by default). To publish from a manual run, set `dry_run` off, type `publish` in the `publish` input, and start the run from `main`. A run from another branch, or without all three, does not publish. A manual publish needs the tag to exist and to point to the commit it runs from. It creates no Release, so use a Release for real releases.
