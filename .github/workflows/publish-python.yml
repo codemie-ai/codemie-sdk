@@ -133,6 +133,8 @@ jobs:
           path: sdk/codemie-python/dist/
           if-no-files-found: error
 
+  # The token lives in the release environment. A reusable workflow only sees secrets
+  # the caller passes, so pass it by name.
   publish:
     name: Publish to PyPI
     needs: verify
@@ -144,6 +146,8 @@ jobs:
       contents: read
       id-token: write
     uses: codemie-ai/ci-workflows/.github/workflows/reusable-publish-pypi.yml@main
+    secrets:
+      PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
     with:
       artifact-name: python-dist
       packages-dir: dist/
