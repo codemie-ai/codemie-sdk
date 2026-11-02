@@ -36,14 +36,14 @@ The `verify` job has no secrets. It fails, and nothing is published, when:
 - the release commit is not on `main`;
 - for a manual publish, the tag does not exist or does not point to the dispatched commit;
 - the tag prefix, format or line does not match;
-- the version is equal to or lower than the highest published version (`scripts/release/check_version.py --version`);
+- the version is equal to or lower than the highest published version (`check_version.py --version` from `codemie-ai/ci-workflows`);
 - lint, tests or the build fail.
 
 The `publish` job runs the version check again right before the upload, because it can wait for approval and another release may land in between.
 
 A timeout, network error, malformed registry response or a published version that cannot be parsed stops the release. The gate fails closed. A package that is not on the registry yet (HTTP 404) passes. Pre-release versions on the registry follow PEP 440 for PyPI and semantic versioning for npm.
 
-`scripts/release/check_version.py --tag <tag> --base <MAJOR.MINOR[.0]>` prints the version a tag names and uses no network.
+`check_version.py --tag <tag> --base <MAJOR.MINOR[.0]>` prints the version a tag names and uses no network.
 
 ## Dry run
 
