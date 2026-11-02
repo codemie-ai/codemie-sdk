@@ -117,6 +117,15 @@ def test_set_empty_policy_sends_empty_list():
     assert result.in_effect is False
 
 
+@pytest.mark.parametrize("components", [[], [FLAG_DISABLED]])
+def test_set_policy_flag_off_is_not_in_effect(components):
+    api = DummyApi()
+    result = make_service(components, api).set_policy([ApprovedToolkit(toolkit="git")])
+    assert api.calls[0][0] == "PUT"
+    assert (result.flag_enabled, result.in_effect) == (False, False)
+    assert [t.toolkit for t in result.approved_toolkits] == ["git"]
+
+
 def test_403_propagates_as_http_error():
     api = DummyApi(error=requests.HTTPError("403"))
     with pytest.raises(requests.HTTPError):

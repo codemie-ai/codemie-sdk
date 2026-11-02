@@ -13,6 +13,10 @@ TOOL_MSG = (
     "Tool 'write_file' in toolkit 'FileSystem' is not approved by platform policy."
 )
 TOOLKIT_MSG = "Toolkit 'Git' is not approved by platform policy."
+MISFILED_MSG = (
+    "Tool 'write_file' does not belong to toolkit 'Git' "
+    "and is not approved by platform policy."
+)
 
 
 def make_response(status=400, body=None, raw=None):
@@ -64,6 +68,16 @@ def test_toolkit_level_refusal_parsed():
     assert exc.value.toolkit == "Git"
     assert exc.value.tool is None
     assert "Git" in str(exc.value)
+
+
+def test_misfiled_tool_refusal_parsed():
+    with pytest.raises(ToolkitNotApprovedError) as exc:
+        put_with(make_response(body=error_body(MISFILED_MSG)))
+    err = exc.value
+    assert err.toolkit == "Git"
+    assert err.tool == "write_file"
+    assert err.message == MISFILED_MSG
+    assert MISFILED_MSG in str(err)
 
 
 def test_top_level_message_form():

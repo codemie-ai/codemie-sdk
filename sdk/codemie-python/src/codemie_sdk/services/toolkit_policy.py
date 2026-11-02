@@ -38,12 +38,12 @@ class ToolkitPolicyService:
         )
 
     @staticmethod
-    def _to_policy(data) -> ToolkitPolicy:
+    def _to_policy(data, flag_enabled: bool) -> ToolkitPolicy:
         raw = data.get("approved_toolkits") if isinstance(data, dict) else data
         toolkits = [ApprovedToolkit.model_validate(t) for t in (raw or [])]
         return ToolkitPolicy(
-            flag_enabled=True,
-            in_effect=bool(toolkits),
+            flag_enabled=flag_enabled,
+            in_effect=flag_enabled and bool(toolkits),
             approved_toolkits=toolkits,
         )
 
@@ -62,13 +62,17 @@ class ToolkitPolicyService:
                 flag_enabled=False, in_effect=False, approved_toolkits=None
             )
         data = self._api.get(POLICY_ENDPOINT, dict, wrap_response=False)
-        return self._to_policy(data)
+        return self._to_policy(data, flag_enabled=True)
 
     def set_policy(self, approved_toolkits: list[ApprovedToolkit]) -> ToolkitPolicy:
         """Replace the whole policy (PUT, full replacement).
 
         ``tools=None`` is sent as ``null``; an empty list sends
         ``{"approved_toolkits": []}``.
+
+        The backend stores the list even when the feature flag is off. In that
+        case the returned policy has ``flag_enabled=False, in_effect=False``
+        and still carries the saved list.
 
         Raises:
             requests.HTTPError: 400 on validation failure, 403 for non-admins.
@@ -79,4 +83,4 @@ class ToolkitPolicyService:
             ]
         }
         data = self._api.put(POLICY_ENDPOINT, dict, json_data=body, wrap_response=False)
-        return self._to_policy(data)
+        return self._to_policy(data, flag_enabled=self._flag_enabled())

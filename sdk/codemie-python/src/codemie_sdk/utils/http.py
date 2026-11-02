@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 _NOT_APPROVED_MARKER = "is not approved by platform policy"
-_TOOL_RE = re.compile(r"Tool '([^']+)' in toolkit '([^']+)'")
+_TOOL_RE = re.compile(r"Tool '([^']+)' (?:in|does not belong to) toolkit '([^']+)'")
 _TOOLKIT_RE = re.compile(r"Toolkit '([^']+)'")
 
 
