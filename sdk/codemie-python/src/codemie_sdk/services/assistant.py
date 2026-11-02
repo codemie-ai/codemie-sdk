@@ -36,7 +36,6 @@ from ..models.assistant import (
 from ..models.common import PaginationParams
 from ..models.conversation import BaseResponse
 from ..utils import ApiRequestHandler, TokenSource
-from ..utils.values import first_not_none
 
 
 class AssistantService:
@@ -332,7 +331,9 @@ class AssistantService:
                     else assistant.assistant_ids,
                     # None on the version means "not reported": keep the
                     # current assistant's skills rather than clearing them.
-                    skill_ids=first_not_none(version.skill_ids, assistant.skill_ids),
+                    skill_ids=assistant.skill_ids
+                    if version.skill_ids is None
+                    else version.skill_ids,
                 )
                 update_resp = self.update(assistant_id, update_req)
                 resp = update_resp.model_dump()
