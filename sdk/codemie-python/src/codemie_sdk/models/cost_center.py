@@ -72,7 +72,10 @@ class CostCenterAssignedBudgetSummary(BaseModel):
     max_budget: float
     member_count: int
     allocated_member_budget_total: float
-    current_spending: float
+    current_spending: float | None = None
+    spend_unavailable: bool = False
+    spend_partial: bool = False
+    spend_missing_amount: float | None = None
     excluded_count: int = 0
     unsynced_count: int = 0
 
@@ -82,7 +85,10 @@ class CostCenterBudgetSummary(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    current_spending: float
+    current_spending: float | None = None
     budget_limit: float | None = None
-    total_percent: float
+    total_percent: float | None = None
+    spend_unavailable: bool = False
+    spend_partial: bool = False
+    spend_missing_amount: float | None = None
     budgets: list[CostCenterAssignedBudgetSummary] = []
