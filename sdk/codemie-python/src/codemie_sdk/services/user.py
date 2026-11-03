@@ -207,11 +207,14 @@ class UserService:
             user_id: The user's unique identifier
 
         Returns:
-            Updated user details with is_active=True
+            The reactivated user's details
+
+        Raises:
+            requests.HTTPError: 403 if reactivating yourself, or a maintainer without being
+                one; 404 if the user is not found; 409 if the user is already active.
         """
-        return self._api.put(
-            f"/v1/admin/users/{user_id}",
+        return self._api.post(
+            f"/v1/admin/users/{user_id}/reactivate",
             CodeMieUserDetail,
-            json_data={"is_active": True},
             wrap_response=False,
         )
