@@ -17,7 +17,7 @@
 import pytest
 
 from codemie_sdk.builders.workflow.builder import WorkflowBuilder
-from codemie_sdk.builders.workflow.definition import WorkflowNextState
+from codemie_sdk.builders.workflow.definition import WorkflowEndState, WorkflowNextState
 
 
 def test_add_assistant_requires_system_prompt_or_id():
@@ -108,3 +108,30 @@ def test_duplicate_state_id_raises():
     )
     with pytest.raises(ValueError, match="s1"):
         builder.add_state("s1", "a", "task two", WorkflowNextState())
+
+
+def _render_with_next(kind, next_state):
+    builder = WorkflowBuilder("wf").add_assistant("a", system_prompt="do a")
+    if kind == "plain":
+        builder = builder.add_state("s1", "a", "task", next_state)
+    elif kind == "tool":
+        builder = builder.add_tool("t", "some_tool").add_tool_state(
+            "s1", "t", next_state
+        )
+    else:
+        builder = builder.add_custom_node("n").add_custom_node_state(
+            "s1", "n", next_state
+        )
+    return builder.render().to_yaml_config()
+
+
+@pytest.mark.parametrize("kind", ["plain", "tool", "custom"])
+def test_end_state_helper_renders_same_as_literal_end(kind):
+    assert _render_with_next(kind, WorkflowEndState()) == _render_with_next(
+        kind, WorkflowNextState(state_id="end")
+    )
+
+
+def test_literal_end_workflow_still_renders():
+    yaml_config = _render_with_next("plain", WorkflowNextState(state_id="end"))
+    assert "end" in yaml_config
