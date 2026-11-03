@@ -23,6 +23,7 @@ class WorkflowCreateRequest(BaseModel):
     project: str = Field(..., min_length=1)
     name: str = Field(..., min_length=1)
     description: str | None = None
+    start_hint: str | None = None
     yaml_config: str = Field(..., min_length=1)
     mode: WorkflowMode = WorkflowMode.SEQUENTIAL
     shared: bool = False
@@ -37,6 +38,7 @@ class WorkflowUpdateRequest(BaseModel):
     project: str = Field(..., min_length=1)
     name: str = Field(..., min_length=1)
     description: str = Field(..., min_length=1)
+    start_hint: str | None = None
     yaml_config: str = Field(..., min_length=1)
     mode: WorkflowMode | None = None
     shared: bool | None = None
@@ -56,6 +58,7 @@ class Workflow(BaseModel):
     project: str
     name: str
     description: str | None = None
+    start_hint: str | None = None
     yaml_config: str | None = None
     mode: WorkflowMode = WorkflowMode.SEQUENTIAL
     shared: bool = False
