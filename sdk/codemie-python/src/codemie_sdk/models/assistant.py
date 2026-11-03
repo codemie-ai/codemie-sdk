@@ -512,6 +512,11 @@ class AssistantChatRequest(BaseModel):
             When false, MCP servers are cached and reused. \
             If not specified, uses conversation's default setting.",
     )
+    attributes: dict[str, str] | None = Field(
+        default=None,
+        description="Run attributes (string key/value pairs) attached to the conversation. "
+        "Immutable per conversation; ignored when save_history is false.",
+    )
 
 
 class AgentMode(str, Enum):

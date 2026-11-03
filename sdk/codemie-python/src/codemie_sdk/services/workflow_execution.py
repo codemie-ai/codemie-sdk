@@ -56,6 +56,7 @@ class WorkflowExecutionService:
         headers: dict[str, str] | None = None,
         tags: list[str] | None = None,
         file_names: list[str] | None = None,
+        attributes: dict[str, str] | None = None,
     ) -> dict:
         """Create a new workflow execution.
 
@@ -68,6 +69,7 @@ class WorkflowExecutionService:
             headers: Optional additional HTTP headers (e.g., X-* for MCP propagation)
             tags: Optional tags to attach to the workflow execution trace in Langfuse.
             file_names: Optional list of file references provided as inputs to the run.
+            attributes: Optional run attributes (string key/value pairs) attached to the execution.
 
         Returns:
             dict: Created workflow execution details
@@ -80,6 +82,7 @@ class WorkflowExecutionService:
             session_id=session_id,
             propagate_headers=propagate_headers,
             tags=tags,
+            attributes=attributes,
         )
         return self._api.post(
             f"/v1/workflows/{self._workflow_id}/executions",

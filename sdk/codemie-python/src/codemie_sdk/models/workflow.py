@@ -92,6 +92,10 @@ class WorkflowExecution(BaseModel):
     created_by: User
     conversation_id: str | None = None
     tokens_usage: TokensUsage | None = None
+    attributes: dict[str, str] | None = Field(
+        default=None,
+        description="Run attributes (string key/value pairs) attached to the execution",
+    )
 
 
 class WorkflowEvaluationRequest(BaseModel):
