@@ -23,6 +23,10 @@ class ToolDetails(BaseModel):
     settings_config: bool = False
     user_description: str | None = None
     settings: Integration | None = None
+    auto_credentials_lookup: bool = Field(
+        True,
+        description="When no integration is pinned, fall back to the consuming user's own integration",
+    )
 
 
 class ToolKitDetails(BaseModel):
@@ -36,6 +40,10 @@ class ToolKitDetails(BaseModel):
     settings_config: bool = False
     is_external: bool = False
     settings: Integration | None = None
+    auto_credentials_lookup: bool = Field(
+        True,
+        description="Toolkit-level counterpart of ToolDetails.auto_credentials_lookup",
+    )
 
 
 class ContextType(str, Enum):
@@ -114,6 +122,15 @@ class MCPServerConfig(BaseModel):
     tools: list[str] | None = Field(
         None, description="List of tool names available in this MCP server"
     )
+    audience: str | None = Field(
+        None,
+        description="OAuth2 audience for OIDC token exchange (RFC 8693)",
+    )
+    auth_config: dict[str, Any] | None = Field(
+        None,
+        repr=False,
+        description="Authentication configuration for this MCP server, stored as a raw dict",
+    )
 
 
 class MCPServerDetails(BaseModel):
@@ -153,6 +170,46 @@ class BuiltinSubagent(BaseModel):
 
     id: str
     display_name: str | None = None
+
+
+class HedgingToolDetails(BaseModel):
+    """Internal tool used as the hedging fast path."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    name: str
+
+
+class HedgingProviderToolDetails(BaseModel):
+    """External provider tool used as the hedging fast path."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    provider_name: str
+    toolkit_name: str
+    tool_name: str
+    datasource_name: str | None = None
+    result_condition: str | None = None
+
+
+class HedgingConfig(BaseModel):
+    """Hedging (fast path) configuration: exactly one of tool or provider_tool."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    tool: HedgingToolDetails | None = None
+    provider_tool: HedgingProviderToolDetails | None = None
+    timeout_ms: int = Field(200, gt=0)
+    input_mapping: dict[str, str] = Field(default_factory=dict)
+    output_field: str | None = None
+
+    @model_validator(mode="after")
+    def validate_tool_or_provider(self) -> "HedgingConfig":
+        if (self.tool is None) == (self.provider_tool is None):
+            raise ValueError(
+                "Exactly one of 'tool' or 'provider_tool' must be specified"
+            )
+        return self
 
 
 class AssistantBase(BaseModel):
@@ -272,6 +329,10 @@ class Assistant(AssistantBase):
         description="Number of times this assistant has been cloned in the Marketplace",
     )
     tool_permissions: ToolPermissionsConfig | None = None
+    hedging_config: HedgingConfig | None = None
+    interactive_enabled: bool = False
+    enable_image_generation: bool | None = False
+    file_attachment_enabled: bool | None = None
 
 
 class AssistantRequestBase(AssistantBase):
@@ -308,6 +369,11 @@ class AssistantRequestBase(AssistantBase):
     prompt_variables: list[PromptVariable] = Field(default_factory=list)
     skip_integration_validation: bool | None = Field(default=False)
     tool_permissions: ToolPermissionsConfig | None = None
+    hedging_config: HedgingConfig | None = None
+    # None (not sent) on requests so an update never resets the stored flag.
+    interactive_enabled: bool | None = None
+    enable_image_generation: bool | None = None
+    file_attachment_enabled: bool | None = None
 
 
 class AssistantCreateRequest(AssistantRequestBase):

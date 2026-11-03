@@ -186,6 +186,7 @@ class WorkflowTool(BaseModel):
     resolve_dynamic_values_in_response: bool = False
     input_key: str | None = None
     tokens_size_limit: int | None = None
+    tool_access: list[WorkflowAssistantTool] | None = None
 
 
 class CustomWorkflowNode(BaseModel):
@@ -330,6 +331,12 @@ class WorkflowDefinition(BaseModel):
     tools: list[WorkflowTool] = Field(default_factory=list)
     custom_nodes: list[CustomWorkflowNode] = Field(default_factory=list)
     states: list[WorkflowState] = Field(default_factory=list)
+    # Engine switches read from the top level of the YAML config; unset means
+    # the backend default applies.
+    enable_summarization_node: bool | None = None
+    messages_limit_before_summarization: int | None = Field(None, gt=0)
+    tokens_limit_before_summarization: int | None = Field(None, gt=0)
+    max_iteration_key_output_limit: int | None = Field(None, gt=0)
 
     def to_yaml_config(
         self, resolve_assistant_name: Callable[[str], str] | None = None
@@ -351,10 +358,24 @@ class WorkflowDefinition(BaseModel):
                 node.model_dump(exclude_none=True) for node in self.custom_nodes
             ],
             "states": [state.model_dump(exclude_none=True) for state in self.states],
+            **self._engine_switches(),
         }
         return yaml.safe_dump(
             payload, sort_keys=False, default_flow_style=False, allow_unicode=True
         )
+
+    def _engine_switches(self) -> dict:
+        names = (
+            "enable_summarization_node",
+            "messages_limit_before_summarization",
+            "tokens_limit_before_summarization",
+            "max_iteration_key_output_limit",
+        )
+        return {
+            name: getattr(self, name)
+            for name in names
+            if getattr(self, name) is not None
+        }
 
     @staticmethod
     def _resolve_assistant(

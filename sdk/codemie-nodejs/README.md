@@ -549,6 +549,18 @@ if (datasource.status === DataSourceStatus.COMPLETED) {
 }
 ```
 
+#### Datasource Limitations
+
+- **This SDK cannot rename or move a datasource.** An update addresses a datasource by its project and
+  name, so the SDK has no way to change either; the platform supports a project
+  move, but the SDK does not expose it yet. A different name addresses a different datasource, or is not found.
+  The search index and any assistant that uses the datasource refer to it by that name, so they would stop
+  matching after a rename. To "rename", create a new datasource, point your assistants at it, then delete the
+  old one.
+- **File datasources are not supported by the Infrastructure-as-Code tooling** built on this SDK. Creating
+  one needs the file contents uploaded together with the request (`files` in the create params), which a
+  declarative document cannot carry. Use `client.datasources.create(...)` with the files directly instead.
+
 #### Best Practices for Datasources
 
 1. **Naming Convention**:
