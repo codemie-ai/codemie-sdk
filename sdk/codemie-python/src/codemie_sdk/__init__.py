@@ -214,7 +214,6 @@ from .models.provisioning import (
 )
 from .services.provisioning import ProvisioningService
 from .models.workflow import (
-    WorkflowRevisionCreatedBy,
     WorkflowRevision,
     WorkflowVersionHistoryResponse,
     WorkflowRollbackRequest,

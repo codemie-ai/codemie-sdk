@@ -7,10 +7,8 @@ import requests
 from pydantic import ValidationError
 
 from codemie_sdk.services.workflow import WorkflowService
-from codemie_sdk.models.workflow import (
-    WorkflowRevisionCreatedBy,
-    WorkflowVersionHistoryResponse,
-)
+from codemie_sdk.models.common import User
+from codemie_sdk.models.workflow import WorkflowVersionHistoryResponse
 from codemie_sdk.utils import ApiRequestHandler
 
 # Raw GET /v1/workflows/{id}/versions body as the backend serializes it (not wrapped in "data").
@@ -69,8 +67,8 @@ class DummyApi:
         return {"message": f"Workflow wf-123 rolled back to revision {idx}."}
 
 
-def test_revision_created_by_parses_wire_user_id():
-    created = WorkflowRevisionCreatedBy.model_validate(
+def test_user_parses_wire_user_id():
+    created = User.model_validate(
         {"user_id": "u1", "username": "alice", "name": "Alice"}
     )
 
@@ -104,7 +102,7 @@ def test_list_versions_parses_wire_revision_fields():
 
     assert revision.yaml_config == "steps: []"
     assert revision.date == datetime(2026, 8, 27, 10, 0, 0)
-    assert isinstance(revision.created_by, WorkflowRevisionCreatedBy)
+    assert isinstance(revision.created_by, User)
     assert revision.created_by.user_id == "u1"
     assert revision.created_by.username == "alice"
     assert revision.created_by.name == "Alice"

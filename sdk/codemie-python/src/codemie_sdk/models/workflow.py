@@ -179,13 +179,6 @@ class WorkflowGeneratorResponse(BaseModel):
     workflow_id: str | None = None
 
 
-class WorkflowRevisionCreatedBy(User):
-    """Creator info on a workflow revision.
-
-    The backend sends ``user_id`` (``UserEntity``); ``User`` also maps a legacy ``id`` onto it.
-    """
-
-
 class WorkflowRevision(BaseModel):
     """A single workflow revision entry in the history list."""
 
@@ -194,7 +187,7 @@ class WorkflowRevision(BaseModel):
     revision_index: int
     yaml_config: str
     date: datetime
-    created_by: WorkflowRevisionCreatedBy | None = None
+    created_by: User | None = None
     change_notes: str | None = None
 
 
