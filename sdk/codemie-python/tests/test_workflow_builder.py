@@ -15,6 +15,7 @@
 """Unit tests for the fluent, immutable WorkflowBuilder."""
 
 import pytest
+import yaml
 
 from codemie_sdk.builders.workflow.builder import WorkflowBuilder
 from codemie_sdk.builders.workflow.definition import WorkflowEndState, WorkflowNextState
@@ -134,4 +135,4 @@ def test_end_state_helper_renders_same_as_literal_end(kind):
 
 def test_literal_end_workflow_still_renders():
     yaml_config = _render_with_next("plain", WorkflowNextState(state_id="end"))
-    assert "end" in yaml_config
+    assert yaml.safe_load(yaml_config)["states"][0]["next"]["state_id"] == "end"
