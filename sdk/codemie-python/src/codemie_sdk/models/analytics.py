@@ -1,8 +1,9 @@
 """Models for analytics-related data structures."""
 
+import json
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 
 class ResponseMetadata(BaseModel):
@@ -146,6 +147,35 @@ class PaginatedAnalyticsQueryParams(AnalyticsQueryParams):
 
     page: int = Field(0, description="Zero-indexed page number")
     per_page: int = Field(20, description="Items per page")
+
+
+class AttributesAnalyticsQueryParams(PaginatedAnalyticsQueryParams):
+    """Paginated query parameters with run-attributes filtering."""
+
+    client_source: str | None = Field(
+        None,
+        description='Client source filter: "platform", "ms-teams-bot", "chrome_extension", "other"',
+    )
+    attributes: dict[str, str] | None = Field(
+        None,
+        description='Run attributes filter; sent as a JSON string, e.g. {"team": "alpha"}. All pairs must match.',
+    )
+
+    @field_serializer("attributes")
+    def _serialize_attributes(self, value: dict[str, str] | None) -> str | None:
+        return json.dumps(value) if value is not None else None
+
+
+class AssistantsRequestsQueryParams(AttributesAnalyticsQueryParams):
+    """Query parameters of the assistants-requests analytics endpoint."""
+
+    assistant_id: str | None = Field(None, description="Assistant ID filter")
+
+
+class AttributesUsageQueryParams(AttributesAnalyticsQueryParams):
+    """Query parameters of the attributes-usage analytics endpoint."""
+
+    attribute_key: str = Field(description="Run attribute key to report usage for")
 
 
 # ── CLI Analytics: /v1/analytics/cli-analytics/* ─────────────────────────────

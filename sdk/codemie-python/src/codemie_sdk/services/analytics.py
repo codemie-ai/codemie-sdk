@@ -4,6 +4,9 @@ import json
 
 from ..models.analytics import (
     AnalyticsQueryParams,
+    AssistantsRequestsQueryParams,
+    AttributesAnalyticsQueryParams,
+    AttributesUsageQueryParams,
     CliAnalyticsCostResponse,
     CliAnalyticsQueryParams,
     CliAnalyticsRepositoriesResponse,
@@ -73,12 +76,17 @@ class AnalyticsService:
         )
 
     def get_assistants_chats(
-        self, params: PaginatedAnalyticsQueryParams | None = None
+        self,
+        params: AttributesAnalyticsQueryParams
+        | PaginatedAnalyticsQueryParams
+        | None = None,
     ) -> TabularResponse:
         """Get assistants chats analytics.
 
         Args:
-            params: Query parameters (filters + pagination)
+            params: Query parameters (filters + pagination; an optional
+                ``attributes`` run-attributes filter via
+                AttributesAnalyticsQueryParams)
 
         Returns:
             TabularResponse with assistant performance metrics including chat statistics,
@@ -93,12 +101,17 @@ class AnalyticsService:
         )
 
     def get_workflows(
-        self, params: PaginatedAnalyticsQueryParams | None = None
+        self,
+        params: AttributesAnalyticsQueryParams
+        | PaginatedAnalyticsQueryParams
+        | None = None,
     ) -> TabularResponse:
         """Get workflows analytics.
 
         Args:
-            params: Query parameters (filters + pagination)
+            params: Query parameters (filters + pagination; an optional
+                ``attributes`` run-attributes filter via
+                AttributesAnalyticsQueryParams)
 
         Returns:
             TabularResponse with workflow execution metrics including total runs,
@@ -107,6 +120,66 @@ class AnalyticsService:
         query_params = params.model_dump(exclude_none=True) if params else {}
         return self._api.get(
             "/v1/analytics/workflows",
+            TabularResponse,
+            params=query_params,
+            wrap_response=False,
+        )
+
+    def get_assistants_requests(
+        self, params: AssistantsRequestsQueryParams | None = None
+    ) -> TabularResponse:
+        """Get assistants requests analytics.
+
+        Args:
+            params: Query parameters (filters, client source, assistant ID,
+                run attributes + pagination)
+
+        Returns:
+            TabularResponse with per-request assistant metrics
+        """
+        query_params = params.model_dump(exclude_none=True) if params else {}
+        return self._api.get(
+            "/v1/analytics/assistants-requests",
+            TabularResponse,
+            params=query_params,
+            wrap_response=False,
+        )
+
+    def get_workflows_executions(
+        self, params: AttributesAnalyticsQueryParams | None = None
+    ) -> TabularResponse:
+        """Get workflows executions analytics.
+
+        Args:
+            params: Query parameters (filters, client source, run attributes
+                + pagination)
+
+        Returns:
+            TabularResponse with per-execution workflow metrics
+        """
+        query_params = params.model_dump(exclude_none=True) if params else {}
+        return self._api.get(
+            "/v1/analytics/workflows-executions",
+            TabularResponse,
+            params=query_params,
+            wrap_response=False,
+        )
+
+    def get_attributes_usage(
+        self, params: AttributesUsageQueryParams
+    ) -> TabularResponse:
+        """Get run attributes usage analytics.
+
+        Args:
+            params: Query parameters (attribute_key is required; filters,
+                client source, run attributes + pagination)
+
+        Returns:
+            TabularResponse with usage metrics for the given attribute key
+        """
+        query_params = params.model_dump(exclude_none=True)
+        return self._api.get(
+            "/v1/analytics/attributes-usage",
             TabularResponse,
             params=query_params,
             wrap_response=False,
