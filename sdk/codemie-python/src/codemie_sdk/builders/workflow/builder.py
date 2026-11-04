@@ -29,8 +29,10 @@ from .definition import (
     CustomWorkflowNode,
     WorkflowAssistant,
     WorkflowDefinition,
+    WorkflowEngineRetryPolicy,
     WorkflowMCPServer,
     WorkflowNextState,
+    WorkflowPoolConfig,
     WorkflowRetryPolicy,
     WorkflowState,
     WorkflowTool,
@@ -54,6 +56,7 @@ class _BuilderState:
     tools: dict[str, WorkflowTool] = field(default_factory=dict)
     custom_nodes: dict[str, CustomWorkflowNode] = field(default_factory=dict)
     states: tuple[WorkflowState, ...] = ()
+    engine: dict[str, Any] = field(default_factory=dict)
 
 
 class WorkflowBuilder:
@@ -87,6 +90,47 @@ class WorkflowBuilder:
 
     def with_icon_url(self, icon_url: str) -> "WorkflowBuilder":
         return self._replaced(icon_url=icon_url)
+
+    def _with_engine(self, **setting: Any) -> "WorkflowBuilder":
+        return self._replaced(engine={**self._state.engine, **setting})
+
+    def with_max_concurrency(self, value: int) -> "WorkflowBuilder":
+        """Accepted up to 100, but the backend runtime clamps it (5 by default)."""
+        return self._with_engine(max_concurrency=value)
+
+    def with_recursion_limit(self, value: int) -> "WorkflowBuilder":
+        return self._with_engine(recursion_limit=value)
+
+    def with_verbose(self, value: bool) -> "WorkflowBuilder":
+        return self._with_engine(verbose=value)
+
+    def with_type(self, value: str) -> "WorkflowBuilder":
+        return self._with_engine(type=value)
+
+    def with_max_nesting_level(self, value: int) -> "WorkflowBuilder":
+        return self._with_engine(max_nesting_level=value)
+
+    def with_pool_config(self, value: WorkflowPoolConfig) -> "WorkflowBuilder":
+        return self._with_engine(pool_config=value)
+
+    def with_retry_policy(self, value: WorkflowEngineRetryPolicy) -> "WorkflowBuilder":
+        return self._with_engine(retry_policy=value)
+
+    def with_summarization_node(self, enabled: bool) -> "WorkflowBuilder":
+        return self._with_engine(enable_summarization_node=enabled)
+
+    def with_summarization_limits(
+        self, messages: int | None = None, tokens: int | None = None
+    ) -> "WorkflowBuilder":
+        """Set only the given before-summarization limits."""
+        given = {
+            "messages_limit_before_summarization": messages,
+            "tokens_limit_before_summarization": tokens,
+        }
+        return self._with_engine(**{k: v for k, v in given.items() if v is not None})
+
+    def with_max_iteration_key_output_limit(self, value: int) -> "WorkflowBuilder":
+        return self._with_engine(max_iteration_key_output_limit=value)
 
     def add_assistant(
         self,
@@ -342,6 +386,7 @@ class WorkflowBuilder:
             tools=list(self._state.tools.values()),
             custom_nodes=list(self._state.custom_nodes.values()),
             states=list(self._state.states),
+            **self._state.engine,
         )
 
     def publish(

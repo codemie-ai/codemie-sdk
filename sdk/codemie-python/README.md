@@ -940,6 +940,35 @@ request = WorkflowCreateRequest(
 )
 ```
 
+6. **Engine settings**
+
+Workflow-wide settings are optional; an unset setting means the platform default applies.
+```python
+from codemie_sdk.builders.workflow import WorkflowEngineRetryPolicy, WorkflowPoolConfig
+
+builder = (
+    builder.with_max_concurrency(20)
+    .with_retry_policy(WorkflowEngineRetryPolicy(max_attempts=3, backoff_factor=2.0))
+    .with_pool_config(WorkflowPoolConfig(enabled=True, min_size=2, max_size=10))
+)
+```
+
+| Setter | Bounds |
+|---|---|
+| `with_max_concurrency(n)` | 1-100 (the backend runtime clamps it, 5 by default) |
+| `with_recursion_limit(n)` | 1-5000 |
+| `with_verbose(flag)` | bool |
+| `with_type(name)` | free string |
+| `with_max_nesting_level(n)` | >= 1 |
+| `with_pool_config(WorkflowPoolConfig)` | `min_size` 1-20, `max_size` 1-50, `refill_interval_seconds` >= 5 |
+| `with_retry_policy(WorkflowEngineRetryPolicy)` | `initial_interval`/`max_interval` 0-3600000, `backoff_factor` 1-10, `max_attempts` 1-100 |
+| `with_summarization_node(flag)` | bool |
+| `with_summarization_limits(messages=, tokens=)` | > 0 |
+| `with_max_iteration_key_output_limit(n)` | > 0 |
+
+`WorkflowNextState(override_task=True)` sets `override_task` on a transition. `keep_history` is
+intentionally unsupported: it is deprecated, so use `include_in_llm_history`.
+
 #### Workflow Node Types
 
 Every state in a workflow runs one thing: an assistant, a tool, a custom node (such as
