@@ -847,6 +847,24 @@ class TestEngineSettings:
         with pytest.raises(ValidationError, match="backoff_factor"):
             WorkflowEngineRetryPolicy(backoff_factor=0.5)
 
+    def test_pool_rejects_min_greater_than_max(self):
+        with pytest.raises(ValidationError, match=r"min_size.*max_size"):
+            WorkflowPoolConfig(min_size=10, max_size=5)
+
+    def test_pool_allows_equal_or_partial_sizes(self):
+        assert WorkflowPoolConfig(min_size=5, max_size=5).min_size == 5
+        assert WorkflowPoolConfig(min_size=10).max_size is None
+        assert WorkflowPoolConfig(max_size=5).min_size is None
+
+    def test_retry_rejects_initial_greater_than_max_interval(self):
+        with pytest.raises(ValidationError, match=r"initial_interval.*max_interval"):
+            WorkflowEngineRetryPolicy(initial_interval=10, max_interval=5)
+
+    def test_retry_allows_equal_or_partial_intervals(self):
+        assert WorkflowEngineRetryPolicy(initial_interval=5, max_interval=5)
+        assert WorkflowEngineRetryPolicy(initial_interval=10).max_interval is None
+        assert WorkflowEngineRetryPolicy(max_interval=5).initial_interval is None
+
     def test_override_task_rendered_only_when_set(self):
         with_flag = WorkflowNextState(state_id="end", override_task=True)
         assert with_flag.model_dump(exclude_none=True)["override_task"] is True

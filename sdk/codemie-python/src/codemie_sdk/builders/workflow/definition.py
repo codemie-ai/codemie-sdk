@@ -259,6 +259,18 @@ class WorkflowPoolConfig(BaseModel):
     max_size: int | None = Field(None, ge=1, le=50)
     refill_interval_seconds: int | None = Field(None, ge=5)
 
+    @model_validator(mode="after")
+    def _check_size_order(self) -> "WorkflowPoolConfig":
+        if (
+            self.min_size is not None
+            and self.max_size is not None
+            and self.min_size > self.max_size
+        ):
+            raise ValueError(
+                f"min_size ({self.min_size}) must not exceed max_size ({self.max_size})"
+            )
+        return self
+
 
 class WorkflowEngineRetryPolicy(BaseModel):
     """Workflow-wide retry policy; every field optional like the backend."""
@@ -269,6 +281,19 @@ class WorkflowEngineRetryPolicy(BaseModel):
     backoff_factor: float | None = Field(None, ge=1, le=10)
     max_interval: float | None = Field(None, ge=0, le=3_600_000)
     max_attempts: int | None = Field(None, ge=1, le=100)
+
+    @model_validator(mode="after")
+    def _check_interval_order(self) -> "WorkflowEngineRetryPolicy":
+        if (
+            self.initial_interval is not None
+            and self.max_interval is not None
+            and self.initial_interval > self.max_interval
+        ):
+            raise ValueError(
+                f"initial_interval ({self.initial_interval}) must not exceed "
+                f"max_interval ({self.max_interval})"
+            )
+        return self
 
 
 class WorkflowNextState(BaseModel):
