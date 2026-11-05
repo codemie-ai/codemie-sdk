@@ -25,7 +25,10 @@ Tests: `sdk/codemie-python/tests/` (pytest, configured in `pytest.ini`).
 | `client/client.ts` | Client class |
 | `auth/` | Credentials and auth types |
 | `services/` | One module per API area, same names as the Python SDK where the area exists in both |
-| `models/` | TypeScript types and zod schemas per API area |
+| `models/` | TypeScript types per API area |
+| `schemas/` | zod schemas that validate request and response data |
+| `mappers/` | Mapping between API data and SDK types |
+| `exceptions/` | SDK error types |
 | `utils/` | HTTP helper (`http.ts`) and small helpers (`helpers.ts`) |
 
 Tests: `sdk/codemie-nodejs/tests/` (jest). Build output goes through `tsup` to CJS, ESM and type declarations. Lint and format use Biome (`biome.json`).
