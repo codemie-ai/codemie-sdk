@@ -35,7 +35,8 @@ from ...models.assistant import MCPServerConfig
 from ...models.workflow import WorkflowMode
 
 # These models are the builder's own input surface, not API response models
-# (which use `extra="ignore"` elsewhere in the SDK, see codemie-python/CLAUDE.md).
+# (which use `extra="ignore"` elsewhere in the SDK, see
+# .ai-run/guides/code-quality.md, section "Pydantic models").
 # A typo'd or renamed kwarg here changes workflow behaviour silently instead of
 # erroring, so `extra="forbid"` catches it at construction time. `frozen=True`
 # backs the builder's and this module's own "render() result is immutable, safe
