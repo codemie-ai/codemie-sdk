@@ -188,13 +188,16 @@ class UserService:
             wrap_response=False,
         )
 
-    def deactivate_user(self, user_id: str) -> None:
+    def deactivate_user(self, user_id: str) -> dict:
         """Deactivate (soft-delete) a user (SuperAdmin only).
 
         Args:
             user_id: The user's unique identifier
+
+        Returns:
+            Response body, e.g. {"message": "User deactivated successfully"}
         """
-        self._api.delete(
+        return self._api.delete(
             f"/v1/admin/users/{user_id}",
             dict,
             wrap_response=False,
@@ -203,15 +206,17 @@ class UserService:
     def reactivate_user(self, user_id: str) -> CodeMieUserDetail:
         """Reactivate a previously deactivated user (SuperAdmin only).
 
+        Reactivation has its own endpoint: updating a user with is_active=True is
+        refused by the API.
+
         Args:
             user_id: The user's unique identifier
 
         Returns:
             Updated user details with is_active=True
         """
-        return self._api.put(
-            f"/v1/admin/users/{user_id}",
+        return self._api.post(
+            f"/v1/admin/users/{user_id}/reactivate",
             CodeMieUserDetail,
-            json_data={"is_active": True},
             wrap_response=False,
         )

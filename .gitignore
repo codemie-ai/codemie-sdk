@@ -1,3 +1,10 @@
+.idea/
+dist
+venv
+.venv
 .DS_Store
 docs/codemie/
 docs/superpowers/
+__pycache__
+.vscode
+.env
