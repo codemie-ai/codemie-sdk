@@ -249,8 +249,17 @@ class WorkflowRetryPolicy(BaseModel):
     max_attempts: int
 
 
+_POOL_DEFAULT_MIN_SIZE = 2
+_POOL_DEFAULT_MAX_SIZE = 5
+
+
 class WorkflowPoolConfig(BaseModel):
-    """Workflow-wide pool settings; unset fields use the platform default."""
+    """Workflow-wide pool settings; unset fields use the platform default.
+
+    The platform defaults are min_size 2 and max_size 5, and a deployment-wide
+    cap (5 by default) limits the pool further. Sizes are checked against the
+    defaults, not against the deployment cap.
+    """
 
     model_config = _MIRRORED_MODEL_CONFIG
 
@@ -261,13 +270,16 @@ class WorkflowPoolConfig(BaseModel):
 
     @model_validator(mode="after")
     def _check_size_order(self) -> "WorkflowPoolConfig":
-        if (
-            self.min_size is not None
-            and self.max_size is not None
-            and self.min_size > self.max_size
-        ):
+        min_size = (
+            self.min_size if self.min_size is not None else _POOL_DEFAULT_MIN_SIZE
+        )
+        max_size = (
+            self.max_size if self.max_size is not None else _POOL_DEFAULT_MAX_SIZE
+        )
+        if min_size > max_size:
             raise ValueError(
-                f"min_size ({self.min_size}) must not exceed max_size ({self.max_size})"
+                f"min_size ({min_size}) must not exceed max_size ({max_size}); "
+                f"unset sizes default to {_POOL_DEFAULT_MIN_SIZE} and {_POOL_DEFAULT_MAX_SIZE}"
             )
         return self
 
@@ -277,9 +289,19 @@ class WorkflowEngineRetryPolicy(BaseModel):
 
     model_config = _MIRRORED_MODEL_CONFIG
 
-    initial_interval: float | None = Field(None, ge=0, le=3_600_000)
+    initial_interval: float | None = Field(
+        None,
+        ge=0,
+        le=3_600_000,
+        description="Delay before the first retry, in seconds.",
+    )
     backoff_factor: float | None = Field(None, ge=1, le=10)
-    max_interval: float | None = Field(None, ge=0, le=3_600_000)
+    max_interval: float | None = Field(
+        None,
+        ge=0,
+        le=3_600_000,
+        description="Upper bound for the delay between retries, in seconds.",
+    )
     max_attempts: int | None = Field(None, ge=1, le=100)
 
     @model_validator(mode="after")

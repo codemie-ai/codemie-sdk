@@ -853,8 +853,23 @@ class TestEngineSettings:
 
     def test_pool_allows_equal_or_partial_sizes(self):
         assert WorkflowPoolConfig(min_size=5, max_size=5).min_size == 5
-        assert WorkflowPoolConfig(min_size=10).max_size is None
         assert WorkflowPoolConfig(max_size=5).min_size is None
+        assert WorkflowPoolConfig(min_size=5).max_size is None
+
+    @pytest.mark.parametrize("sizes", [{"min_size": 10}, {"max_size": 1}])
+    def test_pool_rejects_partial_sizes_conflicting_with_platform_defaults(self, sizes):
+        with pytest.raises(ValidationError, match=r"min_size.*max_size"):
+            WorkflowPoolConfig(**sizes)
+
+    @pytest.mark.parametrize(
+        "model, field",
+        [
+            (WorkflowEngineRetryPolicy, "initial_interval"),
+            (WorkflowEngineRetryPolicy, "max_interval"),
+        ],
+    )
+    def test_retry_interval_fields_document_seconds(self, model, field):
+        assert "seconds" in model.model_fields[field].description
 
     def test_retry_rejects_initial_greater_than_max_interval(self):
         with pytest.raises(ValidationError, match=r"initial_interval.*max_interval"):

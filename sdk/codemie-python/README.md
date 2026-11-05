@@ -960,8 +960,8 @@ builder = (
 | `with_verbose(flag)` | bool |
 | `with_type(name)` | free string |
 | `with_max_nesting_level(n)` | >= 1 |
-| `with_pool_config(WorkflowPoolConfig)` | `min_size` 1-20, `max_size` 1-50, `refill_interval_seconds` >= 5 |
-| `with_retry_policy(WorkflowEngineRetryPolicy)` | `initial_interval`/`max_interval` 0-3600000, `backoff_factor` 1-10, `max_attempts` 1-100 |
+| `with_pool_config(WorkflowPoolConfig)` | `min_size` 1-20, `max_size` 1-50, `refill_interval_seconds` >= 5; unset sizes default to 2 and 5 and `min_size` must not exceed `max_size`; the platform also caps pool size per deployment (5 by default) |
+| `with_retry_policy(WorkflowEngineRetryPolicy)` | `initial_interval`/`max_interval` in seconds, 0-3600000, `backoff_factor` 1-10, `max_attempts` 1-100 |
 | `with_summarization_node(flag)` | bool |
 | `with_summarization_limits(messages=, tokens=)` | > 0 |
 | `with_max_iteration_key_output_limit(n)` | > 0 |
