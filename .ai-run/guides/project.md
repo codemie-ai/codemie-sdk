@@ -1,28 +1,48 @@
-# Project
+# Project Context
 
-This repository holds two client SDKs for the CodeMie platform.
+## Project Identity
 
-| Package | Path | Registry name | Language |
-|---------|------|---------------|----------|
-| Python SDK | `sdk/codemie-python` | `codemie-sdk-python` | Python 3.12, Poetry |
-| Node.js SDK | `sdk/codemie-nodejs` | `codemie-sdk` | TypeScript, npm |
+| Field | Value | Source |
+|---|---|---|
+| Project name | CodeMie SDK (Python and Node.js client SDKs) | `README.md` |
+| Repository/package | `codemie-ai/codemie-sdk`; packages `codemie-sdk-python` (`sdk/codemie-python`, Python 3.12, Poetry) and `codemie-sdk` (`sdk/codemie-nodejs`, TypeScript, npm) | `sdk/codemie-python/pyproject.toml`, `sdk/codemie-nodejs/package.json` |
+| Project code/key | `EPMCDME` | maintainer decision |
 
-Each package is built, tested and released on its own. Commands: `quality-gates.md`. Layout: `architecture.md`.
+## Work Item Tracker
+
+| Field | Value |
+|---|---|
+| Provider | Jira for maintainers; GitHub Issues for external contributors |
+| Key/prefix | `EPMCDME`; in examples use only the placeholder `EPMCDME-NNNNN` |
+
+> Adapter configuration belongs exclusively in `## Ticket Adapter`. Do not duplicate adapter status or instructions in the Work Item Tracker table.
 
 ## Ticket Adapter
 
-- Tracker: Jira.
-- Tool: the `codemie-jira-assistant` CodeMie assistant.
-- Ticket keys look like `EPMCDME-NNNNN`. Use only this placeholder form in files, commits, branches and PRs of this repository. Never write a real key.
-- External contributors do not need Jira. They use GitHub Issues, and a PR closes its issue with `Closes #N`.
+**Status**: configured
+**Adapter**: the `codemie-jira-assistant` skill (maintainers only)
+**Lookup**: ask `codemie-jira-assistant` for the ticket by key; it returns summary, description, acceptance criteria and links
+**Create**: give `codemie-jira-assistant` the full story file (summary, description, acceptance criteria) and ask it to create the ticket
+**Output**: the ticket key
+**Comment**: post the PR URL on the ticket through `codemie-jira-assistant`
+
+## Source Control And Review
+
+| Field | Value |
+|---|---|
+| Provider | GitHub |
+| Repository remote | `https://github.com/codemie-ai/codemie-sdk.git` |
+| Default target branch | `main` |
+| Review artifact type | PR |
 
 ## MR Adapter
 
-- Host: GitHub, organisation `codemie-ai`.
-- Create a pull request with `gh pr create`.
-- The PR title follows Conventional Commits. See `git-workflow.md`.
-- The PR template is `.github/PULL_REQUEST_TEMPLATE.md`.
+**Status**: configured
+**Adapter**: GitHub CLI, `gh pr create`
+**Instructions**: Fill in `.github/PULL_REQUEST_TEMPLATE.md`. Title, branch and commit rules are in `.ai-run/guides/standards/git-workflow.md`. Do not put a ticket key in the title or body. External contributors close their GitHub issue with `Closes #N`.
 
-## Related repositories
+## Complexity Scoring
 
-The platform backend, the UI, the test harness and the infrastructure code are separate repositories. A change to a platform catalog (tool names, integration types, credential types) may also need a change in the backend. This repository follows the backend; it does not drive it.
+**Status**: not configured
+**Field**: not configured
+**Format**: not configured

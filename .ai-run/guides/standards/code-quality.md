@@ -1,6 +1,6 @@
 # Code quality
 
-Linters and formatters decide style: ruff for Python (version pinned in `sdk/codemie-python/pyproject.toml`), Biome for Node.js (`sdk/codemie-nodejs/biome.json`). Do not argue with them in review. How to run them: `quality-gates.md`.
+Linters and formatters decide style: ruff for Python (version range in `sdk/codemie-python/pyproject.toml`, locked in `sdk/codemie-python/poetry.lock`), Biome for Node.js (`sdk/codemie-nodejs/biome.json`). Do not argue with them in review. How to run them: `.ai-run/guides/quality-gates.md`.
 
 ## General rules
 

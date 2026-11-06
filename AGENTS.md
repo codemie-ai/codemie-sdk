@@ -6,13 +6,13 @@ Two client SDKs for the CodeMie platform: `sdk/codemie-python` and `sdk/codemie-
 
 | Topic | Guide |
 |-------|-------|
-| Packages, ticket and PR tools | [project.md](.ai-run/guides/project.md) |
+| Project identity, ticket and PR adapters | [project.md](.ai-run/guides/project.md) |
 | Code layout of both SDKs | [architecture.md](.ai-run/guides/architecture.md) |
 | Day-to-day workflow, adding an API area | [development.md](.ai-run/guides/development.md) |
-| Style, Pydantic models, error handling | [code-quality.md](.ai-run/guides/code-quality.md) |
+| Style, Pydantic models, error handling | [standards/code-quality.md](.ai-run/guides/standards/code-quality.md) |
 | All commands: lint, format, test, build | [quality-gates.md](.ai-run/guides/quality-gates.md) |
 | Secrets, internal references, vulnerability reports | [security.md](.ai-run/guides/security.md) |
-| Branches, commits, PRs, releases | [git-workflow.md](.ai-run/guides/git-workflow.md) |
+| Branches, commits, PRs, releases | [standards/git-workflow.md](.ai-run/guides/standards/git-workflow.md) |
 
 ## Critical rules
 

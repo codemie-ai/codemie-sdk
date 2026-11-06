@@ -1,14 +1,14 @@
 # Development
 
-For every command (install, lint, format, test, build) see `quality-gates.md`. This file does not repeat them.
+For every command (install, lint, format, test, build) see `.ai-run/guides/quality-gates.md`. This file does not repeat them.
 
 ## Workflow
 
-1. Create a branch from `main`. Naming: `git-workflow.md`.
-2. Change one SDK, or both when the platform API area exists in both. See `architecture.md`.
+1. Create a branch from `main`. Naming: `.ai-run/guides/standards/git-workflow.md`.
+2. Change one SDK, or both when the platform API area exists in both. See `.ai-run/guides/architecture.md`.
 3. Add or update tests in the same change. Python tests are in `sdk/codemie-python/tests/`, Node.js tests in `sdk/codemie-nodejs/tests/`.
 4. Run the gates for each SDK you changed. All gates must pass before you open a PR.
-5. Open a PR. Commit and PR rules: `git-workflow.md`.
+5. Open a PR. Commit and PR rules: `.ai-run/guides/standards/git-workflow.md`.
 
 ## Adding an API area
 

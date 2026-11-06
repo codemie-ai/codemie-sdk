@@ -36,3 +36,7 @@ Tests: `sdk/codemie-nodejs/tests/` (jest). Build output goes through `tsup` to C
 ## Parity
 
 The two SDKs mirror the same platform API but are not generated from each other. The Python SDK has more areas today (for example `builders/workflow`, vendor services, admin). When you add an API area to one SDK, check whether the other needs it.
+
+## Related repositories
+
+The platform backend, the UI, the test harness and the infrastructure code are separate repositories. A change to a platform catalog (tool names, integration types, credential types) may also need a change in the backend. This repository follows the backend; it does not drive it.

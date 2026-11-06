@@ -5,9 +5,9 @@ Source of truth: `.github/workflows/ci.yml` (jobs `python`, `node`), `sdk/codemi
 
 ## Python SDK (`sdk/codemie-python`)
 
-Run all commands from `sdk/codemie-python`.
+Run all commands from `sdk/codemie-python`. CI uses Python 3.12 (`actions/setup-python`) and installs Poetry with `pipx install poetry`.
 
-CI job "Python SDK" (`.github/workflows/ci.yml`, job `python`) runs these steps in order:
+CI job "Python SDK" (`.github/workflows/ci.yml`, job `python`) then runs these steps in order:
 
 1. `poetry install --no-interaction`
 2. `poetry run ruff check .`
@@ -27,7 +27,7 @@ Makefile targets (`sdk/codemie-python/Makefile`):
 | `make verify` | see the warning below |
 | `make build` | `poetry build` |
 
-Warning about `make verify`: the target is defined as `verify: ruff tests`. The Makefile has no `tests` target (the real target is `test`). Because the directory `tests/` exists, make treats `tests` as an up-to-date file and prints "Nothing to be done for `tests'". So `make verify` runs only `make ruff` and never runs the tests. It also rewrites files (`--fix`, `ruff format`), while CI only checks.
+Warning about `make verify`: the target is defined as `verify: ruff tests`. The Makefile has no `tests` target (the real target is `test`). Because the directory `tests/` exists, make treats `tests` as an up-to-date file and runs nothing for it. So `make verify` runs only `make ruff` and never runs the tests. It also rewrites files (`--fix`, `ruff format`), while CI only checks.
 
 Before you push, run the CI commands, not `make verify`:
 
@@ -55,4 +55,4 @@ Other scripts in `package.json`: `npm run format` (writes files), `npm run test:
 
 ## Repository checks
 
-The CI jobs `internal-refs` ("Internal references") and `secrets-detection` ("Security") use reusable workflows. They scan for internal ticket keys, internal hosts, personal paths and secrets. See `security.md`.
+The CI jobs `internal-refs` ("Internal references") and `secrets-detection` ("Security") use reusable workflows. They scan for internal ticket keys, internal hosts, personal paths and secrets. See `.ai-run/guides/security.md`.
