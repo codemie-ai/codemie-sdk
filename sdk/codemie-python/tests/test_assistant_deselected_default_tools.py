@@ -67,30 +67,30 @@ def payload(api):
 
 def test_create_sends_field_when_set():
     service, api = make_service()
-    service.create(create_req(deselected_default_tools=["search_kb"]))
-    assert payload(api)["deselected_default_tools"] == ["search_kb"]
+    service.create(create_req(disabled_context_tools=["search_kb"]))
+    assert payload(api)["disabled_context_tools"] == ["search_kb"]
 
 
 def test_update_sends_changed_list():
     service, api = make_service()
-    service.update("a1", update_req(deselected_default_tools=["search_code_repo"]))
-    assert payload(api)["deselected_default_tools"] == ["search_code_repo"]
+    service.update("a1", update_req(disabled_context_tools=["search_code_repo"]))
+    assert payload(api)["disabled_context_tools"] == ["search_code_repo"]
 
 
 def test_unset_field_omitted_from_payload():
     service, api = make_service()
     service.create(create_req())
-    assert "deselected_default_tools" not in payload(api)
+    assert "disabled_context_tools" not in payload(api)
     service.update("a1", update_req())
-    assert "deselected_default_tools" not in payload(api)
+    assert "disabled_context_tools" not in payload(api)
 
 
 def test_explicit_empty_list_is_sent():
     service, api = make_service()
-    service.create(create_req(deselected_default_tools=[]))
-    assert payload(api)["deselected_default_tools"] == []
-    service.update("a1", update_req(deselected_default_tools=[]))
-    assert payload(api)["deselected_default_tools"] == []
+    service.create(create_req(disabled_context_tools=[]))
+    assert payload(api)["disabled_context_tools"] == []
+    service.update("a1", update_req(disabled_context_tools=[]))
+    assert payload(api)["disabled_context_tools"] == []
 
 
 def _version(**extra):
@@ -104,21 +104,21 @@ def _version(**extra):
 
 def test_read_models_expose_field_and_default_empty():
     assistant = dict(BASE)
-    assert Assistant(**assistant).deselected_default_tools == []
+    assert Assistant(**assistant).disabled_context_tools == []
     assert Assistant(
-        **assistant, deselected_default_tools=["search_kb"]
-    ).deselected_default_tools == ["search_kb"]
-    assert AssistantVersion(**_version()).deselected_default_tools == []
+        **assistant, disabled_context_tools=["search_kb"]
+    ).disabled_context_tools == ["search_kb"]
+    assert AssistantVersion(**_version()).disabled_context_tools == []
     assert AssistantVersion(
-        **_version(deselected_default_tools=["search_kb"])
-    ).deselected_default_tools == ["search_kb"]
+        **_version(disabled_context_tools=["search_kb"])
+    ).disabled_context_tools == ["search_kb"]
 
 
 def test_backend_rejection_propagates():
     service, api = make_service()
     api.error = requests.HTTPError("400 bad tool name")
     with pytest.raises(requests.HTTPError):
-        service.create(create_req(deselected_default_tools=["nope"]))
+        service.create(create_req(disabled_context_tools=["nope"]))
 
 
 def test_get_tools_returns_default_datasource_toolkit_unchanged():
@@ -145,15 +145,15 @@ def test_rollback_fallback_carries_field():
     # Assistant has no `user_prompts` attribute, which the fallback reads
     # (pre-existing); use a stand-in exposing it so the fallback is reachable.
     api.get_responses["/v1/assistants/id/a1"] = SimpleNamespace(
-        **Assistant(**BASE, deselected_default_tools=["search_kb"]).model_dump(),
+        **Assistant(**BASE, disabled_context_tools=["search_kb"]).model_dump(),
         user_prompts=[],
     )
     api.put = lambda endpoint, response_model, json_data=None, **kw: (
         api.calls.append(("put", endpoint, json_data)) or response_model(message="ok")
     )
     api.get_responses["/v1/assistants/a1/versions/2"] = AssistantVersion(
-        **_version(deselected_default_tools=["search_code_repo"])
+        **_version(disabled_context_tools=["search_code_repo"])
     )
     service.rollback_to_version("a1", 2)
     put = [c for c in api.calls if c[0] == "put"][-1]
-    assert put[2]["deselected_default_tools"] == ["search_code_repo"]
+    assert put[2]["disabled_context_tools"] == ["search_code_repo"]

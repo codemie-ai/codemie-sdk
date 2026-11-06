@@ -85,7 +85,7 @@ export class AssistantService {
    */
   async get(assistantId: string): Promise<Assistant> {
     const assistant = await this.api.get<Assistant>(`/v1/assistants/id/${assistantId}`);
-    return { ...assistant, deselected_default_tools: assistant.deselected_default_tools ?? [] };
+    return { ...assistant, disabled_context_tools: assistant.disabled_context_tools ?? [] };
   }
 
   /**
@@ -93,7 +93,7 @@ export class AssistantService {
    */
   async getBySlug(slug: string): Promise<Assistant> {
     const assistant = await this.api.get<Assistant>(`/v1/assistants/slug/${slug}`);
-    return { ...assistant, deselected_default_tools: assistant.deselected_default_tools ?? [] };
+    return { ...assistant, disabled_context_tools: assistant.disabled_context_tools ?? [] };
   }
 
   /**
@@ -198,7 +198,7 @@ export class AssistantService {
     const version = await this.api.get<AssistantVersion>(
       `/v1/assistants/${assistantId}/versions/${versionNumber}`,
     );
-    return { ...version, deselected_default_tools: version.deselected_default_tools ?? [] };
+    return { ...version, disabled_context_tools: version.disabled_context_tools ?? [] };
   }
 
   /**

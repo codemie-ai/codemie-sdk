@@ -100,7 +100,7 @@ export interface Assistant extends AssistantBase {
   assistant_ids: string[];
   categories?: AssistantCategory[];
   context: Context[];
-  deselected_default_tools: string[];
+  disabled_context_tools: string[];
   skill_ids?: string[];
   conversation_starters: string[];
   created_date?: string;
@@ -174,7 +174,7 @@ export interface AssistantVersion {
   mcp_servers: MCPServerDetails[];
   assistant_ids: string[];
   prompt_variables?: PromptVariable[];
-  deselected_default_tools: string[];
+  disabled_context_tools: string[];
   // allow future fields without breaking consumers
   [key: string]: unknown;
 }
