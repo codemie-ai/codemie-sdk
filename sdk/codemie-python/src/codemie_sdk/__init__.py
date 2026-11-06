@@ -185,6 +185,16 @@ from .models.usage_attribution import (
     UsageAttributionSettingsResponse,
 )
 from .services.usage_attribution import UsageAttributionService
+from .models.provisioning import (
+    ProvisioningProject,
+    ProvisioningProjectBlock,
+    ProvisioningBudgetRequest,
+    ProvisioningBudgetCategory,
+    ProvisioningBudgetGroup,
+    ProvisioningBudgetResponse,
+    ProvisioningBudgetResult,
+)
+from .services.provisioning import ProvisioningService
 
 try:
     __version__ = _pkg_version("codemie-sdk-python")
@@ -329,4 +339,12 @@ __all__ = [
     "UsageAttributionTableResponse",
     "UsageAttributionSettingsResponse",
     "UsageAttributionService",
+    "ProvisioningProject",
+    "ProvisioningProjectBlock",
+    "ProvisioningBudgetRequest",
+    "ProvisioningBudgetCategory",
+    "ProvisioningBudgetGroup",
+    "ProvisioningBudgetResponse",
+    "ProvisioningBudgetResult",
+    "ProvisioningService",
 ]
