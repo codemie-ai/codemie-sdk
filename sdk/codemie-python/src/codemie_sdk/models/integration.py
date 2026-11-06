@@ -81,8 +81,8 @@ class Integration(BaseModel):
     setting_type: IntegrationType = Field(default=IntegrationType.USER)
 
     @field_serializer("date", "update_date")
-    def serialize_dt(self, dt: datetime, _info):
-        return dt.isoformat()
+    def serialize_dt(self, dt: datetime | None, _info):
+        return dt.isoformat() if dt is not None else None
 
 
 class IntegrationTestRequest(BaseModel):
