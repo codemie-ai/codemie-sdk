@@ -152,3 +152,30 @@ export interface WorkflowExecutionStateOutput {
   /** Output content */
   output?: string;
 }
+
+/** Creator information on a workflow revision (backend UserEntity: keyed by `user_id`, not `id`). */
+export interface WorkflowRevisionCreatedBy {
+  user_id: string;
+  username: string;
+  name: string;
+}
+
+/** A single workflow revision entry */
+export interface WorkflowRevision {
+  /** Full YAML config snapshot */
+  yaml_config: string;
+  /** ISO-8601 timestamp of this revision */
+  date: string;
+  /** User who created this revision; null when the backend has no creator recorded */
+  created_by: WorkflowRevisionCreatedBy | null;
+  /** Optional audit note */
+  change_notes: string | null;
+}
+
+/** Response for GET /v1/workflows/{id}/versions */
+export interface WorkflowVersionHistoryResponse {
+  workflow_id: string;
+  workflow_name: string;
+  total_revisions: number;
+  revisions: WorkflowRevision[];
+}

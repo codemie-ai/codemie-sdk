@@ -105,3 +105,14 @@ export const WorkflowExecutionStateListParamsSchema = z
 export type WorkflowExecutionStateListParams = Partial<
   z.infer<typeof WorkflowExecutionStateListParamsSchema>
 >;
+
+/**
+ * Workflow rollback parameters schema
+ */
+export const WorkflowRollbackParamsSchema = z
+  .object({
+    revision_index: z.number().int().min(0),
+    change_notes: z.string().optional(),
+  })
+  .readonly();
+export type WorkflowRollbackParams = z.infer<typeof WorkflowRollbackParamsSchema>;
