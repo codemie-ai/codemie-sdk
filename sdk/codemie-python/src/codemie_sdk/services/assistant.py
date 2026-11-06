@@ -319,7 +319,6 @@ class AssistantService:
                     toolkits=version.toolkits
                     if hasattr(version, "toolkits")
                     else assistant.toolkits,
-                    user_prompts=assistant.user_prompts,
                     shared=assistant.shared,
                     is_react=assistant.is_react,
                     is_global=assistant.is_global,
@@ -330,6 +329,9 @@ class AssistantService:
                     assistant_ids=version.assistant_ids
                     if hasattr(version, "assistant_ids")
                     else assistant.assistant_ids,
+                    skill_ids=assistant.skill_ids
+                    if version.skill_ids is None
+                    else version.skill_ids,
                 )
                 update_resp = self.update(assistant_id, update_req)
                 resp = update_resp.model_dump()
