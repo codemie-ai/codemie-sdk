@@ -145,6 +145,22 @@ describe("AssistantService", () => {
       expect(result).toEqual(mockAssistant);
     });
 
+    it("should return hide_tool_outputs from the response", async () => {
+      apiHandler.get.mockResolvedValue({ ...mockAssistant, hide_tool_outputs: true });
+
+      const result = await service.get("1");
+
+      expect(result.hide_tool_outputs).toBe(true);
+    });
+
+    it("should parse a response without hide_tool_outputs", async () => {
+      apiHandler.get.mockResolvedValue(mockAssistant);
+
+      const result = await service.get("1");
+
+      expect(result.hide_tool_outputs).toBeUndefined();
+    });
+
     it("should handle not found error", async () => {
       const error = new NotFoundError("Assistant", "non-existent");
       apiHandler.get.mockRejectedValue(error);
@@ -292,6 +308,15 @@ describe("AssistantService", () => {
 
       expect(apiHandler.put).toHaveBeenCalledWith("/v1/assistants/123", updateRequest);
       expect(result).toEqual(mockResponse);
+    });
+
+    it("should not send hide_tool_outputs on update when omitted", async () => {
+      apiHandler.put.mockResolvedValue({ success: true });
+
+      await service.update("123", updateRequest);
+
+      const body = apiHandler.put.mock.calls[0][1] as Record<string, unknown>;
+      expect("hide_tool_outputs" in body).toBe(false);
     });
 
     it("should preserve mcp_config_id in outbound update payload", async () => {
