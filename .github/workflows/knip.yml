@@ -1,0 +1,17 @@
+name: Knip
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  knip:
+    name: Knip
+    uses: codemie-ai/ci-workflows/.github/workflows/reusable-knip.yml@main
+    with:
+      working-directory: sdk/codemie-nodejs
+      node-version: '20'
