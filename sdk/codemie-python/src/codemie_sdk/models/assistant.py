@@ -71,6 +71,10 @@ class PromptVariable(BaseModel):
     key: str
     description: str | None = None
     default_value: str
+    is_sensitive: bool = Field(
+        default=False,
+        description="Whether this variable holds sensitive data; its default is never round-tripped in plain text",
+    )
 
 
 class MCPServerConfig(BaseModel):
