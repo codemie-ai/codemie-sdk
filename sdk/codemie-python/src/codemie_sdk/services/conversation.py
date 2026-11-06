@@ -124,7 +124,6 @@ class ConversationService:
             f"/v1/conversations/{conversation_id}",
             ConversationDetails,
             json_data=request.model_dump(exclude_none=True, by_alias=True),
-            stream=request.stream,
             extra_headers=headers,
         )
         return response

@@ -28,6 +28,22 @@ class ApiError(CodeMieError):
         super().__init__(message)
 
 
+class IncompleteStreamError(CodeMieError):
+    """Raised when a streaming response ends without a terminal ("last": true) chunk.
+
+    Distinguishes a dropped/truncated connection from a legitimate stream
+    end (a final answer, or a tool-call interruption with ``generated: null``),
+    both of which always carry ``"last": true`` on the wire.
+    """
+
+    def __init__(self, last_chunk_seen: dict | None = None):
+        self.last_chunk_seen = last_chunk_seen
+        super().__init__(
+            "Stream ended before a terminal chunk ('\"last\": true') was received; "
+            "the response is incomplete."
+        )
+
+
 class NotFoundError(ApiError):
     """Exception raised when a resource is not found."""
 
