@@ -16,6 +16,8 @@ export const ExecutionStatus = {
   FAILED: "Failed",
   SUCCEEDED: "Succeeded",
   ABORTED: "Aborted",
+  RECOVERING: "RECOVERING",
+  NEEDS_TRIAGE: "NEEDS_TRIAGE",
 } as const;
 export type ExecutionStatusType = (typeof ExecutionStatus)[keyof typeof ExecutionStatus];
 
