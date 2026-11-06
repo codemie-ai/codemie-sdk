@@ -12,9 +12,9 @@ export const AssistantListParamsSchema = z
 export type AssistantListParams = Partial<z.infer<typeof AssistantListParamsSchema>>;
 
 const PromptVariableSchema = z.object({
-  key: z.string(),
-  description: z.string().optional().nullable(),
-  default_value: z.string(),
+  key: z.string().max(100),
+  description: z.string().max(200).optional().nullable(),
+  default_value: z.string().max(500).optional(),
 });
 
 // The API echoes an inline config with its unused keys set to null - a stdio server
@@ -36,88 +36,99 @@ const MCPServerConfigObjectSchema = z.looseObject({
 export const MCPServerConfigSchema = MCPServerConfigObjectSchema.optional()
   .nullable()
   .refine((config) => {
-    if (!config) {
+    if (!config || Object.keys(config).length === 0) {
       return true;
     }
-    const hasUrl = !!config.url;
-    const hasCommand = !!config.command;
+    const hasUrl = !!config.url?.trim();
+    const hasCommand = !!config.command?.trim();
     return hasUrl !== hasCommand;
   }, "Either 'url' or 'command' must be provided in config, but not both");
 
-export const AssistantCreateParamsSchema = z
-  .object({
-    name: z.string(),
-    description: z.string(),
-    icon_url: z.string().optional().nullable(),
-    system_prompt: z.string(),
-    project: z.string(),
-    context: z.array(
+const AssistantParamsFields = {
+  name: z.string(),
+  description: z.string().optional().nullable(),
+  icon_url: z.string().optional().nullable(),
+  system_prompt: z.string(),
+  project: z.string().optional(),
+  context: z
+    .array(
       z.object({
         context_type: z.enum(["knowledge_base", "code", "provider"]),
         name: z.string(),
       }),
-    ),
-    llm_model_type: z.string().nullable(),
-    toolkits: z.array(
+    )
+    .optional(),
+  llm_model_type: z.string(),
+  toolkits: z
+    .array(
       z.object({
         toolkit: z.string(),
         tools: z.array(
           z.object({
             name: z.string(),
             label: z.string().optional().nullable(),
-            settings_config: z.boolean(),
+            settings_config: z.boolean().optional(),
             user_description: z.string().optional().nullable(),
             settings: z.any().nullable().optional(),
           }),
         ),
-        label: z.string(),
-        settings_config: z.boolean(),
-        is_external: z.boolean(),
+        label: z.string().optional(),
+        settings_config: z.boolean().optional(),
+        is_external: z.boolean().optional().nullable(),
         settings: z.any().optional(),
       }),
-    ),
-    conversation_starters: z.array(z.string()),
-    shared: z.boolean().optional(),
-    is_react: z.boolean().optional(),
-    is_global: z.boolean().optional(),
-    slug: z.string().optional().nullable(),
-    temperature: z.number().optional().nullable(),
-    top_p: z.number().optional().nullable(),
-    mcp_servers: z.array(
+    )
+    .optional(),
+  conversation_starters: z.array(z.string()).optional(),
+  shared: z.boolean().optional(),
+  is_react: z.boolean().optional(),
+  is_global: z.boolean().optional().nullable(),
+  slug: z.string().optional().nullable(),
+  temperature: z.number().optional().nullable(),
+  top_p: z.number().optional().nullable(),
+  mcp_servers: z
+    .array(
       z.looseObject({
         name: z.string(),
         description: z.string().optional().nullable(),
-        enabled: z.boolean(),
+        enabled: z.boolean().optional(),
         config: MCPServerConfigSchema,
         mcp_connect_url: z.string().optional().nullable(),
-        tools_tokens_size_limit: z.number().optional().nullable(),
+        tools_tokens_size_limit: z.number().int().optional().nullable(),
         command: z.string().optional().nullable(),
         arguments: z.string().optional().nullable(),
         settings: z.any().optional(),
         mcp_connect_auth_token: z.any().optional(),
         mcp_config_id: z.string().optional().nullable(),
         integration_alias: z.string().optional().nullable(),
-        use_custom_config: z.boolean().optional().nullable(),
-        resolve_dynamic_values_in_arguments: z.boolean().optional().nullable(),
+        use_custom_config: z.boolean().optional(),
+        resolve_dynamic_values_in_arguments: z.boolean().optional(),
         tools: z.array(z.string()).optional().nullable(),
       }),
-    ),
-    assistant_ids: z.array(z.string()),
-    skill_ids: z.array(z.string()).optional(),
-    prompt_variables: z.array(PromptVariableSchema).nullable().optional().default([]),
-    categories: z
-      .array(z.union([z.string(), z.looseObject({ id: z.string(), name: z.string() })]))
-      .max(3)
-      .optional()
-      .nullable(),
-    skip_integration_validation: z.boolean().optional().default(false),
+    )
+    .optional(),
+  assistant_ids: z.array(z.string()).optional(),
+  skill_ids: z.array(z.string()).optional(),
+  prompt_variables: z.array(PromptVariableSchema).nullable().optional(),
+  categories: z
+    .array(z.union([z.string(), z.looseObject({ id: z.string() })]))
+    .max(3)
+    .optional(),
+  skip_integration_validation: z.boolean().optional().nullable(),
+};
+
+export const AssistantCreateParamsSchema = z
+  .object({
+    ...AssistantParamsFields,
+    prompt_variables: AssistantParamsFields.prompt_variables.default([]),
+    skip_integration_validation: AssistantParamsFields.skip_integration_validation.default(false),
   })
   .readonly();
 // In order to make sure that default values are applied correctly, we use z.input here
 // instead of z.infer which would give us the type after defaults are applied.
 export type AssistantCreateParams = z.input<typeof AssistantCreateParamsSchema>;
 
-export const AssistantUpdateParamsSchema = AssistantCreateParamsSchema;
+export const AssistantUpdateParamsSchema = z.object(AssistantParamsFields).readonly();
 export type AssistantUpdateParams = z.input<typeof AssistantUpdateParamsSchema>;
 
 export const AssistantChatParamsSchema = z
