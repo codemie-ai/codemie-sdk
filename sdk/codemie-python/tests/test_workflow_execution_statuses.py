@@ -67,7 +67,9 @@ def test_execution_rejects_unknown_status():
 
 def test_execution_state_rejects_unknown_status():
     with pytest.raises(ValidationError):
-        WorkflowExecutionState.model_validate({**state_payload(), "status": "FUTURE_STATUS"})
+        WorkflowExecutionState.model_validate(
+            {**state_payload(), "status": "FUTURE_STATUS"}
+        )
 
 
 def test_execution_state_defaults_to_not_started():
