@@ -9,10 +9,13 @@ from typing import (
     get_args,
     Union,
 )
+import codecs
 import json
 import requests
 import logging
 from functools import wraps
+
+from ..exceptions import IncompleteStreamError
 
 T = TypeVar("T")
 
@@ -139,20 +142,27 @@ class ApiRequestHandler:
         """Consume a streaming response and return the terminal chunk as a dict.
 
         Wire format: JSON objects, either newline-separated or concatenated.
-        The terminal chunk has ``"last": true`` and ``"generated"`` set to the
-        full response text.
+        The terminal chunk always has ``"last": true`` — both for a final
+        answer and for a tool-call interruption, where ``"generated"`` is
+        absent/null instead of the response text.
 
-        Known limitation: if the connection ends before a ``"last": true``
-        chunk arrives, this returns the last chunk seen as-is, with no
-        signal that the response is incomplete. Callers cannot currently
-        distinguish a complete answer from one truncated mid-stream.
+        Bytes are decoded with an incremental UTF-8 decoder so a multi-byte
+        character split across two network chunks is reassembled correctly
+        instead of raising ``UnicodeDecodeError``.
+
+        Raises:
+            IncompleteStreamError: if the connection ends (or the server
+                closes the stream) before a ``"last": true`` chunk arrives,
+                so a dropped connection is never mistaken for a legitimate
+                empty/interrupted response.
         """
         last_chunk: dict = {}
         decoder = json.JSONDecoder()
+        utf8_decoder = codecs.getincrementaldecoder("utf-8")()
         buf = ""
         try:
-            for raw in response.iter_content(chunk_size=None, decode_unicode=True):
-                buf += raw.decode("utf-8") if isinstance(raw, bytes) else raw
+            for raw in response.iter_content(chunk_size=None, decode_unicode=False):
+                buf += utf8_decoder.decode(raw)
                 buf = buf.lstrip()
                 while buf:
                     try:
@@ -163,7 +173,7 @@ class ApiRequestHandler:
                             if obj.get("last"):
                                 # Drain remaining bytes to avoid connection pool issues
                                 for _ in response.iter_content(
-                                    chunk_size=None, decode_unicode=True
+                                    chunk_size=None, decode_unicode=False
                                 ):
                                     pass
                                 return last_chunk
@@ -171,7 +181,7 @@ class ApiRequestHandler:
                         break  # incomplete chunk — wait for more data
         finally:
             response.close()
-        return last_chunk
+        raise IncompleteStreamError(last_chunk_seen=last_chunk or None)
 
     def _parse_response(
         self,

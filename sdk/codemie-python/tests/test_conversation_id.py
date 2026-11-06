@@ -8,17 +8,17 @@ from codemie_sdk.models.assistant import (
 
 
 class TestAssistantChatRequestConversationId:
-    def test_defaults_to_none(self):
+    def test_defaults_to_a_generated_uuid(self):
         request = AssistantChatRequest(text="hi")
 
-        assert request.conversation_id is None
+        assert request.conversation_id is not None
 
-    def test_excluded_from_payload_when_none(self):
+    def test_generated_id_is_included_in_payload(self):
         request = AssistantChatRequest(text="hi")
 
         payload = request.model_dump(exclude_none=True, by_alias=True)
 
-        assert "conversation_id" not in payload
+        assert payload["conversation_id"] == request.conversation_id
 
     def test_explicit_value_is_preserved_and_sent(self):
         request = AssistantChatRequest(text="hi", conversation_id="session-123")
@@ -27,14 +27,23 @@ class TestAssistantChatRequestConversationId:
 
         assert payload["conversation_id"] == "session-123"
 
-    def test_separate_requests_without_an_explicit_id_do_not_diverge(self):
+    def test_separate_instances_get_distinct_ids(self):
         first_turn = AssistantChatRequest(text="turn 1")
         second_turn = AssistantChatRequest(text="turn 2")
 
-        assert first_turn.conversation_id is None
-        assert second_turn.conversation_id is None
+        assert first_turn.conversation_id != second_turn.conversation_id
 
-    def test_reusing_the_same_id_across_turns_keeps_it_identical(self):
+    def test_reusing_the_same_request_object_keeps_the_id_across_turns(self):
+        """Mutating and resending the same request instance (the documented
+        multi-turn pattern) must keep one conversation_id across calls."""
+        request = AssistantChatRequest(text="turn 1")
+        first_id = request.conversation_id
+
+        request.text = "turn 2"
+
+        assert request.conversation_id == first_id
+
+    def test_explicit_shared_id_across_two_instances_is_identical(self):
         session_id = "session-abc"
         first_turn = AssistantChatRequest(text="turn 1", conversation_id=session_id)
         second_turn = AssistantChatRequest(text="turn 2", conversation_id=session_id)
@@ -43,10 +52,10 @@ class TestAssistantChatRequestConversationId:
 
 
 class TestVirtualAssistantChatRequestConversationId:
-    def test_defaults_to_none(self):
+    def test_defaults_to_a_generated_uuid(self):
         request = VirtualAssistantChatRequest()
 
-        assert request.conversation_id is None
+        assert request.conversation_id is not None
 
     def test_explicit_value_is_preserved(self):
         request = VirtualAssistantChatRequest(conversation_id="session-xyz")

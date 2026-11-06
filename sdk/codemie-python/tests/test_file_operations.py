@@ -66,7 +66,9 @@ class TestUploadFileToChatReturnType:
         class _FakeApi:
             def post_multipart(self, endpoint, response_model, files=None):
                 captured["response_model"] = response_model
-                return FileResponse(file_url="https://codemie.example.com/v1/files/abc123")
+                return FileResponse(
+                    file_url="https://codemie.example.com/v1/files/abc123"
+                )
 
         svc._api = _FakeApi()
         file_path = tmp_path / "note.txt"
