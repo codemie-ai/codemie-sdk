@@ -9,6 +9,15 @@ export interface ApiResponse<T> {
   data: T;
 }
 
+function requestPath(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    return new URL(url, "https://request.invalid").pathname;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Convert cookies object to cookie string format.
  * Example: {key1: "value1", key2: "value2"} => "key1=value1; key2=value2"
@@ -137,34 +146,45 @@ export class ApiRequestHandler {
     });
   }
 
-  private processFailedResponse(error: AxiosError): void {
+  private processFailedResponse(error: AxiosError): never {
     const response = error.response;
-    const status = response?.status || 500;
-
-    const data = (response?.data || {}) as {
-      error?: { message?: string; detail?: string; help?: string; details?: string };
+    const status = response?.status;
+    const data = response?.data;
+    const payload = typeof data === "object" && data !== null ? data as Record<string, unknown> : {};
+    const detail = typeof payload.error === "object" && payload.error !== null
+      ? payload.error as Record<string, unknown>
+      : payload;
+    const errorMessage = [detail.message, detail.detail, detail.details, detail.help]
+      .filter((value): value is string => typeof value === "string" && value.length > 0)
+      .join(". ");
+    const requestId = response?.headers?.["x-request-id"] ?? response?.headers?.["x-correlation-id"];
+    const request = {
+      method: error.config?.method?.toUpperCase(),
+      // URL removes credentials, origin, query parameters and fragment from diagnostics.
+      path: requestPath(error.config?.url),
+      requestId: typeof requestId === "string" ? requestId : undefined,
+      code: error.code,
     };
 
     if (status === 404) {
-      throw new NotFoundError("Resource", "unknown");
+      throw new NotFoundError("Resource", request.path || "unknown", {
+        message: errorMessage || undefined,
+        response: data,
+        request,
+      });
     }
 
     if (status === 422) {
       // Validation error returns different structure (details instead of detail)
-      const errorMessage = [
-        data.error?.message,
-        data.error?.help,
-        JSON.stringify(data.error?.details ?? {}),
-      ]
-        .filter(Boolean)
-        .join(". ");
-      throw new ApiError(errorMessage || "Validation error", status, data);
+      const validationDetails = typeof detail.details === "object" ? JSON.stringify(detail.details) : undefined;
+      throw new ApiError([errorMessage, validationDetails].filter(Boolean).join(". ") || "Validation error", status, data, request);
     }
 
-    const errorMessage = [data.error?.message, data.error?.detail, data.error?.help]
-      .filter(Boolean)
-      .join(". ");
-
-    throw new ApiError(errorMessage || `HTTP ${status} error`, status, data);
+    throw new ApiError(
+      errorMessage || (typeof data === "string" && data) || error.message || "API request failed",
+      status,
+      data,
+      request,
+    );
   }
 }
