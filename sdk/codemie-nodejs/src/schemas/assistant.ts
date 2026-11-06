@@ -146,6 +146,8 @@ export const AssistantChatParamsSchema = z
     metadata: z.record(z.string(), z.unknown()).optional(),
     mcp_server_single_usage: z.boolean().optional(),
     save_history: z.boolean().optional(),
+    /** Run attributes; immutable per conversation, ignored when save_history is false. */
+    attributes: z.record(z.string(), z.string()).optional(),
 
     version: z.number().optional(),
     output_schema: z

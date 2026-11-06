@@ -132,6 +132,27 @@ describe("WorkflowMapper", () => {
       });
     });
 
+    it("should pass attributes through when present and omit them when absent", () => {
+      const base: WorkflowExecutionResponse = {
+        id: "exec-123",
+        execution_id: "execution-123",
+        workflow_id: "workflow-123",
+        overall_status: ExecutionStatus.SUCCEEDED,
+        date: "2025-01-01",
+        prompt: "test prompt",
+        created_by: { username: "user1", name: "User One" },
+      };
+
+      const withAttrs = WorkflowMapper.mapWorkflowExecutionResponse({
+        ...base,
+        attributes: { team: "alpha" },
+      });
+      expect(withAttrs.attributes).toEqual({ team: "alpha" });
+
+      const without = WorkflowMapper.mapWorkflowExecutionResponse(base);
+      expect("attributes" in without).toBe(false);
+    });
+
     it("should handle empty values", () => {
       // Arrange
       const apiResponse: WorkflowExecutionResponse = {
