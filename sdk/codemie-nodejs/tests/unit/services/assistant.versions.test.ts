@@ -40,7 +40,7 @@ describe("AssistantService versions", () => {
         toolkits: [],
         mcp_servers: [],
         assistant_ids: [],
-        deselected_default_tools: [],
+        disabled_context_tools: [],
       },
     ];
 
@@ -64,7 +64,7 @@ describe("AssistantService versions", () => {
       toolkits: [],
       mcp_servers: [],
       assistant_ids: [],
-      deselected_default_tools: [],
+      disabled_context_tools: [],
     };
 
     apiHandler.get.mockResolvedValue(version);
@@ -75,7 +75,7 @@ describe("AssistantService versions", () => {
     expect(result).toEqual(version);
   });
 
-  it("getVersion should default deselected_default_tools to [] when absent", async () => {
+  it("getVersion should default disabled_context_tools to [] when absent", async () => {
     apiHandler.get.mockResolvedValue({
       version_number: 3,
       created_date: new Date().toISOString(),
@@ -84,20 +84,20 @@ describe("AssistantService versions", () => {
 
     const result = await service.getVersion("assistant-123", 3);
 
-    expect(result.deselected_default_tools).toEqual([]);
+    expect(result.disabled_context_tools).toEqual([]);
   });
 
-  it("getVersion should return deselected_default_tools when present", async () => {
+  it("getVersion should return disabled_context_tools when present", async () => {
     apiHandler.get.mockResolvedValue({
       version_number: 3,
       created_date: new Date().toISOString(),
       system_prompt: "v3",
-      deselected_default_tools: ["search_kb"],
+      disabled_context_tools: ["search_kb"],
     });
 
     const result = await service.getVersion("assistant-123", 3);
 
-    expect(result.deselected_default_tools).toEqual(["search_kb"]);
+    expect(result.disabled_context_tools).toEqual(["search_kb"]);
   });
 
   it("compareVersions should call correct endpoint", async () => {

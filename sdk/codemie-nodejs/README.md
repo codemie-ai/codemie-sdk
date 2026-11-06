@@ -1165,9 +1165,9 @@ Then run the tests:
 npm run test:e2e
 ```
 
-#### Deselected Default Tools
+#### Disabled Context Tools
 
-`deselected_default_tools` (list of default datasource tool names opted out, e.g. `["search_kb"]`) is accepted by `create`/`update` and returned on `Assistant` and `AssistantVersion` (defaults to `[]`). Omit it on update to leave the current value unchanged; pass `[]` to clear it.
+`disabled_context_tools` (list of default datasource tool names opted out, e.g. `["search_kb"]`) is accepted by `create`/`update` and returned on `Assistant` and `AssistantVersion` (defaults to `[]`). Omit it on update to leave the current value unchanged; pass `[]` to clear it.
 
 ### Assistant Versioning via SDK
 
