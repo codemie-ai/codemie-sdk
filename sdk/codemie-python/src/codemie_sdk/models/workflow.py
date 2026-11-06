@@ -78,6 +78,9 @@ class ExecutionStatus(str, Enum):
     FAILED = "Failed"
     SUCCEEDED = "Succeeded"
     ABORTED = "Aborted"
+    RECOVERING = "RECOVERING"
+    NEEDS_TRIAGE = "NEEDS_TRIAGE"
+    AUTHENTICATION_REQUIRED = "AUTHENTICATION_REQUIRED"
 
 
 class WorkflowExecution(BaseModel):
