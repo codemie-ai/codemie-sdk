@@ -2,6 +2,8 @@
 
 TypeScript/JavaScript SDK for CodeMie services. This SDK provides a comprehensive interface to interact with CodeMie services, including LLM (Large Language Models), assistants, workflows, and tools.
 
+See the [parity guide](../../docs/PARITY.md) for how this SDK relates to the Python SDK.
+
 ## Table of Contents
 
 - [CodeMie Node.js SDK](#codemie-nodejs-sdk)
@@ -25,6 +27,8 @@ TypeScript/JavaScript SDK for CodeMie services. This SDK provides a comprehensiv
       - [Integration Types](#integration-types)
       - [Core Methods](#core-methods-2)
       - [Best Practices for Integrations](#best-practices-for-integrations)
+    - [Project Service](#project-service)
+    - [User Admin Methods](#user-admin-methods)
     - [Workflow Service](#workflow-service)
       - [Core Methods](#core-methods-3)
       - [Workflow Execution](#workflow-execution)
@@ -687,6 +691,58 @@ await client.integrations.delete(
    - Regularly review and update integration settings
    - Use project-level integrations for team-wide settings
    - Use user-level integrations for personal settings
+
+### Project Service
+
+Manage projects and their members through `client.projects`. Method names are the camelCase form of the Python names; payload and query keys stay snake_case.
+
+```typescript
+const created = await client.projects.createProject({ name: 'my-project', description: 'Demo' });
+const page = await client.projects.listProjects({ page: 0, per_page: 20, search: 'my' });
+const detail = await client.projects.getProjectDetail('my-project');
+await client.projects.updateProject('my-project', { description: 'New text' });
+await client.projects.deleteProject('my-project');
+
+// Members
+await client.projects.assignUserToProject('my-project', userId, false);
+await client.projects.updateUserProjectAssignment('my-project', userId, true);
+await client.projects.removeUserFromProject('my-project', userId);
+await client.projects.transferOwnership('my-project', userId);
+
+// Bulk and CSV (csv is a Buffer)
+await client.projects.bulkAssignUsersToProject('my-project', [{ user_id: userId, is_project_admin: false }]);
+await client.projects.bulkRemoveUsersFromProject('my-project', [userId]);
+await client.projects.validateUsersFromCsv('my-project', csv);
+await client.projects.importUsersFromCsv('my-project', csv);
+
+// Existence check
+if (await client.projects.projectExists('my-project')) { /* ... */ }
+```
+
+Notes:
+
+- Bulk assign accepts 1 to 1000 users and bulk remove 1 to 100 ids; anything else throws a zod error before the request is sent.
+- A failed bulk call may be partly applied. Re-read the project members before retrying a remove.
+- `projectExists` returns `false` when the project is not found or not visible to the caller. Any 404 on that path counts as `false`, including one caused by a wrong base URL, a proxy or an older backend, so a misconfigured `apiDomain` reports every project as missing; other errors are rethrown. It reads the full project detail, not a lightweight probe.
+- Neither SDK sets a default request timeout; configure one on your side if you need it.
+
+### User Admin Methods
+
+`client.users` also exposes admin methods (admin rights required). The project methods here take `(userId, projectName)`, the reverse of the same-named `client.projects` methods.
+
+```typescript
+const users = await client.users.listAdminUsers(0, 20, 'smith');
+const user = await client.users.getAdminUser(userId);
+await client.users.updateAdminUser(userId, { /* admin-editable fields */ });
+const memberships = await client.users.getUserProjects(userId);
+await client.users.assignUserToProject(userId, 'my-project', false);
+await client.users.updateUserProjectRole(userId, 'my-project', true);
+await client.users.removeUserFromProject(userId, 'my-project');
+await client.users.setDefaultProject(userId, 'my-project');
+await client.users.clearDefaultProject(userId, 'my-project');
+await client.users.deactivateUser(userId);
+await client.users.reactivateUser(userId);
+```
 
 ### Workflow Service
 

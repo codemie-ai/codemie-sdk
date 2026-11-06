@@ -60,7 +60,7 @@ export class ApiRequestHandler {
   }
 
   private async request<T>(
-    method: "get" | "post" | "put" | "delete",
+    method: "get" | "post" | "put" | "patch" | "delete",
     path: string,
     config: Record<string, unknown> = {},
   ): Promise<T> {
@@ -106,6 +106,15 @@ export class ApiRequestHandler {
     extraHeaders?: Record<string, string>,
   ): Promise<T> {
     return this.request<T>("put", path, this.withHeaders({ ...config, data }, extraHeaders));
+  }
+
+  async patch<T>(
+    path: string,
+    data?: unknown,
+    config: Record<string, unknown> = {},
+    extraHeaders?: Record<string, string>,
+  ): Promise<T> {
+    return this.request<T>("patch", path, this.withHeaders({ ...config, data }, extraHeaders));
   }
 
   async postMultipart<T>(

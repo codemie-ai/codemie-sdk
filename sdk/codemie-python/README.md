@@ -2,6 +2,8 @@
 
 Python SDK for CodeMie services. This SDK provides a comprehensive interface to interact with CodeMie services, including LLM (Large Language Models), assistants, workflows, and tools.
 
+See the [parity guide](../../docs/PARITY.md) for how this SDK relates to the Node.js SDK.
+
 ## Table of Contents
 
 - [Installation](#installation)
@@ -23,6 +25,7 @@ Python SDK for CodeMie services. This SDK provides a comprehensive interface to 
     - [Integration Types](#integration-types)
     - [Core Methods](#core-methods-2)
     - [Best Practices for Integrations](#best-practices-for-integrations)
+  - [Project Service](#project-service)
   - [Workflow Service](#workflow-service)
     - [Core Methods](#core-methods-3)
     - [Workflow Execution](#workflow-execution)
@@ -655,6 +658,36 @@ result = client.integrations.delete(
    - Regularly review and update integration settings
    - Use project-level integrations for team-wide settings
    - Use user-level integrations for personal settings
+
+### Project Service
+
+Manage projects and their members through `client.projects`.
+
+```python
+created = client.projects.create_project(name="my-project", description="Demo")
+page = client.projects.list_projects(page=0, per_page=20, search="my")
+detail = client.projects.get_project_detail("my-project")
+client.projects.update_project("my-project", description="New text")
+client.projects.delete_project("my-project")
+
+# Members
+client.projects.assign_user_to_project("my-project", user_id, is_project_admin=False)
+client.projects.update_user_project_assignment("my-project", user_id, is_project_admin=True)
+client.projects.remove_user_from_project("my-project", user_id)
+client.projects.transfer_ownership("my-project", user_id)
+
+# Bulk and CSV
+client.projects.bulk_assign_users_to_project("my-project", users)
+client.projects.bulk_remove_users_from_project("my-project", [user_id])
+client.projects.validate_users_from_csv("my-project", csv_bytes)
+client.projects.import_users_from_csv("my-project", csv_bytes)
+
+# Existence check
+if client.projects.project_exists("my-project"):
+    ...
+```
+
+`project_exists` returns `False` when the project is not found or not visible to the caller (HTTP 404); other HTTP errors are re-raised. Any 404 on that path counts, including one caused by a wrong base URL, a proxy or an older backend, so a misconfigured `api_domain` reports every project as missing. It reads the full project detail. The SDK sets no default request timeout. A failed bulk call may be partly applied, so re-read the members before retrying a remove. See the [parity guide](../../docs/PARITY.md) for differences from the Node.js SDK.
 
 ### Workflow Service
 

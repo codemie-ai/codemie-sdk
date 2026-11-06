@@ -119,6 +119,10 @@ class ProjectDetailResponse(BaseModel):
     cost_center_id: UUID | None = None
     cost_center_name: str | None = None
     members: list[ProjectMember]
+    enforce_member_spend_limits: bool = False
+    chargeback_enabled: bool = False
+    allowed_models: list[str] | None = None
+    default_model: str | None = None
     chargeback_attribution: str = "project"
     cli_analytics_enabled: bool | None = None
 

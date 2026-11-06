@@ -12,4 +12,5 @@ export * from "./workflow_execution_state";
 export * from "./workflow_execution";
 export * from "./category";
 export * from "./skill";
+export * from "./project";
 export * from "./workflow";

@@ -18,7 +18,7 @@
 
 [CodeMie](https://www.codemie.ai/) is an AI platform for building and running assistants and workflows. This repository holds the client libraries for its API. Use them to create and run assistants, workflows and datasources, call LLMs and manage integrations from your own code.
 
-- **Two languages, one API surface.** The Python and TypeScript / Node.js clients cover the same CodeMie services.
+- **Two languages, one API surface.** The Python and TypeScript / Node.js clients target the same CodeMie API and follow one naming convention. The Python SDK covers more services than the Node.js SDK; see the [parity guide](docs/PARITY.md) for the per-service comparison and known differences.
 - **Full platform coverage.** Assistants, workflows, datasources, integrations, conversations, files, users and more.
 - **Flexible authentication.** Client credentials, username and password, or an SSO cookie.
 
