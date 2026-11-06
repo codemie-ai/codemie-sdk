@@ -554,18 +554,27 @@ class AssistantService:
         assistant_id: str,
         categories: list[str] | None = None,
         ignore_recommendations: bool = False,
+        force_publish: bool = False,
+        override_notice: str | None = None,
     ) -> dict:
         """Publish an assistant to the marketplace.
         Args:
             assistant_id: ID of the assistant to publish
             categories: List of categories for marketplace classification (e.g., ['quality-assurance'])
             ignore_recommendations: If True, bypass validation and publish anyway
+            force_publish: Admins and maintainers only: publish over CRITICAL gate findings.
+                Requires override_notice.
+            override_notice: Justification for force_publish, 20 to 2000 characters
         """
         body = {}
         if categories:
             body["categories"] = categories
         if ignore_recommendations:
             body["ignore_recommendations"] = ignore_recommendations
+        if force_publish:
+            body["force_publish"] = force_publish
+        if override_notice is not None:
+            body["override_notice"] = override_notice
 
         return self._api.post(
             f"/v1/assistants/{assistant_id}/marketplace/publish",
