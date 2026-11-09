@@ -37,7 +37,9 @@ class ExportService:
                 403 for a referenced entity the caller cannot read, 422 for stored data the
                 document format cannot represent (an unresolved credential or reference).
         """
-        return self._api.get(f"/v1/export/{kind}/{entity_id}", dict)
+        return self._api.get(
+            f"/v1/export/{kind}/{entity_id}", dict, wrap_response=False
+        )
 
     def export_raw(self, kind: str, entity_id: str) -> bytes:
         """Export an entity, returning the exact response bytes (key order, spacing) as sent.
@@ -49,5 +51,7 @@ class ExportService:
         Raises:
             requests.HTTPError: same as `export()`.
         """
-        response = self._api.get(f"/v1/export/{kind}/{entity_id}", requests.Response)
+        response = self._api.get(
+            f"/v1/export/{kind}/{entity_id}", requests.Response, wrap_response=False
+        )
         return response.content

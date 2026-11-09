@@ -45,6 +45,17 @@ class TestExport:
         assert get.call_args.kwargs["url"].endswith("/v1/export/assistant/assistant-1")
         assert result == _DOCUMENT
 
+    def test_returns_document_unwrapped_when_it_has_a_top_level_data_key(self, service):
+        # ApiRequestHandler._parse_response unwraps a top-level `data` key by default. The
+        # export document has no such key today, but if it ever grows one, export() must
+        # still hand back the whole document, not the inner `data` value.
+        document_with_data_key = {**_DOCUMENT, "data": "not the real document"}
+        with patch("codemie_sdk.utils.http.requests.get") as get:
+            get.return_value = _ok(document_with_data_key)
+            result = service.export("assistant", "assistant-1")
+
+        assert result == document_with_data_key
+
     def test_raises_http_error_on_failure(self, service):
         body = {"error": {"message": "Unknown export kind 'bogus'", "details": None}}
         with patch("codemie_sdk.utils.http.requests.get") as get:
