@@ -136,10 +136,14 @@ class AssistantService:
         Returns:
             AssistantUpdateResponse with optional validation results
         """
+        payload = request.model_dump(exclude_none=True)
+        if "hide_tool_outputs" not in request.model_fields_set:
+            # Don't overwrite the stored value with the model default on update.
+            payload.pop("hide_tool_outputs", None)
         return self._api.put(
             f"/v1/assistants/{assistant_id}",
             AssistantUpdateResponse,
-            json_data=request.model_dump(exclude_none=True),
+            json_data=payload,
         )
 
     def get_tools(self) -> list[ToolKitDetails]:
