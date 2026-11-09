@@ -3,6 +3,19 @@ dist
 venv
 .venv
 .DS_Store
+docs/codemie/
+docs/superpowers/
 __pycache__
 .vscode
 .env
+
+# Local agent and SDLC tooling state
+.ai-run/runs/
+.ai-run/sdlc-factory/
+.agents/memory/
+docs/superpowers/tasks/
+docs/superpowers/runs/
+.claude/settings.local.json
+.superpowers
+.codegraph/
+docs/superpowers/qa-tasks/
