@@ -40,19 +40,27 @@ describe("HTTP error diagnostics", () => {
       expect(error).toMatchObject({ statusCode: status, response: body });
       expect((error as Error).message).toContain("Useful server detail");
       expect((error as ApiError).response).toBe(body);
+      expect((error as ApiError).body).toBe(body);
+      expect(
+        ((error as ApiError).response?.error as { message?: string } | undefined)?.message,
+      ).toBe("Rejected");
       return;
     }
     throw new Error("Expected an API error");
   });
 
-  it.each(["plain response", ["validation detail"], null])("retains a non-object body: %p", (body) => {
-    expect(() => rejectResponse(failure(404, body))).toThrow(ApiError);
-    try {
-      rejectResponse(failure(404, body));
-    } catch (error) {
-      expect((error as ApiError).response).toBe(body);
-    }
-  });
+  it.each(["plain response", ["validation detail"], null])(
+    "retains a non-object body in `body` and keeps `response` an object: %p",
+    (body) => {
+      expect(() => rejectResponse(failure(404, body))).toThrow(ApiError);
+      try {
+        rejectResponse(failure(404, body));
+      } catch (error) {
+        expect((error as ApiError).body).toBe(body);
+        expect((error as ApiError).response).toEqual({});
+      }
+    },
+  );
 
   it("keeps useful request context without credentials, body, query or fragment", () => {
     try {
@@ -68,7 +76,7 @@ describe("HTTP error diagnostics", () => {
     }
   });
 
-  it("does not invent HTTP 500 for a network error or mask a malformed URL", () => {
+  it("keeps statusCode 500 for a network error and exposes the cause via request.code", () => {
     const error = {
       message: "Connection reset",
       code: "ECONNRESET",
@@ -78,7 +86,8 @@ describe("HTTP error diagnostics", () => {
       rejectResponse(error);
     } catch (caught) {
       expect(caught).toMatchObject({ message: "Connection reset", request: { code: "ECONNRESET" } });
-      expect((caught as ApiError).statusCode).toBeUndefined();
+      expect((caught as ApiError).statusCode).toBe(500);
+      expect((caught as ApiError).response).toEqual({});
       expect((caught as ApiError).request?.path).toBeUndefined();
     }
   });

@@ -148,9 +148,12 @@ export class ApiRequestHandler {
 
   private processFailedResponse(error: AxiosError): never {
     const response = error.response;
-    const status = response?.status;
+    // Connection failures keep the historical 500 so `statusCode >= 500` retry checks still match;
+    // the underlying cause is exposed via `request.code`.
+    const status = response?.status ?? 500;
     const data = response?.data;
-    const payload = typeof data === "object" && data !== null ? data as Record<string, unknown> : {};
+    const isObjectBody = typeof data === "object" && data !== null && !Array.isArray(data);
+    const payload = isObjectBody ? (data as Record<string, unknown>) : {};
     const detail = typeof payload.error === "object" && payload.error !== null
       ? payload.error as Record<string, unknown>
       : payload;
@@ -169,7 +172,8 @@ export class ApiRequestHandler {
     if (status === 404) {
       throw new NotFoundError("Resource", request.path || "unknown", {
         message: errorMessage || undefined,
-        response: data,
+        response: payload,
+        body: data,
         request,
       });
     }
@@ -177,14 +181,15 @@ export class ApiRequestHandler {
     if (status === 422) {
       // Validation error returns different structure (details instead of detail)
       const validationDetails = typeof detail.details === "object" ? JSON.stringify(detail.details) : undefined;
-      throw new ApiError([errorMessage, validationDetails].filter(Boolean).join(". ") || "Validation error", status, data, request);
+      throw new ApiError([errorMessage, validationDetails].filter(Boolean).join(". ") || "Validation error", status, payload, request, data);
     }
 
     throw new ApiError(
       errorMessage || (typeof data === "string" && data) || error.message || "API request failed",
       status,
-      data,
+      payload,
       request,
+      data,
     );
   }
 }
