@@ -18,6 +18,7 @@ export const ExecutionStatus = {
   ABORTED: "Aborted",
   RECOVERING: "RECOVERING",
   NEEDS_TRIAGE: "NEEDS_TRIAGE",
+  AUTHENTICATION_REQUIRED: "AUTHENTICATION_REQUIRED",
 } as const;
 export type ExecutionStatusType = (typeof ExecutionStatus)[keyof typeof ExecutionStatus];
 

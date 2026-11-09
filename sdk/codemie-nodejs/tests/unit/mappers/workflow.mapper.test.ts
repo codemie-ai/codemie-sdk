@@ -117,9 +117,10 @@ describe("WorkflowMapper", () => {
       expect(result.overall_status).toBe(wireValue);
     });
 
-    it.each<["RECOVERING" | "NEEDS_TRIAGE", ExecutionStatusType]>([
+    it.each<["RECOVERING" | "NEEDS_TRIAGE" | "AUTHENTICATION_REQUIRED", ExecutionStatusType]>([
       ["RECOVERING", ExecutionStatus.RECOVERING],
       ["NEEDS_TRIAGE", ExecutionStatus.NEEDS_TRIAGE],
+      ["AUTHENTICATION_REQUIRED", ExecutionStatus.AUTHENTICATION_REQUIRED],
     ])("exports and preserves %s status", (wireValue, constant) => {
       expect(constant).toBe(wireValue);
       const result = WorkflowMapper.mapWorkflowExecutionResponse(responseForStatus(wireValue));
