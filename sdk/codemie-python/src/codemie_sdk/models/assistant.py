@@ -71,6 +71,10 @@ class PromptVariable(BaseModel):
     key: str
     description: str | None = None
     default_value: str
+    is_sensitive: bool = Field(
+        default=False,
+        description="Whether this variable holds sensitive data; its default is never round-tripped in plain text",
+    )
 
 
 class MCPServerConfig(BaseModel):
@@ -330,6 +334,18 @@ class Assistant(AssistantBase):
         description="Number of times this assistant has been cloned in the Marketplace",
     )
     tool_permissions: ToolPermissionsConfig | None = None
+    marketplace_status: str | None = Field(
+        default=None,
+        description="Marketplace review status (DRAFT, PENDING_REVIEW, APPROVED, REJECTED, WITHDRAWN)",
+    )
+    is_verified: bool | None = Field(
+        default=None,
+        description="True once a reviewer approved the assistant for the marketplace",
+    )
+    marketplace_decision_reason: str | None = Field(
+        default=None,
+        description="Reason given by the reviewer who rejected the assistant",
+    )
     hedging_config: HedgingConfig | None = None
     interactive_enabled: bool = False
     enable_image_generation: bool | None = False
@@ -828,4 +844,48 @@ class UserMappingResponse(BaseModel):
     workflow_id: Optional[str] = Field(
         default=None,
         description="Workflow scope the response is effective for",
+    )
+
+
+class ShareUsersRequest(BaseModel):
+    """Request body for POST/DELETE /v1/assistants/{assistant_id}/share."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    user_ids: List[str] = Field(
+        description="Internal user ids to grant or revoke per-user access for"
+    )
+
+
+class SharedUser(BaseModel):
+    """One entry of a shared-with / sharable-users list item."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: str = Field(description="User id")
+    username: str = Field(description="Username")
+    email: Optional[str] = Field(default=None, description="User email")
+    name: Optional[str] = Field(default=None, description="Display name")
+    picture: Optional[str] = Field(default=None, description="Avatar URL")
+
+
+class SharedWithResponse(BaseModel):
+    """Response body for GET/POST/DELETE .../shared-with and .../share."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    shared_with: List[SharedUser] = Field(
+        default_factory=list,
+        description="Users currently granted per-user access to the assistant",
+    )
+
+
+class SharableUsersResponse(BaseModel):
+    """Response body for GET /v1/assistants/{assistant_id}/sharable-users."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    users: List[SharedUser] = Field(
+        default_factory=list,
+        description="Internal users matching the search query that can be granted access",
     )
