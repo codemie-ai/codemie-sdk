@@ -319,6 +319,9 @@ class AssistantService:
                     toolkits=version.toolkits
                     if hasattr(version, "toolkits")
                     else assistant.toolkits,
+                    disabled_context_tools=version.disabled_context_tools
+                    if hasattr(version, "disabled_context_tools")
+                    else assistant.disabled_context_tools,
                     user_prompts=assistant.user_prompts,
                     shared=assistant.shared,
                     is_react=assistant.is_react,

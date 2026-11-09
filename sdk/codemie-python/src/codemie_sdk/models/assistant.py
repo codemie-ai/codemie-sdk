@@ -349,6 +349,7 @@ class Assistant(AssistantBase):
     interactive_enabled: bool = False
     enable_image_generation: bool | None = False
     file_attachment_enabled: bool | None = None
+    disabled_context_tools: list[str] = Field(default_factory=list)
 
 
 class AssistantRequestBase(AssistantBase):
@@ -390,6 +391,7 @@ class AssistantRequestBase(AssistantBase):
     interactive_enabled: bool | None = None
     enable_image_generation: bool | None = None
     file_attachment_enabled: bool | None = None
+    disabled_context_tools: list[str] | None = None
 
 
 class AssistantCreateRequest(AssistantRequestBase):
@@ -509,6 +511,7 @@ class AssistantVersion(BaseModel):
     mcp_servers: list[MCPServerDetails] = Field(default_factory=list)
     assistant_ids: list[str] = Field(default_factory=list)
     prompt_variables: list[PromptVariable] = Field(default_factory=list)
+    disabled_context_tools: list[str] = Field(default_factory=list)
 
 
 class ChatRole(str, Enum):

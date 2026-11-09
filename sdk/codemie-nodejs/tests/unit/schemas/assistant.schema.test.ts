@@ -493,3 +493,42 @@ describe("AssistantCreateParamsSchema API-echo nulls", () => {
     ).toThrow();
   });
 });
+
+describe("AssistantCreateParamsSchema disabled_context_tools", () => {
+  const base = {
+    name: "A",
+    description: "D",
+    system_prompt: "P",
+    project: "proj",
+    context: [],
+    llm_model_type: "gpt-4",
+    toolkits: [],
+    conversation_starters: [],
+    assistant_ids: [],
+    mcp_servers: [],
+  };
+
+  it("accepts a list of tool names", () => {
+    const parsed = AssistantCreateParamsSchema.parse({
+      ...base,
+      disabled_context_tools: ["search_kb"],
+    });
+    expect(parsed.disabled_context_tools).toEqual(["search_kb"]);
+  });
+
+  it("accepts an empty list", () => {
+    const parsed = AssistantUpdateParamsSchema.parse({ ...base, disabled_context_tools: [] });
+    expect(parsed.disabled_context_tools).toEqual([]);
+  });
+
+  it("leaves the key absent when omitted", () => {
+    const parsed = AssistantCreateParamsSchema.parse(base);
+    expect("disabled_context_tools" in parsed).toBe(false);
+  });
+
+  it("rejects non-string items", () => {
+    expect(() =>
+      AssistantCreateParamsSchema.parse({ ...base, disabled_context_tools: [1] }),
+    ).toThrow();
+  });
+});
