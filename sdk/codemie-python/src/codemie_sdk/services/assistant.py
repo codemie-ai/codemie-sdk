@@ -836,3 +836,83 @@ class AssistantService:
             dict,
             params=params or None,
         )
+
+    def list_shared_with(self, assistant_id: str):
+        """List users explicitly granted per-user access to the assistant (owner only).
+
+        Calls GET /v1/assistants/{assistant_id}/shared-with.
+
+        Args:
+            assistant_id: ID of the assistant
+
+        Returns:
+            SharedWithResponse with the current shared_with list
+        """
+        from ..models.assistant import SharedWithResponse
+
+        return self._api.get(
+            f"/v1/assistants/{assistant_id}/shared-with", SharedWithResponse
+        )
+
+    def share(self, assistant_id: str, user_ids: list[str]):
+        """Grant per-user READ access to the assistant to one or more internal users (owner only).
+
+        Calls POST /v1/assistants/{assistant_id}/share.
+
+        Args:
+            assistant_id: ID of the assistant
+            user_ids: Internal user ids to grant access to
+
+        Returns:
+            SharedWithResponse with the refreshed shared_with list
+        """
+        from ..models.assistant import ShareUsersRequest, SharedWithResponse
+
+        request = ShareUsersRequest(user_ids=user_ids)
+        return self._api.post(
+            f"/v1/assistants/{assistant_id}/share",
+            SharedWithResponse,
+            json_data=request.model_dump(),
+        )
+
+    def revoke_share(self, assistant_id: str, user_ids: list[str]):
+        """Revoke per-user READ access to the assistant for one or more users (owner only).
+
+        Calls DELETE /v1/assistants/{assistant_id}/share.
+
+        Args:
+            assistant_id: ID of the assistant
+            user_ids: Internal user ids to revoke access from
+
+        Returns:
+            SharedWithResponse with the refreshed shared_with list
+        """
+        from ..models.assistant import ShareUsersRequest, SharedWithResponse
+
+        request = ShareUsersRequest(user_ids=user_ids)
+        return self._api.delete(
+            f"/v1/assistants/{assistant_id}/share",
+            SharedWithResponse,
+            json_data=request.model_dump(),
+        )
+
+    def search_sharable_users(self, assistant_id: str, q: str):
+        """Search internal users that can be granted access to the assistant (owner only).
+
+        Calls GET /v1/assistants/{assistant_id}/sharable-users?q=<q>. The backend
+        requires ``q`` to be at least 2 characters (422 otherwise).
+
+        Args:
+            assistant_id: ID of the assistant
+            q: Search query matched against name, username and email
+
+        Returns:
+            SharableUsersResponse listing matching internal users
+        """
+        from ..models.assistant import SharableUsersResponse
+
+        return self._api.get(
+            f"/v1/assistants/{assistant_id}/sharable-users",
+            SharableUsersResponse,
+            params={"q": q},
+        )

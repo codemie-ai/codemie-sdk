@@ -842,3 +842,47 @@ class UserMappingResponse(BaseModel):
         default=None,
         description="Workflow scope the response is effective for",
     )
+
+
+class ShareUsersRequest(BaseModel):
+    """Request body for POST/DELETE /v1/assistants/{assistant_id}/share."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    user_ids: List[str] = Field(
+        description="Internal user ids to grant or revoke per-user access for"
+    )
+
+
+class SharedUser(BaseModel):
+    """One entry of a shared-with / sharable-users list item."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: str = Field(description="User id")
+    username: str = Field(description="Username")
+    email: Optional[str] = Field(default=None, description="User email")
+    name: Optional[str] = Field(default=None, description="Display name")
+    picture: Optional[str] = Field(default=None, description="Avatar URL")
+
+
+class SharedWithResponse(BaseModel):
+    """Response body for GET/POST/DELETE .../shared-with and .../share."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    shared_with: List[SharedUser] = Field(
+        default_factory=list,
+        description="Users currently granted per-user access to the assistant",
+    )
+
+
+class SharableUsersResponse(BaseModel):
+    """Response body for GET /v1/assistants/{assistant_id}/sharable-users."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    users: List[SharedUser] = Field(
+        default_factory=list,
+        description="Internal users matching the search query that can be granted access",
+    )
