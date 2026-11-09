@@ -6,6 +6,7 @@ import type {
   SkillCompanionFileMetadata,
   SkillCompanionFilePayload,
   SkillCreateParams,
+  SkillVisibility,
 } from "../../../src/models/skill";
 
 jest.mock("../../../src/utils/http", () => ({
@@ -127,6 +128,45 @@ describe("SkillService", () => {
         path: "docs/a b.md",
       });
       expect(result).toEqual(file);
+    });
+  });
+
+  describe("visibility", () => {
+    const visibilities = ["project", "public"] as SkillVisibility[];
+
+    it.each(visibilities)("create forwards visibility %s", async (visibility) => {
+      const params: SkillCreateParams = {
+        name: "my-skill",
+        description: "A skill description",
+        content: "c".repeat(100),
+        project: "p",
+        visibility,
+      };
+      apiHandler.post.mockResolvedValueOnce({});
+
+      await service.create(params);
+
+      expect(apiHandler.post).toHaveBeenCalledWith("/v1/skills", params);
+      expect((apiHandler.post.mock.calls[0][1] as { visibility: string }).visibility).toBe(
+        visibility,
+      );
+    });
+
+    it.each(visibilities)("update forwards visibility %s", async (visibility) => {
+      apiHandler.put.mockResolvedValueOnce({});
+
+      await service.update("s1", { visibility });
+
+      expect(apiHandler.put).toHaveBeenCalledWith("/v1/skills/s1", { visibility });
+    });
+
+    it.each(visibilities)("importSkill forwards visibility %s", async (visibility) => {
+      const params = { file_content: "Zm9v", filename: "s.md", project: "p", visibility };
+      apiHandler.post.mockResolvedValueOnce({});
+
+      await service.importSkill(params);
+
+      expect(apiHandler.post).toHaveBeenCalledWith("/v1/skills/import", params);
     });
   });
 });

@@ -115,6 +115,41 @@ describe("AssistantCreateParamsSchema mcp_servers.config", () => {
   });
 });
 
+describe("hide_tool_outputs", () => {
+  const VALID = {
+    name: "A",
+    description: "D",
+    system_prompt: "P",
+    project: "proj",
+    context: [],
+    llm_model_type: "gpt-4",
+    toolkits: [],
+    conversation_starters: [],
+    assistant_ids: [],
+    mcp_servers: [],
+  };
+
+  it("accepts true and false on create", () => {
+    expect(
+      AssistantCreateParamsSchema.parse({ ...VALID, hide_tool_outputs: true }).hide_tool_outputs,
+    ).toBe(true);
+    expect(
+      AssistantCreateParamsSchema.parse({ ...VALID, hide_tool_outputs: false }).hide_tool_outputs,
+    ).toBe(false);
+  });
+
+  it("leaves the key absent when not provided (update must not reset it)", () => {
+    const parsed = AssistantUpdateParamsSchema.parse({ ...VALID });
+    expect("hide_tool_outputs" in parsed).toBe(false);
+  });
+
+  it("rejects non-boolean values", () => {
+    expect(() =>
+      AssistantCreateParamsSchema.parse({ ...VALID, hide_tool_outputs: "yes" }),
+    ).toThrow();
+  });
+});
+
 describe("AssistantCreateParamsSchema mcp_servers pass-through", () => {
   const base = {
     name: "A",

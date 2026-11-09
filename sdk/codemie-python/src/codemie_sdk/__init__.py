@@ -188,6 +188,24 @@ from .models.usage_attribution import (
     UsageAttributionSettingsResponse,
 )
 from .services.usage_attribution import UsageAttributionService
+from .models.marketplace_management import (
+    MarketplaceStatusFilter,
+    MarketplaceGateResult,
+    MarketplacePendingOrderBy,
+    MarketplaceGateFinding,
+    MarketplacePendingRow,
+    MarketplacePendingResponse,
+    MarketplaceAssistantRow,
+    MarketplaceAssistantsResponse,
+    MarketplacePendingStats,
+    MarketplaceOverview,
+    MarketplaceReviewDetail,
+    MarketplaceIndexingOutcome,
+    MarketplaceReviewActionResponse,
+    MarketplaceForcePublishResponse,
+    MarketplaceDecisionRequest,
+)
+from .services.marketplace_management import MarketplaceManagementService
 
 try:
     __version__ = _pkg_version("codemie-sdk-python")
@@ -336,4 +354,20 @@ __all__ = [
     "UsageAttributionTableResponse",
     "UsageAttributionSettingsResponse",
     "UsageAttributionService",
+    "MarketplaceStatusFilter",
+    "MarketplaceGateResult",
+    "MarketplacePendingOrderBy",
+    "MarketplaceGateFinding",
+    "MarketplacePendingRow",
+    "MarketplacePendingResponse",
+    "MarketplaceAssistantRow",
+    "MarketplaceAssistantsResponse",
+    "MarketplacePendingStats",
+    "MarketplaceOverview",
+    "MarketplaceReviewDetail",
+    "MarketplaceIndexingOutcome",
+    "MarketplaceReviewActionResponse",
+    "MarketplaceForcePublishResponse",
+    "MarketplaceDecisionRequest",
+    "MarketplaceManagementService",
 ]

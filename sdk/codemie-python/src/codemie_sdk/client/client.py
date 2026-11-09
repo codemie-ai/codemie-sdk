@@ -36,6 +36,8 @@ from ..services.toolkit_policy import ToolkitPolicyService
 from ..services.project_budget_groups import ProjectBudgetGroupsService
 from ..services.usage_attribution import UsageAttributionService
 from ..services.servicenow_integration import ServiceNowIntegrationService
+from ..services.marketplace_management import MarketplaceManagementService
+from ..services.export import ExportService
 
 
 class CodeMieClient:
@@ -199,6 +201,12 @@ class CodeMieClient:
             self._api_domain, _token_source, verify_ssl=self._verify_ssl
         )
         self.usage_attribution = UsageAttributionService(
+            self._api_domain, _token_source, verify_ssl=self._verify_ssl
+        )
+        self.marketplace_management = MarketplaceManagementService(
+            self._api_domain, _token_source, verify_ssl=self._verify_ssl
+        )
+        self.export = ExportService(
             self._api_domain, _token_source, verify_ssl=self._verify_ssl
         )
 
