@@ -12,6 +12,9 @@ Two client SDKs for the CodeMie platform: `sdk/codemie-python` and `sdk/codemie-
 | Style, Pydantic models, error handling | [standards/code-quality.md](.ai-run/guides/standards/code-quality.md) |
 | All commands: lint, format, test, build | [quality-gates.md](.ai-run/guides/quality-gates.md) |
 | Secrets, internal references, vulnerability reports | [security.md](.ai-run/guides/security.md) |
+| Files, commands and actions that are off limits | [safety-no-go.md](.ai-run/guides/safety-no-go.md) |
+| Test types, conventions, coverage commands | [testing/qa-strategy.md](.ai-run/guides/testing/qa-strategy.md) |
+| Current coverage and untested areas | [testing/qa-health.md](.ai-run/guides/testing/qa-health.md) |
 | Branches, commits, PRs, releases | [standards/git-workflow.md](.ai-run/guides/standards/git-workflow.md) |
 
 ## Critical rules
@@ -21,4 +24,5 @@ Two client SDKs for the CodeMie platform: `sdk/codemie-python` and `sdk/codemie-
 3. No credentials, private hostnames, personal paths or real ticket keys in any file. Use placeholders.
 4. Do not publish a package by hand. Releases follow `docs/RELEASING.md`.
 5. Add or update tests with every behaviour change.
-6. Edit the guides in this repository. Keep one topic in one guide, and keep commands only in `quality-gates.md`.
+6. Never do what `safety-no-go.md` lists. Claude Code enforces the same list through `.claude/settings.json`.
+7. Edit the guides in this repository. Keep one topic in one guide, and keep commands only in `quality-gates.md`.
