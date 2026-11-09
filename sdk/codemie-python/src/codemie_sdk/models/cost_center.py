@@ -59,3 +59,36 @@ class PaginatedCostCenterListResponse(BaseModel):
 
     data: list[CostCenterResponse]
     pagination: PaginationInfo
+
+
+class CostCenterAssignedBudgetSummary(BaseModel):
+    """Per-category budget totals aggregated across a cost center's linked projects."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    budget_category: str
+    budget_duration: str | None = None
+    soft_budget: float
+    max_budget: float
+    member_count: int
+    allocated_member_budget_total: float
+    current_spending: float | None = None
+    spend_unavailable: bool = False
+    spend_partial: bool = False
+    spend_missing_amount: float | None = None
+    excluded_count: int = 0
+    unsynced_count: int = 0
+
+
+class CostCenterBudgetSummary(BaseModel):
+    """Combined budget rollup for a cost center across its linked projects."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    current_spending: float | None = None
+    budget_limit: float | None = None
+    total_percent: float | None = None
+    spend_unavailable: bool = False
+    spend_partial: bool = False
+    spend_missing_amount: float | None = None
+    budgets: list[CostCenterAssignedBudgetSummary] = []

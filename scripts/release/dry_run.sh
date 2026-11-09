@@ -6,7 +6,10 @@ set -euo pipefail
 kind="${1:-}"
 tag="${2:-}"
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-check="$root/scripts/release/check_version.py"
+CI_WORKFLOWS_REF="${CI_WORKFLOWS_REF:-main}"
+check_url="https://raw.githubusercontent.com/codemie-ai/ci-workflows/${CI_WORKFLOWS_REF}/scripts/release/check_version.py"
+# Run check_version.py from ci-workflows without saving it. pipefail makes a failed download fail the call.
+check() { curl -fsSL "$check_url" | python3 -I - "$@"; }
 
 case "$kind" in
   python) sdk=sdk/codemie-python; eco=pypi; name=codemie-sdk-python ;;
@@ -25,7 +28,7 @@ if [ "$kind" = python ]; then
 else
   base="$(node -p "require('./package.json').version")"
 fi
-version="$(python3 "$check" --ecosystem "$eco" --name "$name" --tag "$tag" --base "$base")"
+version="$(check --ecosystem "$eco" --name "$name" --tag "$tag" --base "$base")"
 echo "base $base, tag $tag -> release $version"
 
 if [ "$kind" = python ]; then
@@ -41,7 +44,7 @@ else
   npm run build
 fi
 
-python3 "$check" --ecosystem "$eco" --name "$name" --version "$version"
+check --ecosystem "$eco" --name "$name" --version "$version"
 
 if [ "$kind" = python ]; then
   poetry build

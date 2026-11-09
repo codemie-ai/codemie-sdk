@@ -36,14 +36,14 @@ The `verify` job has no secrets. It fails, and nothing is published, when:
 - the release commit is not on `main`;
 - for a manual publish, the tag does not exist or does not point to the dispatched commit;
 - the tag prefix, format or line does not match;
-- the version is equal to or lower than the highest published version (`scripts/release/check_version.py --version`);
+- the version is equal to or lower than the highest published version (`check_version.py --version` from `codemie-ai/ci-workflows`);
 - lint, tests or the build fail.
 
 The `publish` job runs the version check again right before the upload, because it can wait for approval and another release may land in between.
 
 A timeout, network error, malformed registry response or a published version that cannot be parsed stops the release. The gate fails closed. A package that is not on the registry yet (HTTP 404) passes. Pre-release versions on the registry follow PEP 440 for PyPI and semantic versioning for npm.
 
-`scripts/release/check_version.py --tag <tag> --base <MAJOR.MINOR[.0]>` prints the version a tag names and uses no network.
+`check_version.py --tag <tag> --base <MAJOR.MINOR[.0]>` prints the version a tag names and uses no network.
 
 ## Dry run
 
@@ -62,5 +62,5 @@ Do this once, by a repository administrator.
 
 - **GitHub environment `release`.** Create it in Settings > Environments. Restrict deployments to the tags `python-v*` and `node-v*` (the manual publish runs from `main`, so also allow `main`). Add required reviewers if a second approval is wanted.
 - **Who can release.** Only people with write access can create a Release. Keep that group small.
-- **PyPI token.** Store a PyPI API token as the secret `PYPI_API_TOKEN`, preferably on the `release` environment. Only the PyPI `publish` job reads it.
+- **PyPI trusted publisher.** In the `codemie-sdk-python` package on PyPI, add a trusted publisher: repository `codemie-ai/codemie-sdk`, workflow `publish-python.yml`, environment `release`. No token is stored. Only the PyPI `publish` job has `id-token: write`.
 - **npm trusted publisher.** In the `codemie-sdk` package on npmjs.com, add a trusted publisher: provider GitHub Actions, organization `codemie-ai`, repository `codemie-sdk`, workflow `publish-node.yml`, environment `release`. Allow both `npm publish` and `npm dist-tag`. No token is stored. Only the npm `publish` job has `id-token: write`.
