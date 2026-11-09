@@ -17,17 +17,17 @@ export enum ChatRole {
 
 export interface ToolDetails {
   description?: string | null;
-  label?: string;
+  label?: string | null;
   name: string;
   settings?: Integration | null;
   settings_config: boolean;
-  user_description?: string;
+  user_description?: string | null;
 }
 
 export interface ToolKitDetails {
-  is_external: boolean;
+  is_external: boolean | null;
   label: string;
-  settings?: Integration;
+  settings?: Integration | null;
   settings_config: boolean;
   toolkit: string;
   tools: ToolDetails[];
@@ -40,7 +40,7 @@ export interface Context {
 
 export interface PromptVariable {
   key: string;
-  description?: string;
+  description?: string | null;
   default_value: string;
 }
 
@@ -62,12 +62,12 @@ export interface MCPServerDetails {
   description?: string | null;
   enabled: boolean;
   config?: MCPServerConfig | null;
-  mcp_connect_url?: string;
-  tools_tokens_size_limit?: number;
-  command?: string;
-  arguments?: string;
-  settings?: Integration;
-  mcp_connect_auth_token?: Integration;
+  mcp_connect_url?: string | null;
+  tools_tokens_size_limit?: number | null;
+  command?: string | null;
+  arguments?: string | null;
+  settings?: Integration | null;
+  mcp_connect_auth_token?: Integration | null;
   mcp_config_id?: string | null;
   integration_alias?: string | null;
   use_custom_config?: boolean | null;
@@ -84,40 +84,40 @@ export interface SystemPromptHistory {
 export interface AssistantCategory {
   id: string;
   name: string;
-  description?: string;
+  description?: string | null;
 }
 
 export interface AssistantBase {
   id: string;
   created_by?: BaseUser;
-  description: string;
-  icon_url?: string;
+  description?: string | null;
+  icon_url?: string | null;
   name: string;
 }
 
 export interface Assistant extends AssistantBase {
   display_name?: string | null;
   assistant_ids: string[];
-  categories?: AssistantCategory[];
+  categories?: AssistantCategory[] | null;
   context: Context[];
-  skill_ids?: string[];
+  skill_ids?: string[] | null;
   conversation_starters: string[];
   created_date?: string;
   creator: string;
-  is_global: boolean;
+  is_global: boolean | null;
   is_react: boolean;
-  llm_model_type?: string;
+  llm_model_type?: string | null;
   mcp_servers: MCPServerDetails[];
   nested_assistants: Partial<Assistant>[];
   project: string;
-  prompt_variables?: PromptVariable[];
+  prompt_variables?: PromptVariable[] | null;
   shared: boolean;
-  slug?: string;
-  system_prompt: string;
+  slug?: string | null;
+  system_prompt: string | null;
   system_prompt_history: SystemPromptHistory[];
-  temperature?: number;
+  temperature?: number | null;
   toolkits: ToolKitDetails[];
-  top_p?: number;
+  top_p?: number | null;
   unique_users_count?: number;
   updated_date?: string;
   user_abilities?: unknown[];
