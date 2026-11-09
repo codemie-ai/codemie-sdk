@@ -215,7 +215,7 @@ describe("AssistantService", () => {
       const result = await service.create(createRequest);
 
       expect(apiHandler.post).toHaveBeenCalledWith("/v1/assistants", createRequest);
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual({ ...mockResponse, assistant_id: "123" });
     });
 
     it("should preserve mcp_config_id in outbound create payload", async () => {
