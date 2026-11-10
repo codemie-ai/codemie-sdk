@@ -16,9 +16,15 @@
 
 import pytest
 import yaml
+from pydantic import ValidationError
 
 from codemie_sdk.builders.workflow.builder import WorkflowBuilder
-from codemie_sdk.builders.workflow.definition import WorkflowEndState, WorkflowNextState
+from codemie_sdk.builders.workflow.definition import (
+    WorkflowEndState,
+    WorkflowEngineRetryPolicy,
+    WorkflowNextState,
+    WorkflowPoolConfig,
+)
 
 
 def test_add_assistant_requires_system_prompt_or_id():
@@ -136,3 +142,46 @@ def test_end_state_helper_renders_same_as_literal_end(kind):
 def test_literal_end_workflow_still_renders():
     yaml_config = _render_with_next("plain", WorkflowNextState(state_id="end"))
     assert yaml.safe_load(yaml_config)["states"][0]["next"]["state_id"] == "end"
+
+
+def test_engine_setters_are_immutable_and_render():
+    base = WorkflowBuilder("wf")
+    full = (
+        base.with_max_concurrency(10)
+        .with_recursion_limit(50)
+        .with_verbose(True)
+        .with_type("custom")
+        .with_max_nesting_level(2)
+        .with_pool_config(WorkflowPoolConfig(enabled=True))
+        .with_retry_policy(WorkflowEngineRetryPolicy(max_attempts=2))
+        .with_summarization_node(True)
+        .with_summarization_limits(messages=5)
+        .with_summarization_limits(tokens=500)
+        .with_max_iteration_key_output_limit(7)
+    )
+    assert "max_concurrency" not in yaml.safe_load(base.render().to_yaml_config())
+    rendered = yaml.safe_load(full.render().to_yaml_config())
+    assert rendered["max_concurrency"] == 10
+    assert rendered["recursion_limit"] == 50
+    assert rendered["verbose"] is True
+    assert rendered["type"] == "custom"
+    assert rendered["max_nesting_level"] == 2
+    assert rendered["pool_config"] == {"enabled": True}
+    assert rendered["retry_policy"] == {"max_attempts": 2}
+    assert rendered["enable_summarization_node"] is True
+    assert rendered["messages_limit_before_summarization"] == 5
+    assert rendered["tokens_limit_before_summarization"] == 500
+    assert rendered["max_iteration_key_output_limit"] == 7
+
+
+def test_summarization_limits_none_not_set():
+    rendered = yaml.safe_load(
+        WorkflowBuilder("wf").with_summarization_limits().render().to_yaml_config()
+    )
+    assert "messages_limit_before_summarization" not in rendered
+
+
+def test_invalid_engine_value_fails_at_render():
+    builder = WorkflowBuilder("wf").with_max_concurrency(0)
+    with pytest.raises(ValidationError, match="max_concurrency"):
+        builder.render()

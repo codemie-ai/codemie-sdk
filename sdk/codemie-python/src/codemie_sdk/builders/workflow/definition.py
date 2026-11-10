@@ -35,7 +35,8 @@ from ...models.assistant import MCPServerConfig
 from ...models.workflow import WorkflowMode
 
 # These models are the builder's own input surface, not API response models
-# (which use `extra="ignore"` elsewhere in the SDK, see codemie-python/CLAUDE.md).
+# (which use `extra="ignore"` elsewhere in the SDK, see
+# .ai-run/guides/standards/code-quality.md, section "Pydantic models").
 # A typo'd or renamed kwarg here changes workflow behaviour silently instead of
 # erroring, so `extra="forbid"` catches it at construction time. `frozen=True`
 # backs the builder's and this module's own "render() result is immutable, safe
@@ -249,6 +250,75 @@ class WorkflowRetryPolicy(BaseModel):
     max_attempts: int
 
 
+_POOL_DEFAULT_MIN_SIZE = 2
+_POOL_DEFAULT_MAX_SIZE = 5
+
+
+class WorkflowPoolConfig(BaseModel):
+    """Workflow-wide pool settings; unset fields use the platform default.
+
+    The platform defaults are min_size 2 and max_size 5, and a deployment-wide
+    cap (5 by default) limits the pool further. Sizes are checked against the
+    defaults, not against the deployment cap.
+    """
+
+    model_config = _MIRRORED_MODEL_CONFIG
+
+    enabled: bool | None = None
+    min_size: int | None = Field(None, ge=1, le=20)
+    max_size: int | None = Field(None, ge=1, le=50)
+    refill_interval_seconds: int | None = Field(None, ge=5)
+
+    @model_validator(mode="after")
+    def _check_size_order(self) -> "WorkflowPoolConfig":
+        min_size = (
+            self.min_size if self.min_size is not None else _POOL_DEFAULT_MIN_SIZE
+        )
+        max_size = (
+            self.max_size if self.max_size is not None else _POOL_DEFAULT_MAX_SIZE
+        )
+        if min_size > max_size:
+            raise ValueError(
+                f"min_size ({min_size}) must not exceed max_size ({max_size}); "
+                f"unset sizes default to {_POOL_DEFAULT_MIN_SIZE} and {_POOL_DEFAULT_MAX_SIZE}"
+            )
+        return self
+
+
+class WorkflowEngineRetryPolicy(BaseModel):
+    """Workflow-wide retry policy; every field optional like the backend."""
+
+    model_config = _MIRRORED_MODEL_CONFIG
+
+    initial_interval: float | None = Field(
+        None,
+        ge=0,
+        le=3_600_000,
+        description="Delay before the first retry, in seconds.",
+    )
+    backoff_factor: float | None = Field(None, ge=1, le=10)
+    max_interval: float | None = Field(
+        None,
+        ge=0,
+        le=3_600_000,
+        description="Upper bound for the delay between retries, in seconds.",
+    )
+    max_attempts: int | None = Field(None, ge=1, le=100)
+
+    @model_validator(mode="after")
+    def _check_interval_order(self) -> "WorkflowEngineRetryPolicy":
+        if (
+            self.initial_interval is not None
+            and self.max_interval is not None
+            and self.initial_interval > self.max_interval
+        ):
+            raise ValueError(
+                f"initial_interval ({self.initial_interval}) must not exceed "
+                f"max_interval ({self.max_interval})"
+            )
+        return self
+
+
 class WorkflowNextState(BaseModel):
     """Where a state transitions to, and how context/history carry across it."""
 
@@ -267,6 +337,7 @@ class WorkflowNextState(BaseModel):
     reset_keys_in_context_store: list[str] | None = None
     include_in_iterator_context: list[str] = Field(default_factory=lambda: ["*"])
     append_to_context: bool = False
+    override_task: bool | None = None
 
     @model_validator(mode="after")
     def check_exclusive(self) -> "WorkflowNextState":
@@ -346,6 +417,14 @@ class WorkflowDefinition(BaseModel):
     messages_limit_before_summarization: int | None = Field(None, gt=0)
     tokens_limit_before_summarization: int | None = Field(None, gt=0)
     max_iteration_key_output_limit: int | None = Field(None, gt=0)
+    # The backend runtime clamps this to its configured maximum (5 by default).
+    max_concurrency: int | None = Field(None, ge=1, le=100)
+    recursion_limit: int | None = Field(None, ge=1, le=5000)
+    verbose: bool | None = None
+    type: str | None = None
+    max_nesting_level: int | None = Field(None, ge=1)
+    pool_config: WorkflowPoolConfig | None = None
+    retry_policy: WorkflowEngineRetryPolicy | None = None
 
     def to_yaml_config(
         self, resolve_assistant_name: Callable[[str], str] | None = None
@@ -379,11 +458,19 @@ class WorkflowDefinition(BaseModel):
             "messages_limit_before_summarization",
             "tokens_limit_before_summarization",
             "max_iteration_key_output_limit",
+            "max_concurrency",
+            "recursion_limit",
+            "verbose",
+            "type",
+            "max_nesting_level",
+            "pool_config",
+            "retry_policy",
         )
+        values = {name: getattr(self, name) for name in names}
         return {
-            name: getattr(self, name)
-            for name in names
-            if getattr(self, name) is not None
+            name: v.model_dump(exclude_none=True) if isinstance(v, BaseModel) else v
+            for name, v in values.items()
+            if v is not None
         }
 
     @staticmethod
