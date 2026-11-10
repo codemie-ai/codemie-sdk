@@ -24,8 +24,10 @@ from codemie_sdk.builders.workflow.definition import (
     WorkflowAssistant,
     WorkflowAssistantTool,
     WorkflowDefinition,
+    WorkflowEngineRetryPolicy,
     WorkflowMCPServer,
     WorkflowNextState,
+    WorkflowPoolConfig,
     WorkflowRetryPolicy,
     WorkflowState,
     WorkflowStateCondition,
@@ -694,7 +696,7 @@ class TestMirroredModelsImmutability:
 
     def test_unknown_kwarg_on_next_state_raises(self):
         with pytest.raises(ValidationError):
-            WorkflowNextState(state_id="end", keep_history=True)
+            WorkflowNextState(state_id="end", not_a_field=True)
 
 
 class TestMcpServerConfigRendering:
@@ -783,3 +785,104 @@ class TestMcpServerConfigRendering:
             "mcp_servers"
         ][0]
         assert "config" not in server
+
+
+class TestEngineSettings:
+    @staticmethod
+    def _render(**kwargs):
+        definition = WorkflowDefinition(
+            name="wf", mode=WorkflowMode.SEQUENTIAL, **kwargs
+        )
+        return yaml.safe_load(definition.to_yaml_config())
+
+    def test_all_settings_render_at_top_level(self):
+        rendered = self._render(
+            max_concurrency=20,
+            recursion_limit=100,
+            verbose=True,
+            type="custom",
+            max_nesting_level=3,
+            pool_config=WorkflowPoolConfig(enabled=True, min_size=2),
+            retry_policy=WorkflowEngineRetryPolicy(max_attempts=3),
+            enable_summarization_node=True,
+            messages_limit_before_summarization=10,
+            tokens_limit_before_summarization=1000,
+            max_iteration_key_output_limit=50,
+        )
+        assert rendered["max_concurrency"] == 20
+        assert rendered["recursion_limit"] == 100
+        assert rendered["verbose"] is True
+        assert rendered["type"] == "custom"
+        assert rendered["max_nesting_level"] == 3
+        assert rendered["pool_config"] == {"enabled": True, "min_size": 2}
+        assert rendered["retry_policy"] == {"max_attempts": 3}
+        assert rendered["enable_summarization_node"] is True
+        assert rendered["messages_limit_before_summarization"] == 10
+        assert rendered["tokens_limit_before_summarization"] == 1000
+        assert rendered["max_iteration_key_output_limit"] == 50
+
+    def test_unset_settings_are_omitted(self):
+        rendered = self._render()
+        assert set(rendered) == {"assistants", "tools", "custom_nodes", "states"}
+
+    @pytest.mark.parametrize(
+        "kwargs, name",
+        [
+            ({"max_concurrency": 0}, "max_concurrency"),
+            ({"max_concurrency": 101}, "max_concurrency"),
+            ({"recursion_limit": 5001}, "recursion_limit"),
+            ({"max_nesting_level": 0}, "max_nesting_level"),
+            ({"max_iteration_key_output_limit": 0}, "max_iteration_key_output_limit"),
+        ],
+    )
+    def test_out_of_bounds_raises(self, kwargs, name):
+        with pytest.raises(ValidationError, match=name):
+            self._render(**kwargs)
+
+    def test_pool_min_size_bound(self):
+        with pytest.raises(ValidationError, match="min_size"):
+            WorkflowPoolConfig(min_size=21)
+
+    def test_retry_backoff_bound(self):
+        with pytest.raises(ValidationError, match="backoff_factor"):
+            WorkflowEngineRetryPolicy(backoff_factor=0.5)
+
+    def test_pool_rejects_min_greater_than_max(self):
+        with pytest.raises(ValidationError, match=r"min_size.*max_size"):
+            WorkflowPoolConfig(min_size=10, max_size=5)
+
+    def test_pool_allows_equal_or_partial_sizes(self):
+        assert WorkflowPoolConfig(min_size=5, max_size=5).min_size == 5
+        assert WorkflowPoolConfig(max_size=5).min_size is None
+        assert WorkflowPoolConfig(min_size=5).max_size is None
+
+    @pytest.mark.parametrize("sizes", [{"min_size": 10}, {"max_size": 1}])
+    def test_pool_rejects_partial_sizes_conflicting_with_platform_defaults(self, sizes):
+        with pytest.raises(ValidationError, match=r"min_size.*max_size"):
+            WorkflowPoolConfig(**sizes)
+
+    @pytest.mark.parametrize(
+        "model, field",
+        [
+            (WorkflowEngineRetryPolicy, "initial_interval"),
+            (WorkflowEngineRetryPolicy, "max_interval"),
+        ],
+    )
+    def test_retry_interval_fields_document_seconds(self, model, field):
+        assert "seconds" in model.model_fields[field].description
+
+    def test_retry_rejects_initial_greater_than_max_interval(self):
+        with pytest.raises(ValidationError, match=r"initial_interval.*max_interval"):
+            WorkflowEngineRetryPolicy(initial_interval=10, max_interval=5)
+
+    def test_retry_allows_equal_or_partial_intervals(self):
+        assert WorkflowEngineRetryPolicy(initial_interval=5, max_interval=5)
+        assert WorkflowEngineRetryPolicy(initial_interval=10).max_interval is None
+        assert WorkflowEngineRetryPolicy(max_interval=5).initial_interval is None
+
+    def test_override_task_rendered_only_when_set(self):
+        with_flag = WorkflowNextState(state_id="end", override_task=True)
+        assert with_flag.model_dump(exclude_none=True)["override_task"] is True
+        assert "override_task" not in WorkflowNextState(state_id="end").model_dump(
+            exclude_none=True
+        )

@@ -24,8 +24,10 @@ import yaml
 from codemie_sdk.builders.workflow import (
     WorkflowAssistantTool,
     WorkflowBuilder,
+    WorkflowEngineRetryPolicy,
     WorkflowMCPServer,
     WorkflowMode,
+    WorkflowPoolConfig,
 )
 from codemie_sdk.builders.workflow.definition import (
     WorkflowNextState,
@@ -147,6 +149,21 @@ def test_example_3_branches_loops_retries_checkpoints():
     }
     # Must not raise: proves every add_state() call above used a fresh id.
     definition.to_yaml_config()
+
+
+def test_example_6_engine_settings():
+    builder = (
+        _example_1_builder()
+        .with_max_concurrency(20)
+        .with_retry_policy(
+            WorkflowEngineRetryPolicy(max_attempts=3, backoff_factor=2.0)
+        )
+        .with_pool_config(WorkflowPoolConfig(enabled=True, min_size=2, max_size=10))
+    )
+    rendered = yaml.safe_load(builder.render().to_yaml_config())
+    assert rendered["max_concurrency"] == 20
+    assert rendered["retry_policy"] == {"backoff_factor": 2.0, "max_attempts": 3}
+    assert rendered["pool_config"] == {"enabled": True, "min_size": 2, "max_size": 10}
 
 
 # --- "Workflow Node Types" examples -----------------------------------------

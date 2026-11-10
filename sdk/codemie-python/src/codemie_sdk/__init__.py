@@ -185,6 +185,24 @@ from .models.usage_attribution import (
     UsageAttributionSettingsResponse,
 )
 from .services.usage_attribution import UsageAttributionService
+from .models.marketplace_management import (
+    MarketplaceStatusFilter,
+    MarketplaceGateResult,
+    MarketplacePendingOrderBy,
+    MarketplaceGateFinding,
+    MarketplacePendingRow,
+    MarketplacePendingResponse,
+    MarketplaceAssistantRow,
+    MarketplaceAssistantsResponse,
+    MarketplacePendingStats,
+    MarketplaceOverview,
+    MarketplaceReviewDetail,
+    MarketplaceIndexingOutcome,
+    MarketplaceReviewActionResponse,
+    MarketplaceForcePublishResponse,
+    MarketplaceDecisionRequest,
+)
+from .services.marketplace_management import MarketplaceManagementService
 from .models.provisioning import (
     ProvisioningProject,
     ProvisioningProjectBlock,
@@ -347,4 +365,20 @@ __all__ = [
     "ProvisioningBudgetResponse",
     "ProvisioningBudgetResult",
     "ProvisioningService",
+    "MarketplaceStatusFilter",
+    "MarketplaceGateResult",
+    "MarketplacePendingOrderBy",
+    "MarketplaceGateFinding",
+    "MarketplacePendingRow",
+    "MarketplacePendingResponse",
+    "MarketplaceAssistantRow",
+    "MarketplaceAssistantsResponse",
+    "MarketplacePendingStats",
+    "MarketplaceOverview",
+    "MarketplaceReviewDetail",
+    "MarketplaceIndexingOutcome",
+    "MarketplaceReviewActionResponse",
+    "MarketplaceForcePublishResponse",
+    "MarketplaceDecisionRequest",
+    "MarketplaceManagementService",
 ]
