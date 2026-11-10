@@ -89,6 +89,16 @@ def test_list_projects_sends_each_email_and_parses_items(service):
     ]
 
 
+def test_list_projects_returns_an_empty_list_when_nothing_matches(service):
+    with patch(
+        "codemie_sdk.utils.http.requests.get", return_value=_response(200, [])
+    ) as get:
+        projects = service.list_projects(["nobody@example.com"])
+
+    assert get.call_args.kwargs["params"] == {"member_email": ["nobody@example.com"]}
+    assert projects == []
+
+
 def test_set_budget_sends_put_with_reference_and_returns_status_and_body(service):
     request = ProvisioningBudgetRequest(
         amounts={"platform": 100.0, "cli": 50.0},
@@ -208,3 +218,27 @@ def test_with_token_authenticates_with_the_new_token_and_leaves_the_original(ser
         )
         service.cancel_budget("demo-project", "CHG-7")
         assert send.call_args.kwargs["headers"]["Authorization"] == "Bearer token"
+
+
+def test_budget_calls_use_the_local_dev_authorization_without_a_token():
+    local = ProvisioningService("http://localhost:8080", "")
+    with patch(
+        "codemie_sdk.services.provisioning.requests.request",
+        return_value=_response(204),
+    ) as send:
+        local.cancel_budget("demo-project", "CHG-8")
+
+    assert send.call_args.kwargs["headers"]["Authorization"] == "dev-codemie-user"
+
+
+def test_budget_calls_send_a_callable_token_on_every_call():
+    tokens = iter(["first", "second"])
+    refreshing = ProvisioningService("https://api.example.com", lambda: next(tokens))
+    with patch(
+        "codemie_sdk.services.provisioning.requests.request",
+        return_value=_response(204),
+    ) as send:
+        refreshing.cancel_budget("demo-project", "CHG-9")
+        assert send.call_args.kwargs["headers"]["Authorization"] == "Bearer first"
+        refreshing.cancel_budget("demo-project", "CHG-9")
+        assert send.call_args.kwargs["headers"]["Authorization"] == "Bearer second"

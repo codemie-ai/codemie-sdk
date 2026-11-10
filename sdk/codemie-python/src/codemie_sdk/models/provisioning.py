@@ -86,7 +86,12 @@ class ProvisioningBudgetGroup(BaseModel):
 
 
 class ProvisioningBudgetResponse(BaseModel):
-    """Outcome of a set or adjust call."""
+    """Outcome of a set or adjust call.
+
+    ``budget`` is always present: the API never answers a set or adjust with a null budget.
+    A cancel answers 204 without a body, which :class:`ProvisioningBudgetResult` represents
+    with ``budget=None``.
+    """
 
     model_config = ConfigDict(extra="ignore")
 

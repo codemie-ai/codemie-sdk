@@ -19,6 +19,7 @@ provisioning clients may call them, each with its own bearer token; any other ca
 including an admin, is rejected with HTTP 403.
 """
 
+import logging
 from urllib.parse import quote
 
 import requests
@@ -30,6 +31,8 @@ from ..models.provisioning import (
     ProvisioningProject,
 )
 from ..utils.http import ApiRequestHandler, TokenSource
+
+logger = logging.getLogger(__name__)
 
 _PROJECTS_URL = "/v1/provisioning/projects"
 _CHANGE_REFERENCE_HEADER = "X-Change-Reference"
@@ -172,28 +175,33 @@ class ProvisioningService:
         """Send a budget call and return the status with the parsed body.
 
         The shared request handler parses the body and drops the status, and 201 versus
-        200 is part of the set contract, so these routes are sent directly.
+        200 is part of the set contract, so these routes are sent directly. The headers
+        come from the handler, so the localhost fallback applies, and the call is logged
+        the way the handler logs its own calls.
         """
-        token = self._token() if callable(self._token) else self._token
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-        }
+        headers = self._api._get_headers()
         if change_reference is not None:
             headers[_CHANGE_REFERENCE_HEADER] = change_reference
 
-        response = requests.request(
-            method,
-            f"{self._api_domain}{_PROJECTS_URL}/{quote(project_name, safe='')}/budget",
-            headers=headers,
-            data=(
-                request.model_dump_json(exclude_none=True)
-                if request is not None
-                else None
-            ),
-            verify=self._verify_ssl,
-        )
-        response.raise_for_status()
+        endpoint = f"{_PROJECTS_URL}/{quote(project_name, safe='')}/budget"
+        logger.debug(f"Making {method} request to {self._api_domain}{endpoint}")
+        try:
+            response = requests.request(
+                method,
+                f"{self._api_domain}{endpoint}",
+                headers=headers,
+                data=(
+                    request.model_dump_json(exclude_none=True)
+                    if request is not None
+                    else None
+                ),
+                verify=self._verify_ssl,
+            )
+            response.raise_for_status()
+        except Exception as e:
+            logger.error(f"Error during {method} request to {endpoint}: {str(e)}")
+            raise
+        logger.info(f"Successfully processed {method} request to {endpoint}")
 
         if response.status_code == 204 or not response.content:
             return ProvisioningBudgetResult(status_code=response.status_code)
