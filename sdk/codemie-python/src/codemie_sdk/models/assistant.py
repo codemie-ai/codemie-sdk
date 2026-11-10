@@ -23,6 +23,10 @@ class ToolDetails(BaseModel):
     settings_config: bool = False
     user_description: str | None = None
     settings: Integration | None = None
+    auto_credentials_lookup: bool = Field(
+        True,
+        description="When no integration is pinned, fall back to the consuming user's own integration",
+    )
 
 
 class ToolKitDetails(BaseModel):
@@ -36,6 +40,10 @@ class ToolKitDetails(BaseModel):
     settings_config: bool = False
     is_external: bool = False
     settings: Integration | None = None
+    auto_credentials_lookup: bool = Field(
+        True,
+        description="Toolkit-level counterpart of ToolDetails.auto_credentials_lookup",
+    )
 
 
 class ContextType(str, Enum):
@@ -63,6 +71,10 @@ class PromptVariable(BaseModel):
     key: str
     description: str | None = None
     default_value: str
+    is_sensitive: bool = Field(
+        default=False,
+        description="Whether this variable holds sensitive data; its default is never round-tripped in plain text",
+    )
 
 
 class MCPServerConfig(BaseModel):
@@ -114,6 +126,15 @@ class MCPServerConfig(BaseModel):
     tools: list[str] | None = Field(
         None, description="List of tool names available in this MCP server"
     )
+    audience: str | None = Field(
+        None,
+        description="OAuth2 audience for OIDC token exchange (RFC 8693)",
+    )
+    auth_config: dict[str, Any] | None = Field(
+        None,
+        repr=False,
+        description="Authentication configuration for this MCP server, stored as a raw dict",
+    )
 
 
 class MCPServerDetails(BaseModel):
@@ -153,6 +174,46 @@ class BuiltinSubagent(BaseModel):
 
     id: str
     display_name: str | None = None
+
+
+class HedgingToolDetails(BaseModel):
+    """Internal tool used as the hedging fast path."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    name: str
+
+
+class HedgingProviderToolDetails(BaseModel):
+    """External provider tool used as the hedging fast path."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    provider_name: str
+    toolkit_name: str
+    tool_name: str
+    datasource_name: str | None = None
+    result_condition: str | None = None
+
+
+class HedgingConfig(BaseModel):
+    """Hedging (fast path) configuration: exactly one of tool or provider_tool."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    tool: HedgingToolDetails | None = None
+    provider_tool: HedgingProviderToolDetails | None = None
+    timeout_ms: int = Field(200, gt=0)
+    input_mapping: dict[str, str] = Field(default_factory=dict)
+    output_field: str | None = None
+
+    @model_validator(mode="after")
+    def validate_tool_or_provider(self) -> "HedgingConfig":
+        if (self.tool is None) == (self.provider_tool is None):
+            raise ValueError(
+                "Exactly one of 'tool' or 'provider_tool' must be specified"
+            )
+        return self
 
 
 class AssistantBase(BaseModel):
@@ -235,6 +296,7 @@ class Assistant(AssistantBase):
     )
     shared: bool = False
     is_react: bool = False
+    hide_tool_outputs: bool = False
     is_global: bool = False
     created_date: datetime | None = None
     updated_date: datetime | None = None
@@ -248,6 +310,7 @@ class Assistant(AssistantBase):
     display_name: str | None = None
     mcp_servers: list[MCPServerDetails] = Field(default_factory=list)
     assistant_ids: list[str] = Field(default_factory=list)
+    skill_ids: list[str] | None = None
     enabled_builtin_subagents: list[str] = Field(default_factory=list)
     version_count: int | None = None
     prompt_variables: list[PromptVariable] | None = Field(default=None)
@@ -272,6 +335,22 @@ class Assistant(AssistantBase):
         description="Number of times this assistant has been cloned in the Marketplace",
     )
     tool_permissions: ToolPermissionsConfig | None = None
+    marketplace_status: str | None = Field(
+        default=None,
+        description="Marketplace review status (DRAFT, PENDING_REVIEW, APPROVED, REJECTED, WITHDRAWN)",
+    )
+    is_verified: bool | None = Field(
+        default=None,
+        description="True once a reviewer approved the assistant for the marketplace",
+    )
+    marketplace_decision_reason: str | None = Field(
+        default=None,
+        description="Reason given by the reviewer who rejected the assistant",
+    )
+    hedging_config: HedgingConfig | None = None
+    interactive_enabled: bool = False
+    enable_image_generation: bool | None = False
+    file_attachment_enabled: bool | None = None
 
 
 class AssistantRequestBase(AssistantBase):
@@ -293,6 +372,7 @@ class AssistantRequestBase(AssistantBase):
     )
     shared: bool = False
     is_react: bool = False
+    hide_tool_outputs: bool = False
     is_global: bool | None = False
     categories: list[str] = Field(
         default_factory=list,
@@ -304,10 +384,16 @@ class AssistantRequestBase(AssistantBase):
     tools_tokens_size_limit: int | None = None
     mcp_servers: list[MCPServerDetails] = Field(default_factory=list)
     assistant_ids: list[str] = Field(default_factory=list)
+    skill_ids: list[str] | None = None
     enabled_builtin_subagents: list[str] | None = None
     prompt_variables: list[PromptVariable] = Field(default_factory=list)
     skip_integration_validation: bool | None = Field(default=False)
     tool_permissions: ToolPermissionsConfig | None = None
+    hedging_config: HedgingConfig | None = None
+    # None (not sent) on requests so an update never resets the stored flag.
+    interactive_enabled: bool | None = None
+    enable_image_generation: bool | None = None
+    file_attachment_enabled: bool | None = None
 
 
 class AssistantCreateRequest(AssistantRequestBase):
@@ -426,6 +512,7 @@ class AssistantVersion(BaseModel):
     toolkits: list[ToolKitDetails] = Field(default_factory=list)
     mcp_servers: list[MCPServerDetails] = Field(default_factory=list)
     assistant_ids: list[str] = Field(default_factory=list)
+    skill_ids: list[str] | None = None
     prompt_variables: list[PromptVariable] = Field(default_factory=list)
 
 
@@ -759,4 +846,48 @@ class UserMappingResponse(BaseModel):
     workflow_id: Optional[str] = Field(
         default=None,
         description="Workflow scope the response is effective for",
+    )
+
+
+class ShareUsersRequest(BaseModel):
+    """Request body for POST/DELETE /v1/assistants/{assistant_id}/share."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    user_ids: List[str] = Field(
+        description="Internal user ids to grant or revoke per-user access for"
+    )
+
+
+class SharedUser(BaseModel):
+    """One entry of a shared-with / sharable-users list item."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: str = Field(description="User id")
+    username: str = Field(description="Username")
+    email: Optional[str] = Field(default=None, description="User email")
+    name: Optional[str] = Field(default=None, description="Display name")
+    picture: Optional[str] = Field(default=None, description="Avatar URL")
+
+
+class SharedWithResponse(BaseModel):
+    """Response body for GET/POST/DELETE .../shared-with and .../share."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    shared_with: List[SharedUser] = Field(
+        default_factory=list,
+        description="Users currently granted per-user access to the assistant",
+    )
+
+
+class SharableUsersResponse(BaseModel):
+    """Response body for GET /v1/assistants/{assistant_id}/sharable-users."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    users: List[SharedUser] = Field(
+        default_factory=list,
+        description="Internal users matching the search query that can be granted access",
     )

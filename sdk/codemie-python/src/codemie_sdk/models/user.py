@@ -22,6 +22,21 @@ class AdminUserProjectInfo(BaseModel):
     is_default: bool = False
 
 
+class UserBudgetAssignmentInfo(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    category: str
+    budget_id: str
+    budget_name: Optional[str] = None
+    max_budget: Optional[float] = None
+    budget_duration: Optional[str] = None
+    budget_reset_at: Optional[str] = None
+    current_spending: Optional[float] = None
+    spend_unavailable: bool = False
+    spend_partial: bool = False
+    spend_missing_amount: Optional[float] = None
+
+
 class AdminUserListItem(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -36,6 +51,7 @@ class AdminUserListItem(BaseModel):
     auth_source: Optional[str] = None
     last_login_at: Optional[str] = None
     projects: List[AdminUserProjectInfo] = []
+    budget_assignments: List[UserBudgetAssignmentInfo] = []
     date: Optional[str] = None
 
 

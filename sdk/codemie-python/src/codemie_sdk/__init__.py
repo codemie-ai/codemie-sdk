@@ -170,11 +170,39 @@ from .models.integration import (
 from .models.a2a import (
     AgentCard,
     AgentProvider,
+    AgentInterface,
     AgentCapabilities,
-    AgentAuthentication,
     AgentSkill,
 )
 from .services.a2a import A2AService
+from .models.usage_attribution import (
+    UsageAttributionQueryParams,
+    UsageAttributionRange,
+    UsageAttributionAnalysisSettings,
+    UsageAttributionAnalysis,
+    UsageAttributionResponse,
+    UsageAttributionTableResponse,
+    UsageAttributionSettingsResponse,
+)
+from .services.usage_attribution import UsageAttributionService
+from .models.marketplace_management import (
+    MarketplaceStatusFilter,
+    MarketplaceGateResult,
+    MarketplacePendingOrderBy,
+    MarketplaceGateFinding,
+    MarketplacePendingRow,
+    MarketplacePendingResponse,
+    MarketplaceAssistantRow,
+    MarketplaceAssistantsResponse,
+    MarketplacePendingStats,
+    MarketplaceOverview,
+    MarketplaceReviewDetail,
+    MarketplaceIndexingOutcome,
+    MarketplaceReviewActionResponse,
+    MarketplaceForcePublishResponse,
+    MarketplaceDecisionRequest,
+)
+from .services.marketplace_management import MarketplaceManagementService
 
 try:
     __version__ = _pkg_version("codemie-sdk-python")
@@ -307,8 +335,32 @@ __all__ = [
     "TypeOfIntegration",
     "AgentCard",
     "AgentProvider",
+    "AgentInterface",
     "AgentCapabilities",
-    "AgentAuthentication",
     "AgentSkill",
     "A2AService",
+    "UsageAttributionQueryParams",
+    "UsageAttributionRange",
+    "UsageAttributionAnalysisSettings",
+    "UsageAttributionAnalysis",
+    "UsageAttributionResponse",
+    "UsageAttributionTableResponse",
+    "UsageAttributionSettingsResponse",
+    "UsageAttributionService",
+    "MarketplaceStatusFilter",
+    "MarketplaceGateResult",
+    "MarketplacePendingOrderBy",
+    "MarketplaceGateFinding",
+    "MarketplacePendingRow",
+    "MarketplacePendingResponse",
+    "MarketplaceAssistantRow",
+    "MarketplaceAssistantsResponse",
+    "MarketplacePendingStats",
+    "MarketplaceOverview",
+    "MarketplaceReviewDetail",
+    "MarketplaceIndexingOutcome",
+    "MarketplaceReviewActionResponse",
+    "MarketplaceForcePublishResponse",
+    "MarketplaceDecisionRequest",
+    "MarketplaceManagementService",
 ]

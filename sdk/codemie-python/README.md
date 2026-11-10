@@ -518,6 +518,27 @@ Datasources can have the following statuses:
 - `FETCHING`: Fetching data from source
 - `IN_PROGRESS`: Processing/indexing in progress
 
+#### Datasource Limitations
+
+- **This SDK cannot rename or move a datasource.** An update addresses a datasource by its project and name
+  (provider datasources by their id), so the SDK has no way to change either; the platform supports a project
+  move, but the SDK does not expose it yet. A different name addresses a different datasource, or is not found.
+  The search index and any assistant that uses the datasource refer to it by that name, so they would stop
+  matching after a rename. To "rename", create a new datasource, point your assistants at it, then delete the
+  old one.
+- **File datasources are not supported by the Infrastructure-as-Code tooling** built on this SDK. Creating
+  one needs the file contents uploaded together with the request, which a declarative document cannot carry.
+  Use `create_file_datasource(...)` with the files directly instead.
+- **Some updates overwrite what they omit.** An SVN update is written in full by the platform, so
+  `UpdateSvnDataSourceRequest` requires the visibility flag (`shared_with_project`), `prompt`, `files_filter`
+  and `docs_generation`; pass the current values (`None` clears a nullable one). A SharePoint update with
+  `full_reindex=True` on an OAuth datasource (`oauth_codemie` / `oauth_custom`) needs `access_token`. An Xray
+  update does not take `embedding_model`: the platform sets it only on create.
+- **SVN datasources are not found by `list(datasource_types=[DataSourceType.SVN])`.** `DataSourceType.SVN` only
+  selects the request route. The platform stores an SVN datasource with the index type you picked (`code`,
+  `summary` or `chunk-summary`) and `vcs_type="svn"`, so filtering by `SVN` returns an empty list. Filter by the
+  code index types and use `datasource.svn`, which is set only for SVN datasources, to tell them apart.
+
 #### Best Practices for Datasources
 
 1. **Naming Convention**:
@@ -918,6 +939,35 @@ request = WorkflowCreateRequest(
     icon_url=definition.icon_url,
 )
 ```
+
+6. **Engine settings**
+
+Workflow-wide settings are optional; an unset setting means the platform default applies.
+```python
+from codemie_sdk.builders.workflow import WorkflowEngineRetryPolicy, WorkflowPoolConfig
+
+builder = (
+    builder.with_max_concurrency(20)
+    .with_retry_policy(WorkflowEngineRetryPolicy(max_attempts=3, backoff_factor=2.0))
+    .with_pool_config(WorkflowPoolConfig(enabled=True, min_size=2, max_size=10))
+)
+```
+
+| Setter | Bounds |
+|---|---|
+| `with_max_concurrency(n)` | 1-100 (the backend runtime clamps it, 5 by default) |
+| `with_recursion_limit(n)` | 1-5000 |
+| `with_verbose(flag)` | bool |
+| `with_type(name)` | free string |
+| `with_max_nesting_level(n)` | >= 1 |
+| `with_pool_config(WorkflowPoolConfig)` | `min_size` 1-20, `max_size` 1-50, `refill_interval_seconds` >= 5; unset sizes default to 2 and 5 and `min_size` must not exceed `max_size`; the platform also caps pool size per deployment (5 by default) |
+| `with_retry_policy(WorkflowEngineRetryPolicy)` | `initial_interval`/`max_interval` in seconds, 0-3600000, `backoff_factor` 1-10, `max_attempts` 1-100 |
+| `with_summarization_node(flag)` | bool |
+| `with_summarization_limits(messages=, tokens=)` | > 0 |
+| `with_max_iteration_key_output_limit(n)` | > 0 |
+
+`WorkflowNextState(override_task=True)` sets `override_task` on a transition. `keep_history` is
+intentionally unsupported: it is deprecated, so use `include_in_llm_history`.
 
 #### Workflow Node Types
 
