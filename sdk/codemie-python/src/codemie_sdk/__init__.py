@@ -386,7 +386,6 @@ __all__ = [
     "MarketplaceForcePublishResponse",
     "MarketplaceDecisionRequest",
     "MarketplaceManagementService",
-    "WorkflowRevisionCreatedBy",
     "WorkflowRevision",
     "WorkflowVersionHistoryResponse",
     "WorkflowRollbackRequest",
