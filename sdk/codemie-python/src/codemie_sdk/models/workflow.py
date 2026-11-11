@@ -71,6 +71,38 @@ class Workflow(BaseModel):
     required_variables: list[str] = Field(default_factory=list)
 
 
+class WorkflowRevision(BaseModel):
+    """A saved revision of a workflow's YAML configuration."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    revision_index: int = Field(
+        ..., description="Absolute 0-based position in the full history, newest first"
+    )
+    yaml_config: str
+    date: datetime
+    created_by: User | None = None
+    change_notes: str | None = None
+
+
+class WorkflowVersionHistoryResponse(BaseModel):
+    """One page of a workflow's revision history."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    revisions: list[WorkflowRevision] = Field(default_factory=list)
+    total_revisions: int
+    workflow_name: str
+    workflow_id: str
+
+
+class WorkflowRollbackRequest(BaseModel):
+    """Request model for rolling a workflow back to an earlier revision."""
+
+    revision_index: int = Field(..., ge=0)
+    change_notes: str | None = Field(default=None, max_length=1000)
+
+
 class ExecutionStatus(str, Enum):
     IN_PROGRESS = "In Progress"
     NOT_STARTED = "Not Started"

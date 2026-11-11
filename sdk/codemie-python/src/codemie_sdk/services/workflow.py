@@ -13,6 +13,8 @@ from ..models.workflow import (
     WorkflowEvaluationRequest,
     WorkflowGeneratorRequest,
     WorkflowGeneratorResponse,
+    WorkflowRollbackRequest,
+    WorkflowVersionHistoryResponse,
     Workflow,
 )
 from ..utils import ApiRequestHandler, TokenSource
@@ -278,6 +280,68 @@ class WorkflowService:
         """
         return self._api.post(
             f"/v1/workflows/{workflow_id}/marketplace/unpublish", dict
+        )
+
+    def list_versions(
+        self,
+        workflow_id: str,
+        page: int | None = None,
+        per_page: int | None = None,
+    ) -> WorkflowVersionHistoryResponse:
+        """List the saved revisions of a workflow, newest first.
+
+        ``page`` and ``per_page`` are sent as given and validated by the API; when
+        omitted the API returns its default first page.
+
+        Args:
+            workflow_id: ID of the workflow
+            page: Optional 0-based page number
+            per_page: Optional page size
+
+        Returns:
+            One page of revisions, each carrying its absolute ``revision_index``,
+            and the ``total_revisions`` count of the full history
+        """
+        params: dict[str, Any] = {}
+        if page is not None:
+            params["page"] = page
+        if per_page is not None:
+            params["per_page"] = per_page
+        return self._api.get(
+            f"/v1/workflows/{workflow_id}/versions",
+            WorkflowVersionHistoryResponse,
+            params=params or None,
+            wrap_response=False,
+        )
+
+    def rollback(
+        self,
+        workflow_id: str,
+        revision_index: int,
+        change_notes: str | None = None,
+    ) -> dict:
+        """Restore a workflow's configuration from an earlier revision.
+
+        The displaced configuration is recorded as a new revision, so a rollback
+        adds one entry to the history.
+
+        Args:
+            workflow_id: ID of the workflow
+            revision_index: Absolute 0-based position of the target revision, as
+                reported by ``list_versions``
+            change_notes: Optional note stored with the new revision (max 1000 characters)
+
+        Returns:
+            The API confirmation message
+        """
+        request = WorkflowRollbackRequest(
+            revision_index=revision_index, change_notes=change_notes
+        )
+        return self._api.post(
+            f"/v1/workflows/{workflow_id}/versions/rollback",
+            dict,
+            json_data=request.model_dump(exclude_none=True),
+            wrap_response=False,
         )
 
     def executions(self, workflow_id: str) -> WorkflowExecutionService:
