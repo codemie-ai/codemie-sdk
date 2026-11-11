@@ -24,6 +24,7 @@ from codemie_sdk.builders.workflow.definition import (
     WorkflowAssistant,
     WorkflowAssistantTool,
     WorkflowDefinition,
+    WorkflowEndState,
     WorkflowEngineRetryPolicy,
     WorkflowMCPServer,
     WorkflowNextState,
@@ -266,6 +267,24 @@ class TestWorkflowRetryPolicy:
             WorkflowRetryPolicy(
                 initial_interval=1.0, backoff_factor=2.0, max_interval=30.0
             )
+
+
+class TestWorkflowEndState:
+    def test_equals_plain_end_next_state(self):
+        assert WorkflowEndState() == WorkflowNextState(state_id="end")
+
+    def test_passes_settings_through(self):
+        assert WorkflowEndState(output_key="pr") == WorkflowNextState(
+            state_id="end", output_key="pr"
+        )
+
+    def test_rejects_other_state_id(self):
+        with pytest.raises(ValueError):
+            WorkflowEndState(state_id="other")
+
+    def test_rejects_conflicting_targets(self):
+        with pytest.raises(ValueError):
+            WorkflowEndState(state_ids=["a"])
 
 
 class TestWorkflowNextState:

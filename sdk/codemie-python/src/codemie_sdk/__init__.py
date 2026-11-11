@@ -206,6 +206,16 @@ from .models.marketplace_management import (
     MarketplaceDecisionRequest,
 )
 from .services.marketplace_management import MarketplaceManagementService
+from .models.provisioning import (
+    ProvisioningProject,
+    ProvisioningProjectBlock,
+    ProvisioningBudgetRequest,
+    ProvisioningBudgetCategory,
+    ProvisioningBudgetGroup,
+    ProvisioningBudgetResponse,
+    ProvisioningBudgetResult,
+)
+from .services.provisioning import ProvisioningService
 
 try:
     __version__ = _pkg_version("codemie-sdk-python")
@@ -354,6 +364,14 @@ __all__ = [
     "UsageAttributionTableResponse",
     "UsageAttributionSettingsResponse",
     "UsageAttributionService",
+    "ProvisioningProject",
+    "ProvisioningProjectBlock",
+    "ProvisioningBudgetRequest",
+    "ProvisioningBudgetCategory",
+    "ProvisioningBudgetGroup",
+    "ProvisioningBudgetResponse",
+    "ProvisioningBudgetResult",
+    "ProvisioningService",
     "MarketplaceStatusFilter",
     "MarketplaceGateResult",
     "MarketplacePendingOrderBy",

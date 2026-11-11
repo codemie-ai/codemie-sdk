@@ -19,7 +19,7 @@ the backend classes in
 ``codemie/src/codemie/core/workflow_models/workflow_models.py``.
 """
 
-from typing import Callable, Literal
+from typing import Any, Callable, Literal
 
 import yaml
 from pydantic import (
@@ -348,6 +348,15 @@ class WorkflowNextState(BaseModel):
                 "state_id/state_ids/condition/switch are mutually exclusive"
             )
         return self
+
+
+def WorkflowEndState(*, state_id: str = "end", **settings: Any) -> WorkflowNextState:
+    """Next state that ends the workflow; accepts the same settings as WorkflowNextState."""
+    if state_id != "end":
+        raise ValueError(
+            "WorkflowEndState always ends the workflow; state_id must be 'end'"
+        )
+    return WorkflowNextState(state_id="end", **settings)
 
 
 class WorkflowState(BaseModel):

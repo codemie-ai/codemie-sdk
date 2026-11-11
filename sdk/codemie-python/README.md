@@ -1127,6 +1127,8 @@ builder = (
     )
 )
 ```
+`WorkflowEndState(output_key="pr")` is shorthand for `WorkflowNextState(state_id="end", output_key="pr")`
+and accepts the same settings. Condition and switch targets still take the plain `"end"` id.
 Other mapping types are `constant`, `script` and `array_map`. `on_error` can be `fail`, `skip`,
 `default` (use together with `default_output`) or `partial`.
 
