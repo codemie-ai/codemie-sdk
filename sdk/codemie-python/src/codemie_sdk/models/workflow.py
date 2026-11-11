@@ -191,6 +191,7 @@ class WorkflowRevision(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
+    revision_index: int
     yaml_config: str
     date: datetime
     created_by: WorkflowRevisionCreatedBy | None = None

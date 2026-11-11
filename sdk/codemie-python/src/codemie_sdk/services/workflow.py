@@ -282,18 +282,35 @@ class WorkflowService:
             f"/v1/workflows/{workflow_id}/marketplace/unpublish", dict
         )
 
-    def list_versions(self, workflow_id: str) -> WorkflowVersionHistoryResponse:
-        """Get revision history for a workflow.
+    def list_versions(
+        self,
+        workflow_id: str,
+        page: int | None = None,
+        per_page: int | None = None,
+    ) -> WorkflowVersionHistoryResponse:
+        """Get one page of the revision history for a workflow.
+
+        page and per_page are sent as given and validated by the API; when omitted the
+        API returns its default first page.
 
         Args:
             workflow_id: ID of the workflow.
+            page: Optional 0-based page number.
+            per_page: Optional page size.
 
         Returns:
-            WorkflowVersionHistoryResponse containing the full revision list.
+            WorkflowVersionHistoryResponse with one page of revisions, each carrying its
+            absolute revision_index, and total_revisions for the full history.
         """
+        params: dict[str, Any] = {}
+        if page is not None:
+            params["page"] = page
+        if per_page is not None:
+            params["per_page"] = per_page
         return self._api.get(
             f"/v1/workflows/{workflow_id}/versions",
             WorkflowVersionHistoryResponse,
+            params=params or None,
             wrap_response=False,
         )
 
@@ -305,13 +322,14 @@ class WorkflowService:
     ) -> dict:
         """Roll the workflow back to a prior revision by positional index.
 
-        revision_index is 0-based into the revisions[] list returned by list_versions.
-        The index is positional — it shifts on every save or rollback, so always fetch
-        the list fresh before rolling back.
+        revision_index is the 0-based position in the full revision history, the value
+        list_versions reports as revision_index on each revision (not an offset into the
+        returned page). The index is positional — it shifts on every save or rollback, so
+        always fetch the list fresh before rolling back.
 
         Args:
             workflow_id: ID of the workflow.
-            revision_index: 0-based index into the revision history.
+            revision_index: 0-based position in the full revision history.
             change_notes: Optional audit note stored on the displaced current config.
 
         Returns:

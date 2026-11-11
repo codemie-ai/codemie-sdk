@@ -17,6 +17,7 @@ from codemie_sdk.utils import ApiRequestHandler
 VERSIONS_WIRE_PAYLOAD = {
     "revisions": [
         {
+            "revision_index": 0,
             "yaml_config": "steps: []",
             "date": "2026-08-27T10:00:00",
             "created_by": {"user_id": "u1", "username": "alice", "name": "Alice"},
@@ -116,7 +117,7 @@ def test_list_versions_accepts_revision_without_creator():
         **VERSIONS_WIRE_PAYLOAD,
         "revisions": [
             {**VERSIONS_WIRE_PAYLOAD["revisions"][0], "created_by": None},
-            VERSIONS_WIRE_PAYLOAD["revisions"][0],
+            {**VERSIONS_WIRE_PAYLOAD["revisions"][0], "revision_index": 1},
         ],
         "total_revisions": 2,
     }
@@ -127,6 +128,91 @@ def test_list_versions_accepts_revision_without_creator():
 
     assert result.revisions[0].created_by is None
     assert result.revisions[1].created_by.user_id == "u1"
+
+
+def test_list_versions_parses_absolute_revision_index():
+    # A later page reports positions in the full history, not offsets into the page.
+    payload = {
+        **VERSIONS_WIRE_PAYLOAD,
+        "revisions": [
+            {**VERSIONS_WIRE_PAYLOAD["revisions"][0], "revision_index": 20},
+            {**VERSIONS_WIRE_PAYLOAD["revisions"][0], "revision_index": 21},
+        ],
+        "total_revisions": 22,
+    }
+    service = WorkflowService("https://api.example.com", "token")
+    service._api = DummyApi(payload)
+
+    result = service.list_versions("wf-123", page=1, per_page=20)
+
+    assert [revision.revision_index for revision in result.revisions] == [20, 21]
+    assert result.total_revisions == 22
+
+
+def test_list_versions_requires_revision_index():
+    revision = {
+        key: value
+        for key, value in VERSIONS_WIRE_PAYLOAD["revisions"][0].items()
+        if key != "revision_index"
+    }
+    service = WorkflowService("https://api.example.com", "token")
+    service._api = DummyApi({**VERSIONS_WIRE_PAYLOAD, "revisions": [revision]})
+
+    with pytest.raises(ValidationError):
+        service.list_versions("wf-123")
+
+
+def test_list_versions_sends_no_params_by_default():
+    service = WorkflowService("https://api.example.com", "token")
+    dummy = DummyApi()
+    service._api = dummy
+
+    service.list_versions("wf-123")
+
+    assert dummy.last_call.params == {}
+
+
+def test_list_versions_sends_page_and_per_page():
+    service = WorkflowService("https://api.example.com", "token")
+    dummy = DummyApi()
+    service._api = dummy
+
+    service.list_versions("wf-123", page=2, per_page=50)
+
+    assert dummy.last_call.params == {"page": 2, "per_page": 50}
+
+
+def test_list_versions_sends_only_the_given_param():
+    service = WorkflowService("https://api.example.com", "token")
+    dummy = DummyApi()
+    service._api = dummy
+
+    service.list_versions("wf-123", per_page=5)
+    assert dummy.last_call.params == {"per_page": 5}
+
+    service.list_versions("wf-123", page=3)
+    assert dummy.last_call.params == {"page": 3}
+
+
+def test_list_versions_sends_page_zero():
+    # 0 is a valid page and must not be dropped as falsy.
+    service = WorkflowService("https://api.example.com", "token")
+    dummy = DummyApi()
+    service._api = dummy
+
+    service.list_versions("wf-123", page=0)
+
+    assert dummy.last_call.params == {"page": 0}
+
+
+def test_list_versions_leaves_paging_validation_to_the_api():
+    service = WorkflowService("https://api.example.com", "token")
+    dummy = DummyApi()
+    service._api = dummy
+
+    service.list_versions("wf-123", page=-1, per_page=101)
+
+    assert dummy.last_call.params == {"page": -1, "per_page": 101}
 
 
 def test_rollback_rejects_negative_revision_index():
