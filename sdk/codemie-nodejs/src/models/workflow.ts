@@ -162,6 +162,8 @@ export interface WorkflowRevisionCreatedBy {
 
 /** A single workflow revision entry */
 export interface WorkflowRevision {
+  /** Position in the full history (0-based, newest first); the value rollback expects */
+  revision_index: number;
   /** Full YAML config snapshot */
   yaml_config: string;
   /** ISO-8601 timestamp of this revision */

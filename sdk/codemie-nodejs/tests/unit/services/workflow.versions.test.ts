@@ -52,6 +52,7 @@ describe("WorkflowService versions", () => {
       total_revisions: 1,
       revisions: [
         {
+          revision_index: 0,
           yaml_config: "steps: []",
           date: "2026-08-27T10:00:00",
           created_by: { user_id: "u1", username: "alice", name: "Alice" },
@@ -68,6 +69,64 @@ describe("WorkflowService versions", () => {
     expect(result).toEqual(response);
   });
 
+  it("listVersions should send page and per_page when given", async () => {
+    apiHandler.get.mockResolvedValue({
+      workflow_id: "wf-123",
+      workflow_name: "My Workflow",
+      total_revisions: 22,
+      revisions: [
+        {
+          revision_index: 20,
+          yaml_config: "steps: []",
+          date: "2026-08-27T10:00:00",
+          created_by: null,
+          change_notes: null,
+        },
+      ],
+    } satisfies WorkflowVersionHistoryResponse);
+
+    const result = await service.listVersions("wf-123", { page: 1, per_page: 20 });
+
+    expect(apiHandler.get).toHaveBeenCalledWith("/v1/workflows/wf-123/versions", {
+      page: 1,
+      per_page: 20,
+    });
+    // Positions are absolute in the full history, not offsets into the page.
+    expect(result.revisions[0].revision_index).toBe(20);
+    expect(result.total_revisions).toBe(22);
+  });
+
+  it("listVersions should send only the given paging param", async () => {
+    apiHandler.get.mockResolvedValue({} as WorkflowVersionHistoryResponse);
+
+    await service.listVersions("wf-123", { per_page: 5 });
+    expect(apiHandler.get).toHaveBeenLastCalledWith("/v1/workflows/wf-123/versions", {
+      per_page: 5,
+    });
+
+    await service.listVersions("wf-123", { page: 3 });
+    expect(apiHandler.get).toHaveBeenLastCalledWith("/v1/workflows/wf-123/versions", { page: 3 });
+  });
+
+  it("listVersions should send page 0 rather than dropping it as falsy", async () => {
+    apiHandler.get.mockResolvedValue({} as WorkflowVersionHistoryResponse);
+
+    await service.listVersions("wf-123", { page: 0 });
+
+    expect(apiHandler.get).toHaveBeenCalledWith("/v1/workflows/wf-123/versions", { page: 0 });
+  });
+
+  it("listVersions should leave paging bounds to the API", async () => {
+    apiHandler.get.mockResolvedValue({} as WorkflowVersionHistoryResponse);
+
+    await service.listVersions("wf-123", { page: -1, per_page: 101 });
+
+    expect(apiHandler.get).toHaveBeenCalledWith("/v1/workflows/wf-123/versions", {
+      page: -1,
+      per_page: 101,
+    });
+  });
+
   it("listVersions should pass through revisions without a creator", async () => {
     const response: WorkflowVersionHistoryResponse = {
       workflow_id: "wf-123",
@@ -75,6 +134,7 @@ describe("WorkflowService versions", () => {
       total_revisions: 1,
       revisions: [
         {
+          revision_index: 0,
           yaml_config: "steps: []",
           date: "2026-08-27T10:00:00",
           created_by: null,

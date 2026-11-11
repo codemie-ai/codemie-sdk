@@ -107,6 +107,18 @@ export type WorkflowExecutionStateListParams = Partial<
 >;
 
 /**
+ * Workflow version history list parameters schema.
+ * The API validates the bounds, so values are sent as given.
+ */
+export const WorkflowVersionListParamsSchema = z
+  .object({
+    page: z.number().optional(),
+    per_page: z.number().optional(),
+  })
+  .readonly();
+export type WorkflowVersionListParams = z.infer<typeof WorkflowVersionListParamsSchema>;
+
+/**
  * Workflow rollback parameters schema
  */
 export const WorkflowRollbackParamsSchema = z

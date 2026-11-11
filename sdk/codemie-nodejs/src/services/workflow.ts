@@ -15,6 +15,8 @@ import {
   WorkflowRollbackParamsSchema,
   WorkflowUpdateParamsSchema,
   type WorkflowUpdateParams,
+  WorkflowVersionListParamsSchema,
+  type WorkflowVersionListParams,
 } from "../schemas/workflow";
 import { ApiRequestHandler } from "../utils/http";
 import { WorkflowExecutionService } from "./workflow_execution";
@@ -123,15 +125,31 @@ export class WorkflowService {
   }
 
   /**
-   * Get revision history for a workflow.
+   * Get one page of the revision history for a workflow.
+   * page and per_page are sent as given and validated by the API; when omitted the API
+   * returns its default first page. Each revision carries its absolute revision_index.
    */
-  async listVersions(workflowId: string): Promise<WorkflowVersionHistoryResponse> {
-    return this.api.get<WorkflowVersionHistoryResponse>(`/v1/workflows/${workflowId}/versions`);
+  async listVersions(
+    workflowId: string,
+    _params: WorkflowVersionListParams = {},
+  ): Promise<WorkflowVersionHistoryResponse> {
+    const params = WorkflowVersionListParamsSchema.parse(_params);
+
+    const queryParams: Record<string, number> = {};
+    if (params.page !== undefined) queryParams.page = params.page;
+    if (params.per_page !== undefined) queryParams.per_page = params.per_page;
+
+    const path = `/v1/workflows/${workflowId}/versions`;
+    if (Object.keys(queryParams).length === 0) {
+      return this.api.get<WorkflowVersionHistoryResponse>(path);
+    }
+    return this.api.get<WorkflowVersionHistoryResponse>(path, queryParams);
   }
 
   /**
    * Roll the workflow back to a prior revision by positional index.
-   * revision_index is 0-based into the revisions[] array returned by listVersions.
+   * revision_index is the 0-based position in the full revision history, the value
+   * listVersions reports as revision_index on each revision (not an offset into the page).
    */
   async rollback(
     workflowId: string,
