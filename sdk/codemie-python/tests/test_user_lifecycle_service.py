@@ -18,7 +18,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from codemie_sdk.models.user import CodeMieUserDetail
+from codemie_sdk.models.user import AdminUserConversation, CodeMieUserDetail
 from codemie_sdk.services.user import UserService
 
 _USER = {
@@ -76,3 +76,34 @@ class TestDeactivate:
 
         assert delete.call_args.kwargs["url"].endswith("/v1/admin/users/user-1")
         assert result == body
+
+
+class TestRemapUser:
+    def test_posts_old_and_new_ids_and_returns_user_detail(self, service):
+        remapped = {**_USER, "id": "user-2"}
+        with patch("codemie_sdk.utils.http.requests.post") as post:
+            post.return_value = _ok(remapped)
+            result = service.remap_user("user-1", "user-2")
+
+        assert post.call_args.kwargs["url"].endswith("/v1/admin/users/remap")
+        assert post.call_args.kwargs["json"] == {
+            "old_user_id": "user-1",
+            "new_user_id": "user-2",
+        }
+        assert isinstance(result, CodeMieUserDetail)
+        assert result.id == "user-2"
+
+
+class TestGetAdminUserConversation:
+    def test_gets_conversation_scoped_to_user_id(self, service):
+        body = {"conversation_id": "conv-1", "user_id": "user-2"}
+        with patch("codemie_sdk.utils.http.requests.get") as get:
+            get.return_value = _ok(body)
+            result = service.get_admin_user_conversation("user-2", "conv-1")
+
+        assert get.call_args.kwargs["url"].endswith(
+            "/v1/admin/users/user-2/conversations/conv-1"
+        )
+        assert isinstance(result, AdminUserConversation)
+        assert result.conversation_id == "conv-1"
+        assert result.user_id == "user-2"

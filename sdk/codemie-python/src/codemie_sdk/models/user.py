@@ -100,6 +100,19 @@ class UserProjectsResponse(BaseModel):
     projects: List[AdminUserProject] = []
 
 
+class AdminUserConversation(BaseModel):
+    """A conversation fetched by (user_id, conversation_id) via the admin API.
+
+    Only the fields the SDK's admin remap/ownership checks need; the backend
+    document carries many more (history, assistant data, etc.).
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    conversation_id: str
+    user_id: Optional[str] = None
+
+
 class User(BaseModel):
     """Model representing a user profile."""
 
