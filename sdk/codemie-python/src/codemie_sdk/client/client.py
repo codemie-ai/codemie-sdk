@@ -33,8 +33,8 @@ from ..services.mcp_configs import MCPConfigsService
 from ..services.cost_center import CostCenterService
 from ..services.customer_config_service import CustomerConfigService
 from ..services.project_budget_groups import ProjectBudgetGroupsService
+from ..services.provisioning import ProvisioningService
 from ..services.usage_attribution import UsageAttributionService
-from ..services.servicenow_integration import ServiceNowIntegrationService
 from ..services.marketplace_management import MarketplaceManagementService
 from ..services.export import ExportService
 
@@ -187,9 +187,6 @@ class CodeMieClient:
         self.project_budget_groups = ProjectBudgetGroupsService(
             self._api_domain, _token_source, verify_ssl=self._verify_ssl
         )
-        self.servicenow_integration = ServiceNowIntegrationService(
-            self._api_domain, _token_source, verify_ssl=self._verify_ssl
-        )
         self.a2a = A2AService(
             self._api_domain, _token_source, verify_ssl=self._verify_ssl
         )
@@ -203,6 +200,9 @@ class CodeMieClient:
             self._api_domain, _token_source, verify_ssl=self._verify_ssl
         )
         self.export = ExportService(
+            self._api_domain, _token_source, verify_ssl=self._verify_ssl
+        )
+        self.provisioning = ProvisioningService(
             self._api_domain, _token_source, verify_ssl=self._verify_ssl
         )
 
