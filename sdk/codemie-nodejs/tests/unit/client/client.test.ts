@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 import { KeycloakCredentials } from "../../../src/auth/credentials";
 import { CodeMieClient, type CodeMieClientConfig } from "../../../src/client/client";
+import { ProjectService } from "../../../src/services/project";
 
 jest.mock("axios", () => ({
   create: jest.fn().mockImplementation(() => ({
@@ -15,6 +16,7 @@ jest.mock("axios", () => ({
   delete: jest.fn(),
 }));
 jest.mock("../../../src/auth/credentials");
+jest.mock("../../../src/services/project");
 
 describe("CodeMieClient", () => {
   const mockConfig: CodeMieClientConfig = {
@@ -175,6 +177,18 @@ describe("CodeMieClient", () => {
 
       const minimalClient = new CodeMieClient(minimalCookieConfig);
       expect(minimalClient).toBeInstanceOf(CodeMieClient);
+    });
+  });
+
+  describe("projects", () => {
+    it("should expose a ProjectService and rebuild it on refresh", async () => {
+      keycloakCredentialsMock.getToken.mockResolvedValue("token" as never);
+      expect(client.projects).toBeInstanceOf(ProjectService);
+      const before = (ProjectService as unknown as jest.Mock).mock.calls.length;
+
+      await client.refreshToken();
+
+      expect((ProjectService as unknown as jest.Mock).mock.calls.length).toBeGreaterThan(before);
     });
   });
 

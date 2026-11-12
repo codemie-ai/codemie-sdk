@@ -17,6 +17,8 @@
 from typing import Literal
 from uuid import UUID
 
+import requests
+
 from ..models.project import (
     BulkAssignmentRequest,
     BulkAssignmentResponse,
@@ -154,6 +156,24 @@ class ProjectService:
             f"/v1/projects/{project_name}",
             response_model=ProjectDetailResponse,
         )
+
+    def project_exists(self, project_name: str) -> bool:
+        """Check whether a project exists and is visible to the caller.
+
+        Returns:
+            True if the project is found; False means not found or not visible.
+
+        Raises:
+            requests.exceptions.HTTPError: For any HTTP error other than 404.
+            requests.exceptions.ConnectionError: If the API is unreachable.
+        """
+        try:
+            self.get_project_detail(project_name)
+        except requests.exceptions.HTTPError as e:
+            if e.response is not None and e.response.status_code == 404:
+                return False
+            raise
+        return True
 
     def update_project(
         self,
