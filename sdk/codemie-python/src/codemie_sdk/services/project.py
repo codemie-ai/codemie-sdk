@@ -51,6 +51,15 @@ class ProjectService:
         """
         self._api = ApiRequestHandler(api_domain, token, verify_ssl)
 
+    @staticmethod
+    def _cost_center_id(value: UUID | str) -> str:
+        try:
+            return str(UUID(str(value)))
+        except ValueError:
+            raise ValueError(
+                f"cost_center_ids contains an invalid UUID: {value!r}"
+            ) from None
+
     def create_project(
         self,
         name: str,
@@ -98,6 +107,7 @@ class ProjectService:
         has_assigned_budgets: bool = False,
         sort_by: Literal["name", "created_at"] | None = None,
         sort_order: Literal["asc", "desc"] = "asc",
+        cost_center_ids: list[UUID] | None = None,
     ) -> PaginatedProjectListResponse:
         """List projects visible to current user with pagination and search.
 
@@ -110,9 +120,15 @@ class ProjectService:
                 assigned project budget
             sort_by: Sort field (name or created_at); ignored when search is active
             sort_order: Sort direction (asc or desc)
+            cost_center_ids: Return only projects assigned to any of these cost centers;
+                sent as one repeated query parameter per id, omitted when empty or None
 
         Returns:
             PaginatedProjectListResponse with projects and pagination info
+
+        Raises:
+            TypeError: If cost_center_ids is a single value instead of a list
+            ValueError: If cost_center_ids contains an invalid UUID
         """
         params = {
             "page": page,
@@ -127,6 +143,14 @@ class ProjectService:
             params["search"] = search
         if sort_by is not None:
             params["sort_by"] = sort_by
+        if cost_center_ids:
+            if isinstance(cost_center_ids, (str, UUID)):
+                raise TypeError(
+                    "cost_center_ids must be a list of UUIDs, not a single value"
+                )
+            params["cost_center_ids"] = [
+                self._cost_center_id(item) for item in cost_center_ids
+            ]
 
         return self._api.get(
             "/v1/projects",
