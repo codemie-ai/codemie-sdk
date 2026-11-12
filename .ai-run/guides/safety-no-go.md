@@ -10,14 +10,14 @@ Related guides: `.ai-run/guides/security.md` (secrets and CI scans), `.ai-run/gu
 
 | Path | Why |
 |------|-----|
-| `.env`, `.env.*` (for example `.env.e2e`, `.env.local`, `.env.staging`), `.envrc` | They hold real platform credentials (for example the Node.js e2e suite loads `sdk/codemie-nodejs/.env.e2e`). Reading them puts secrets in the agent context and logs. |
+| `.env`, `.env.local`, `.env.*.local`, `.env.e2e`, `.env.prod*`, `.env.dev*`, `.env.stag*`, `.env.uat*`, `.env.qa*`, `.env.test*`, `*.env`, `.envrc`, in any folder | They hold real platform credentials (for example the Node.js e2e suite loads `sdk/codemie-nodejs/.env.e2e`). Reading them puts secrets in the agent context and logs. |
 | `*.pem`, `*.key`, `*.p12`, `*.pfx` | Private keys and certificates. A leaked key cannot be taken back. |
 | `~/.ssh/**`, `~/.aws/**` | Personal SSH keys and cloud credentials. They are outside the repository and outside the task. |
 | `.npmrc`, `.pypirc`, in your home directory or in the repository | Registry tokens that can publish packages. |
 | `sdk/codemie-python/poetry.lock` (no hand edits) | Poetry generates it. A hand edit breaks the content hash, and `poetry install` in CI then fails. Change `pyproject.toml` and run Poetry. |
 | `package-lock.json` (no hand edits, no commit) | The Node.js SDK has no committed lock file on purpose; CI runs `npm install` (see `.ai-run/guides/quality-gates.md`). |
 
-You may read and edit the committed template `sdk/codemie-nodejs/.env.e2e.example` (and any other `.env.example` or `.env.*.example` file). It holds only placeholders. Put real values only in your local `.env.e2e`, which git ignores.
+You may read and edit the committed template `sdk/codemie-nodejs/.env.e2e.example`. It holds only placeholders. The rules name each blocked file, so a template name such as `.env.example` stays readable; do not give a file with real values a template name. Put real values only in your local `.env.e2e`, which git ignores.
 
 ## Commands never run
 
@@ -41,3 +41,9 @@ You may read and edit the committed template `sdk/codemie-nodejs/.env.e2e.exampl
 | Approval of the `release` environment in GitHub Actions | It is the last gate before the upload to a public registry. |
 | Merge of a PR to `main` | Every PR needs one approval from a collaborator with write access (`CONTRIBUTING.md`, section "Review Rule"). |
 | A change to `.github/workflows/`, `.gitleaks.toml` or `.claude/settings.json` | These files control CI, secret scans and agent permissions. A maintainer must review the change on purpose. Claude Code asks before it edits them. |
+
+## Limits
+
+- Claude Code loads the project `.claude/settings.json` only when the session starts at the repository root. A session started in a package folder has no rules from this file. Start Claude Code at the root.
+- The path rules are anchored to the repository root (`/**/...`), so a `cd` into a package does not change them. Do not change them to `**/...`: that form is relative to the current folder.
+- Do not add a `!` exception (for example `Read(!/**/.env.example)`) to a root-anchored rule. Claude Code ignores it, and the rule blocks the excepted file too. List the blocked names instead of a broad `.env.*`.
