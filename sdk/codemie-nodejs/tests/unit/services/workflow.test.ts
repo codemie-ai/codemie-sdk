@@ -510,7 +510,7 @@ describe("WorkflowService", () => {
 
       const result = await service.listVersions("wf-123");
 
-      expect(apiHandler.get).toHaveBeenCalledWith("/v1/workflows/wf-123/versions");
+      expect(apiHandler.get).toHaveBeenCalledWith("/v1/workflows/wf-123/versions", {});
       expect(result).toEqual(response);
     });
 
@@ -563,15 +563,16 @@ describe("WorkflowService", () => {
       expect(apiHandler.get).toHaveBeenCalledWith("/v1/workflows/wf-123/versions", { page: 0 });
     });
 
-    it("listVersions should leave paging bounds to the API", async () => {
-      apiHandler.get.mockResolvedValue({} as WorkflowVersionHistoryResponse);
+    it.each([
+      [{ page: -1 }],
+      [{ per_page: 0 }],
+      [{ per_page: -5 }],
+      [{ page: 1.5 }],
+      [{ per_page: 2.5 }],
+    ])("listVersions should reject invalid paging %j locally", async (params) => {
+      await expect(service.listVersions("wf-123", params)).rejects.toThrow();
 
-      await service.listVersions("wf-123", { page: -1, per_page: 101 });
-
-      expect(apiHandler.get).toHaveBeenCalledWith("/v1/workflows/wf-123/versions", {
-        page: -1,
-        per_page: 101,
-      });
+      expect(apiHandler.get).not.toHaveBeenCalled();
     });
 
     it("listVersions should pass through revisions without a creator", async () => {

@@ -108,12 +108,12 @@ export type WorkflowExecutionStateListParams = Partial<
 
 /**
  * Workflow version history list parameters schema.
- * The API validates the bounds, so values are sent as given.
+ * Bounds match the other list calls: page >= 0, per_page > 0. Omitted values are not sent.
  */
 export const WorkflowVersionListParamsSchema = z
   .object({
-    page: z.number().optional(),
-    per_page: z.number().optional(),
+    page: z.number().int().min(0).optional(),
+    per_page: z.number().int().positive().optional(),
   })
   .readonly();
 export type WorkflowVersionListParams = z.infer<typeof WorkflowVersionListParamsSchema>;

@@ -126,8 +126,8 @@ export class WorkflowService {
 
   /**
    * Get one page of the revision history for a workflow.
-   * page and per_page are sent as given and validated by the API; when omitted the API
-   * returns its default first page. Each revision carries its absolute revision_index.
+   * page (integer >= 0) and per_page (positive integer) are validated locally; when omitted
+   * the API returns its default first page. Each revision carries its absolute revision_index.
    */
   async listVersions(
     workflowId: string,
@@ -139,11 +139,10 @@ export class WorkflowService {
     if (params.page !== undefined) queryParams.page = params.page;
     if (params.per_page !== undefined) queryParams.per_page = params.per_page;
 
-    const path = `/v1/workflows/${workflowId}/versions`;
-    if (Object.keys(queryParams).length === 0) {
-      return this.api.get<WorkflowVersionHistoryResponse>(path);
-    }
-    return this.api.get<WorkflowVersionHistoryResponse>(path, queryParams);
+    return this.api.get<WorkflowVersionHistoryResponse>(
+      `/v1/workflows/${workflowId}/versions`,
+      queryParams,
+    );
   }
 
   /**
