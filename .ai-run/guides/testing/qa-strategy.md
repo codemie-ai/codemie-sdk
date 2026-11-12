@@ -1,6 +1,6 @@
 # QA Strategy
 
-**Last assessed**: 2026-11-09
+**Last assessed**: 2026-11-12
 
 How this repository tests its two SDKs. For the exact commands see `.ai-run/guides/quality-gates.md`; this file repeats only the test commands, in the same form.
 
@@ -17,8 +17,8 @@ How this repository tests its two SDKs. For the exact commands see `.ai-run/guid
 ### Unit Tests
 
 Python SDK:
-- **Location**: `sdk/codemie-python/tests/` (flat, 34 files)
-- **Pattern**: `test_<area>.py`, plain `def test_*()` functions, no classes
+- **Location**: `sdk/codemie-python/tests/` (flat, one `test_<area>.py` per area)
+- **Pattern**: `test_<area>.py`. Most files use plain `def test_*()` functions. Some files group tests in `class Test<Thing>` (for example `test_workflow_definition.py`, `test_user_lifecycle_service.py`). Follow the style of the file you extend.
 - **Run command**: `poetry run pytest tests/` (from `sdk/codemie-python`; CI job `python`, `.github/workflows/ci.yml`)
 - **Example**: `sdk/codemie-python/tests/test_credentials.py:32` (`test_external_token_wins_over_password_grant`)
 
@@ -36,7 +36,7 @@ Node.js SDK:
 ### End-to-End Tests
 
 Node.js SDK e2e suite:
-- **Location**: `sdk/codemie-nodejs/tests/e2e/specs/` (11 spec files, for example `assistant.spec.ts`, `workflow.spec.ts`, `datasource_with_git.spec.ts`)
+- **Location**: `sdk/codemie-nodejs/tests/e2e/specs/` (for example `assistant.spec.ts`, `workflow.spec.ts`, `datasource_with_git.spec.ts`)
 - **Tool**: Jest (`*.spec.ts`), run in band against a live CodeMie environment
 - **Run command**: `npm run test:e2e` (from `sdk/codemie-nodejs`). Not part of CI.
 - **Setup**: copy `sdk/codemie-nodejs/.env.e2e.example` to `.env.e2e` and fill in the values. `tests/e2e/setup.ts` loads that file and sets a 5-minute test timeout. Never commit `.env.e2e` (see `.ai-run/guides/safety-no-go.md`).
@@ -59,7 +59,7 @@ Current numbers: `.ai-run/guides/testing/qa-health.md`.
 
 - **Test file naming**: Python `test_<area>.py`; Node.js unit `<area>.test.ts`; Node.js e2e `<area>.spec.ts`.
 - **Test file location**: in a separate `tests/` directory of each SDK, not next to the source.
-- **Test style**: Python uses plain pytest functions with `assert`, and `@pytest.mark.parametrize` for tables (`sdk/codemie-python/tests/test_export_model_fields.py:97`). Node.js uses `describe` / `it` (unit) and `describe` / `test` (e2e).
+- **Test style**: Python uses pytest functions with `assert`, in some files grouped in `Test*` classes, and `@pytest.mark.parametrize` for tables (`sdk/codemie-python/tests/test_export_model_fields.py`). Node.js uses `describe` / `it` (unit) and `describe` / `test` (e2e).
 - **Mocking the HTTP layer**:
   - Python: patch the `requests` call inside the shared helper, for example `patch("codemie_sdk.utils.http.requests.get")` (`sdk/codemie-python/tests/test_marketplace_management_service.py:73`). Build fake responses with `MagicMock` (`sdk/codemie-python/tests/test_user_lifecycle_service.py:33`).
   - Node.js: mock the whole HTTP module with `jest.mock("../../../src/utils/http", ...)` (`sdk/codemie-nodejs/tests/unit/services/user.test.ts:7`).

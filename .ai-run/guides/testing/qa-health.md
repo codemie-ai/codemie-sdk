@@ -1,21 +1,21 @@
 # QA Health
 
-**Last assessed**: 2026-11-09
-**Coverage**: Python SDK 85% lines; Node.js SDK 74.9% lines, 58% branches
+**Last assessed**: 2026-11-12
+**Coverage**: Python SDK 86% lines; Node.js SDK 76.9% lines, 62.6% branches
 
-Measured once, locally, on `main` with the unit suites only (the Node.js e2e suite needs a live platform and was not run). CI does not collect coverage, so these numbers are a snapshot. To measure again, use the coverage commands in `.ai-run/guides/testing/qa-strategy.md`, section "Coverage Targets".
+Measured once, locally, on 2026-11-12, with the unit suites only (the Node.js e2e suite needs a live platform and was not run). CI does not collect coverage, so these numbers are a snapshot. To measure again, use the coverage commands in `.ai-run/guides/testing/qa-strategy.md`, section "Coverage Targets".
 
 | SDK | Tests | Result | Lines | Branches |
 |---|---|---|---|---|
-| Python (`poetry run pytest tests/ --cov=codemie_sdk`) | 443 | all passed | 85% (4294 of 5060 statements) | not measured |
-| Node.js (`npx jest --config jest.config.mjs --coverage`) | 302 in 24 suites | all passed | 74.9% (603 of 805) | 58% (222 of 383) |
+| Python (`poetry run pytest tests/ --cov=codemie_sdk`) | 514 | all passed | 86% (4425 of 5174 statements) | not measured |
+| Node.js (`npx jest --config jest.config.mjs --coverage`) | 329 in 26 suites | all passed | 76.9% (632 of 822) | 62.6% (258 of 412) |
 
 ## Coverage Summary
 
 | Module / area | Coverage | Notes |
 |---|---|---|
 | Python `models/` | 92-100% per module (`models/errors.py` 74%) | Models are covered through the service and model tests. |
-| Python `builders/workflow/` | 97-99% | The best covered area. Five test files (`test_workflow_*.py`), including the README examples. |
+| Python `builders/workflow/` | 97-100% | The best covered area. Six test files (`test_workflow_*.py`), including the README examples. |
 | Python `client/client.py` | 94% | |
 | Python `auth/credentials.py` | 81% | |
 | Python `utils/http.py` | 83% | |
@@ -24,7 +24,7 @@ Measured once, locally, on `main` with the unit suites only (the Node.js e2e sui
 | Node.js `mappers/`, `models/`, `schemas/`, `exceptions/` | 91-100% (`models/errors.ts` 65%) | |
 | Node.js `auth/credentials.ts` | 100% lines, 85% branches | |
 | Node.js `client/client.ts` | 76% lines, 58% branches | |
-| Node.js `utils/http.ts` | 56% lines, 40% branches | The unit tests mock this module for every service test. |
+| Node.js `utils/http.ts` | 84% lines, 78% branches | `tests/unit/utils/` tests it directly. The service tests mock it. |
 | Node.js `services/` | 8-100% per module | `user`, `task`, `llm`, `files`, `integration`, `workflow*` at 100% lines. |
 
 ## Risky Untested Areas
@@ -38,12 +38,11 @@ Modules with zero or low coverage that carry business logic:
 | `sdk/codemie-python/src/codemie_sdk/services/dynamic_config.py` | 26% | No test file. Admin configuration writes. |
 | `sdk/codemie-python/src/codemie_sdk/services/project_budget_groups.py` | 29% | No test file. Budget data. |
 | `sdk/codemie-python/src/codemie_sdk/services/admin.py` | 40% | Admin operations. Only the admin models have tests (`test_admin_user_models.py`). |
-| `sdk/codemie-python/src/codemie_sdk/services/conversation.py`, `skill.py`, `integration.py` | 42-44% | Core user-facing areas with low request coverage. |
+| `sdk/codemie-python/src/codemie_sdk/services/conversation.py`, `skill.py`, `integration.py` | 42-47% | Core user-facing areas with low request coverage. |
 | `sdk/codemie-nodejs/src/services/analytics.ts` | 8% lines, 0% branches | No unit test file. |
 | `sdk/codemie-nodejs/src/services/category.ts` | 33% lines, 0% branches | No unit test file. |
-| `sdk/codemie-nodejs/src/services/skill.ts` | 30% lines, 0% branches | `tests/unit/services/skill.test.ts` has 7 tests but leaves most methods out. |
+| `sdk/codemie-nodejs/src/services/skill.ts` | 33% lines, 0% branches | `tests/unit/services/skill.test.ts` covers the limits, companion files and visibility, but leaves most methods out. |
 | `sdk/codemie-nodejs/src/services/conversation.ts` | 36% lines, 0% branches | |
-| `sdk/codemie-nodejs/src/utils/http.ts` | 56% lines, 40% branches | Shared by every service. The error mapping paths (`NotFoundError`, `ApiError`) are only partly covered. |
 
 ## Known Test Debt
 
@@ -53,14 +52,14 @@ No QA documents or test plans are in the repository. Gaps found in the code:
 - The Node.js e2e suite (`sdk/codemie-nodejs/tests/e2e/`) does not run in CI and needs a live platform, so it can fall behind the code.
 - The Python `test` dependency group in `sdk/codemie-python/pyproject.toml` lists packages that no test in this repository imports (`boto3`, `python-gitlab`, `pytest-playwright`, `PyHamcrest`, `codemie-plugins`, `aws-assume-role-lib`, `python-dotenv`, `pytest-xdist`, `pytest-rerunfailures`, `tzlocal`). They make `poetry install` slow.
 - `sdk/codemie-python/pytest.ini` sets `pythonpath` to a directory that does not exist and hides unknown-mark warnings (see `qa-strategy.md`, section "Anti-Patterns").
-- The Python and Node.js SDKs do not have the same test depth for the same area (for example skills: Python `test_skill_models.py` covers models only; Node.js `skill.test.ts` covers a few methods).
+- The Python and Node.js SDKs do not have the same test depth for the same area (for example skills: Python `test_skill_models.py` covers the models and the `visibility` field on create, update and import; Node.js `skill.test.ts` covers a few methods).
 
 ## Recent Test Activity
 
-From `git log --diff-filter=AM -n 5 --name-only --pretty='' -- '*test*' '*spec*'` on 2026-11-09:
+From `git log --diff-filter=AM -n 5 --name-only --pretty='' -- 'sdk/*test*' 'sdk/*spec*'` on 2026-11-12:
 
-- `sdk/codemie-python/tests/test_assistant_share.py`
-- `sdk/codemie-python/tests/test_marketplace_management_service.py`
-- `sdk/codemie-python/tests/test_export_service.py`
-- `sdk/codemie-python/tests/test_prompt_variables.py`
 - `sdk/codemie-python/tests/test_user_lifecycle_service.py`
+- `sdk/codemie-python/tests/test_workflow_builder.py`
+- `sdk/codemie-python/tests/test_workflow_definition.py`
+- `sdk/codemie-python/tests/test_assistant_integration_serialization.py`
+- `sdk/codemie-python/tests/test_integration_serialization.py`
