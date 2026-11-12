@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 import json
 from pathlib import Path
-from typing import Union, Any, Literal, Optional, Dict
+from typing import Any, Literal, Optional, Dict
 from pydantic import BaseModel
 from copy import deepcopy
 
@@ -30,9 +30,10 @@ from ..models.assistant import (
     ReactionRequest,
     ToolCallResumeRequest,
     AssistantProjectFeature,
-    AssistantProjectMappingListResponse,
     AssistantProjectMappingRequest,
+    AssistantProjectMappingListResponse,
 )
+from ..models.file_operation import FileResponse
 from ..models.common import PaginationParams
 from ..models.conversation import BaseResponse
 from ..utils import ApiRequestHandler, TokenSource
@@ -50,6 +51,44 @@ class AssistantService:
             verify_ssl: Whether to verify SSL certificates
         """
         self._api = ApiRequestHandler(api_domain, token, verify_ssl)
+
+    @staticmethod
+    def _extract_output_schema(
+        request: AssistantChatRequest | VirtualAssistantChatRequest,
+    ) -> type[BaseModel] | None:
+        """If request.output_schema is a Pydantic model, replace it in-place
+        with its JSON schema (what the API expects) and return the original
+        model class so the response can be converted back after the call.
+        """
+        if (
+            request.output_schema is not None
+            and inspect.isclass(request.output_schema)
+            and issubclass(request.output_schema, BaseModel)
+        ):
+            pydantic_schema = deepcopy(request.output_schema)
+            request.output_schema = request.output_schema.model_json_schema()
+            return pydantic_schema
+        return None
+
+    @staticmethod
+    def _convert_generated(
+        response: BaseModelResponse, pydantic_schema: type[BaseModel] | None
+    ) -> None:
+        """Convert response.generated into pydantic_schema in place, if requested.
+
+        self._parse_response doesn't see the actual request model (where the
+        desired output format for structured output is reflected), so the
+        conversion happens here instead. A streamed terminal chunk serializes
+        `generated` as a JSON string; the non-streaming path already returns
+        it parsed as a dict. Skipped when generated is None (e.g. the stream
+        ended on a tool-call interruption rather than a final answer).
+        """
+        if not pydantic_schema or response.generated is None:
+            return
+        if isinstance(response.generated, str):
+            response.generated = pydantic_schema.model_validate_json(response.generated)
+        else:
+            response.generated = pydantic_schema.model_validate(response.generated)
 
     def list(
         self,
@@ -352,7 +391,7 @@ class AssistantService:
         assistant_id: str,
         request: AssistantChatRequest,
         headers: dict[str, str] | None = None,
-    ) -> Union[requests.Response, BaseModelResponse]:
+    ) -> BaseModelResponse:
         """Send a chat request to an assistant.
 
         Args:
@@ -363,14 +402,7 @@ class AssistantService:
         Returns:
             Chat response or streaming response
         """
-        pydantic_schema = None
-        if (
-            request.output_schema is not None
-            and inspect.isclass(request.output_schema)
-            and issubclass(request.output_schema, BaseModel)
-        ):
-            pydantic_schema = deepcopy(request.output_schema)
-            request.output_schema = request.output_schema.model_json_schema()
+        pydantic_schema = self._extract_output_schema(request)
 
         response = self._api.post(
             f"/v1/assistants/{assistant_id}/model",
@@ -379,10 +411,7 @@ class AssistantService:
             stream=request.stream,
             extra_headers=headers,
         )
-        if not request.stream and pydantic_schema:
-            # we do conversion to the BaseModel here because self._parse_response don't see actual request model,
-            # where reflected desired output format for structured output
-            response.generated = pydantic_schema.model_validate(response.generated)
+        self._convert_generated(response, pydantic_schema)
 
         return response
 
@@ -391,7 +420,7 @@ class AssistantService:
         assistant_id: str,
         version_number: int,
         request: AssistantChatRequest,
-    ) -> Union[requests.Response, BaseModelResponse]:
+    ) -> BaseModelResponse:
         """Send a chat request to a specific assistant version.
 
         Uses the stable chat endpoint with an explicit `version` parameter to
@@ -406,14 +435,7 @@ class AssistantService:
         Returns:
             Chat response or streaming response
         """
-        pydantic_schema = None
-        if (
-            request.output_schema is not None
-            and inspect.isclass(request.output_schema)
-            and issubclass(request.output_schema, BaseModel)
-        ):
-            pydantic_schema = deepcopy(request.output_schema)
-            request.output_schema = request.output_schema.model_json_schema()
+        pydantic_schema = self._extract_output_schema(request)
 
         payload = request.model_dump(exclude_none=True, by_alias=True)
         payload["version"] = version_number
@@ -424,8 +446,7 @@ class AssistantService:
             json_data=payload,
             stream=request.stream,
         )
-        if not request.stream and pydantic_schema:
-            response.generated = pydantic_schema.model_validate(response.generated)
+        self._convert_generated(response, pydantic_schema)
 
         return response
 
@@ -434,7 +455,7 @@ class AssistantService:
         assistant_slug: str,
         request: AssistantChatRequest,
         headers: dict[str, str] | None = None,
-    ) -> Union[requests.Response, BaseModelResponse]:
+    ) -> BaseModelResponse:
         """Send a chat request to an assistant by slug.
 
         Args:
@@ -445,14 +466,7 @@ class AssistantService:
         Returns:
             Chat response or streaming response
         """
-        pydantic_schema = None
-        if (
-            request.output_schema is not None
-            and inspect.isclass(request.output_schema)
-            and issubclass(request.output_schema, BaseModel)
-        ):
-            pydantic_schema = deepcopy(request.output_schema)
-            request.output_schema = request.output_schema.model_json_schema()
+        pydantic_schema = self._extract_output_schema(request)
 
         response = self._api.post(
             f"/v1/assistants/slug/{assistant_slug}/model",
@@ -461,8 +475,7 @@ class AssistantService:
             stream=request.stream,
             extra_headers=headers,
         )
-        if not request.stream and pydantic_schema:
-            response.generated = pydantic_schema.model_validate(response.generated)
+        self._convert_generated(response, pydantic_schema)
 
         return response
 
@@ -470,7 +483,7 @@ class AssistantService:
         self,
         request: VirtualAssistantChatRequest,
         headers: Optional[Dict[str, str]] = None,
-    ) -> Union[requests.Response, BaseModelResponse]:
+    ) -> BaseModelResponse:
         """Run inference using an inline (virtual) assistant definition.
 
         No database assistant record is required. History is never persisted.
@@ -482,14 +495,7 @@ class AssistantService:
         Returns:
             Chat response or streaming response
         """
-        pydantic_schema = None
-        if (
-            request.output_schema is not None
-            and inspect.isclass(request.output_schema)
-            and issubclass(request.output_schema, BaseModel)
-        ):
-            pydantic_schema = deepcopy(request.output_schema)
-            request.output_schema = request.output_schema.model_json_schema()
+        pydantic_schema = self._extract_output_schema(request)
 
         response = self._api.post(
             "/v1/assistants/virtual/model",
@@ -498,14 +504,16 @@ class AssistantService:
             stream=request.stream,
             extra_headers=headers,
         )
-        if not request.stream and pydantic_schema:
-            response.generated = pydantic_schema.model_validate(response.generated)
+        self._convert_generated(response, pydantic_schema)
 
         return response
 
-    def upload_file_to_chat(self, file_path: Path):
-        """Upload a file to assistant chat and return the response containing file_url."""
+    def upload_file_to_chat(self, file_path: Path) -> FileResponse:
+        """Upload a file to assistant chat and return the response containing file_url.
 
+        Use ``client.files.get_file_by_url(response.file_url)`` to download
+        the file with authentication.
+        """
         with open(file_path, "rb") as file:
             files = [
                 (
@@ -518,7 +526,7 @@ class AssistantService:
                     ),
                 ),
             ]
-            response = self._api.post_multipart("/v1/files/", dict, files=files)
+            response = self._api.post_multipart("/v1/files/", FileResponse, files=files)
 
         return response
 
