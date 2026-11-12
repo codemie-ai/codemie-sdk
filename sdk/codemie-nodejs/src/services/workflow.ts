@@ -1,6 +1,10 @@
 import { WorkflowMapper } from "../mappers/workflow.mapper";
 import type { AnyJson, PaginatedResponse, AuthConfig } from "../models/common";
-import type { Workflow, WorkflowResponse } from "../models/workflow";
+import type {
+  Workflow,
+  WorkflowResponse,
+  WorkflowVersionHistoryResponse,
+} from "../models/workflow";
 import {
   WorkflowCreateParamsSchema,
   type WorkflowCreateParams,
@@ -8,8 +12,11 @@ import {
   type WorkflowEvaluationParams,
   WorkflowListParamsSchema,
   type WorkflowListParams,
+  WorkflowRollbackParamsSchema,
   WorkflowUpdateParamsSchema,
   type WorkflowUpdateParams,
+  WorkflowVersionListParamsSchema,
+  type WorkflowVersionListParams,
 } from "../schemas/workflow";
 import { ApiRequestHandler } from "../utils/http";
 import { WorkflowExecutionService } from "./workflow_execution";
@@ -115,6 +122,48 @@ export class WorkflowService {
   async evaluate(workflowId: string, _params: WorkflowEvaluationParams): Promise<AnyJson> {
     const params = WorkflowEvaluationParamsSchema.parse(_params);
     return this.api.post(`/v1/workflows/${workflowId}/evaluate`, params);
+  }
+
+  /**
+   * Get one page of the revision history for a workflow.
+   * page (integer >= 0) and per_page (positive integer) are validated locally; when omitted
+   * the API returns its default first page. Each revision carries its absolute revision_index.
+   */
+  async listVersions(
+    workflowId: string,
+    _params: WorkflowVersionListParams = {},
+  ): Promise<WorkflowVersionHistoryResponse> {
+    const params = WorkflowVersionListParamsSchema.parse(_params);
+
+    const queryParams: Record<string, number> = {};
+    if (params.page !== undefined) queryParams.page = params.page;
+    if (params.per_page !== undefined) queryParams.per_page = params.per_page;
+
+    return this.api.get<WorkflowVersionHistoryResponse>(
+      `/v1/workflows/${workflowId}/versions`,
+      queryParams,
+    );
+  }
+
+  /**
+   * Roll the workflow back to a prior revision by positional index.
+   * revision_index is the 0-based position in the full revision history, the value
+   * listVersions reports as revision_index on each revision (not an offset into the page).
+   * Backends that predate paging omit it; use a newer backend to roll back by index.
+   */
+  async rollback(
+    workflowId: string,
+    revisionIndex: number,
+    changeNotes?: string,
+  ): Promise<{ message: string }> {
+    const params = WorkflowRollbackParamsSchema.parse({
+      revision_index: revisionIndex,
+      ...(changeNotes !== undefined ? { change_notes: changeNotes } : {}),
+    });
+    return this.api.post<{ message: string }>(
+      `/v1/workflows/${workflowId}/versions/rollback`,
+      params,
+    );
   }
 
   /**

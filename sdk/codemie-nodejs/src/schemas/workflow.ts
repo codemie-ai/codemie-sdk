@@ -105,3 +105,26 @@ export const WorkflowExecutionStateListParamsSchema = z
 export type WorkflowExecutionStateListParams = Partial<
   z.infer<typeof WorkflowExecutionStateListParamsSchema>
 >;
+
+/**
+ * Workflow version history list parameters schema.
+ * Bounds match the other list calls: page >= 0, per_page > 0. Omitted values are not sent.
+ */
+export const WorkflowVersionListParamsSchema = z
+  .object({
+    page: z.number().int().min(0).optional(),
+    per_page: z.number().int().positive().optional(),
+  })
+  .readonly();
+export type WorkflowVersionListParams = z.infer<typeof WorkflowVersionListParamsSchema>;
+
+/**
+ * Workflow rollback parameters schema
+ */
+export const WorkflowRollbackParamsSchema = z
+  .object({
+    revision_index: z.number().int().min(0),
+    change_notes: z.string().optional(),
+  })
+  .readonly();
+export type WorkflowRollbackParams = z.infer<typeof WorkflowRollbackParamsSchema>;

@@ -19,7 +19,7 @@ class User(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    user_id: str = Field(None)
+    user_id: str | None = None
     username: str = ""
     name: str = ""
 

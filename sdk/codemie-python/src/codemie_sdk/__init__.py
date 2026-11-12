@@ -213,6 +213,11 @@ from .models.provisioning import (
     ProvisioningBudgetResult,
 )
 from .services.provisioning import ProvisioningService
+from .models.workflow import (
+    WorkflowRevision,
+    WorkflowVersionHistoryResponse,
+    WorkflowRollbackRequest,
+)
 
 try:
     __version__ = _pkg_version("codemie-sdk-python")
@@ -381,4 +386,7 @@ __all__ = [
     "MarketplaceForcePublishResponse",
     "MarketplaceDecisionRequest",
     "MarketplaceManagementService",
+    "WorkflowRevision",
+    "WorkflowVersionHistoryResponse",
+    "WorkflowRollbackRequest",
 ]
