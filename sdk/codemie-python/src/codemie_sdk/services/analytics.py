@@ -92,6 +92,28 @@ class AnalyticsService:
             wrap_response=False,
         )
 
+    def get_assistants_requests(
+        self, params: PaginatedAnalyticsQueryParams | None = None
+    ) -> TabularResponse:
+        """Get assistant requests analytics.
+
+        Args:
+            params: Query parameters (filters + pagination); ``assistant_id``
+                limits the rows to one assistant, ``client_source`` to one client
+
+        Returns:
+            TabularResponse with one row per assistant request, newest first,
+            including conversation and request identifiers, tokens, cost,
+            execution time and status
+        """
+        query_params = params.model_dump(exclude_none=True) if params else {}
+        return self._api.get(
+            "/v1/analytics/assistants-requests",
+            TabularResponse,
+            params=query_params,
+            wrap_response=False,
+        )
+
     def get_workflows(
         self, params: PaginatedAnalyticsQueryParams | None = None
     ) -> TabularResponse:
