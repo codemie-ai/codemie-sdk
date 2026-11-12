@@ -19,3 +19,11 @@ docs/superpowers/runs/
 .superpowers
 .codegraph/
 docs/superpowers/qa-tasks/
+
+# AI
+.agents/memory/sdlc/daily/
+docs/superpowers/tasks/*/**/*.local.*
+docs/superpowers/tasks/*/**/*.local/
+docs/superpowers/tasks/*/**/task-*-brief.md
+docs/superpowers/tasks/*/**/task-*-report.md
+docs/superpowers/qa-tasks/*/**/*.local.*
