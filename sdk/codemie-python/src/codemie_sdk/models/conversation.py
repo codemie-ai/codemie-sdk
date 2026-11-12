@@ -188,6 +188,7 @@ class ConversationDetails(BaseModel):
     category: str | None
     mcp_server_single_usage: bool | None = False
     finished_at: datetime | None = None
+    attributes: dict[str, str] | None = None
 
 
 class ConversationShareRequest(BaseModel):
