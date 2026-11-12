@@ -4,7 +4,7 @@ Rules for every AI agent and every person who works in this repository. Do not d
 
 In Claude Code, `.claude/settings.json` blocks the usual spellings of this list: `permissions.deny` for the sections "Files never read or changed" and "Commands never run", and `permissions.ask` for the section "Actions that always need a person". The file is a guard, not a security boundary. A shell glob such as `cat .env*`, a script, a subprocess or another spelling of a command can get past it. So this guide applies to Claude Code too. Other agents (Codex, Gemini, Copilot and others) do not read that file at all. When you change one file, change the other in the same PR.
 
-Related guides: `.ai-run/guides/security.md` (secrets and CI scans), `.ai-run/guides/standards/git-workflow.md` (branches, releases).
+Related guides: `.ai-run/guides/development/security-patterns.md` (secrets and CI scans), `.ai-run/guides/standards/git-workflow.md` (branches, releases).
 
 ## Files never read or changed
 

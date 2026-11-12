@@ -11,7 +11,7 @@ Two client SDKs for the CodeMie platform: `sdk/codemie-python` and `sdk/codemie-
 | Day-to-day workflow, adding an API area | [development.md](.ai-run/guides/development.md) |
 | Style, Pydantic models, error handling | [standards/code-quality.md](.ai-run/guides/standards/code-quality.md) |
 | All commands: lint, format, test, build | [quality-gates.md](.ai-run/guides/quality-gates.md) |
-| Secrets, internal references, vulnerability reports | [security.md](.ai-run/guides/security.md) |
+| Secrets, internal references, vulnerability reports | [development/security-patterns.md](.ai-run/guides/development/security-patterns.md) |
 | Files, commands and actions that are off limits | [safety-no-go.md](.ai-run/guides/safety-no-go.md) |
 | Test types, conventions, coverage commands | [testing/qa-strategy.md](.ai-run/guides/testing/qa-strategy.md) |
 | Current coverage and untested areas | [testing/qa-health.md](.ai-run/guides/testing/qa-health.md) |
