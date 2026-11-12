@@ -54,6 +54,51 @@ def test_skill_detail_response_exposes_mcp_servers():
     assert response.mcp_servers[0].name == "custom-server"
 
 
+_TOOLKITS = [{"toolkit": "Git", "tools": [{"name": "x"}]}]
+
+_DETAIL = {
+    "id": "skill-1",
+    "name": "s",
+    "description": "d",
+    "project": "p",
+    "visibility": "project",
+    "createdDate": "2026-09-24T00:00:00Z",
+    "content": "c",
+}
+
+
+def test_skill_detail_response_keeps_toolkits():
+    response = SkillDetailResponse.model_validate({**_DETAIL, "toolkits": _TOOLKITS})
+    assert response.toolkits == _TOOLKITS
+
+
+def test_skill_update_request_includes_toolkits():
+    request = SkillUpdateRequest(toolkits=_TOOLKITS)
+    assert request.model_dump(exclude_none=True)["toolkits"] == _TOOLKITS
+
+
+def test_skill_toolkits_round_trip_from_read_to_update():
+    response = SkillDetailResponse.model_validate({**_DETAIL, "toolkits": _TOOLKITS})
+    request = SkillUpdateRequest(toolkits=response.toolkits)
+    assert request.model_dump(exclude_none=True)["toolkits"] == _TOOLKITS
+
+
+def test_skill_empty_toolkits_are_sent():
+    update = SkillUpdateRequest(toolkits=[])
+    assert update.model_dump(exclude_none=True)["toolkits"] == []
+    create = SkillCreateRequest(
+        name="s", description="d", content="c", project="p", toolkits=[]
+    )
+    assert create.model_dump(exclude_none=True)["toolkits"] == []
+
+
+def test_skill_toolkits_none_is_omitted_and_existing_dumps_unchanged():
+    assert "toolkits" not in SkillUpdateRequest(name="s").model_dump(exclude_none=True)
+    create = SkillCreateRequest(name="s", description="d", content="c", project="p")
+    assert "toolkits" not in create.model_dump(exclude_none=True)
+    assert SkillDetailResponse.model_validate(_DETAIL).toolkits is None
+
+
 def _service_with_mock_api():
     with patch("codemie_sdk.services.skill.ApiRequestHandler") as handler_cls:
         service = SkillService("https://api.example.com", "token")
