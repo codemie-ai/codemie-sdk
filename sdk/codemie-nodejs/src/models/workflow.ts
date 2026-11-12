@@ -93,6 +93,8 @@ export interface WorkflowExecutionResponse {
   created_by: BaseUser;
   /** Token usage statistics */
   tokens_usage?: TokensUsage;
+  /** Run attributes attached to the execution */
+  attributes?: Record<string, string> | null;
 }
 
 /** Model representing a workflow execution */
@@ -115,6 +117,8 @@ export interface WorkflowExecution {
   created_by: BaseUser;
   /** Token usage statistics */
   tokens_usage?: TokensUsage;
+  /** Run attributes attached to the execution */
+  attributes?: Record<string, string> | null;
 }
 
 /** Model for workflow execution state thought */

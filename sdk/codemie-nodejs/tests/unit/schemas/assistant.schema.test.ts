@@ -1,5 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
 import {
+  AssistantChatParamsSchema,
   AssistantCreateParamsSchema,
   AssistantUpdateParamsSchema,
   MCPServerConfigSchema,
@@ -526,5 +527,21 @@ describe("AssistantCreateParamsSchema API-echo nulls", () => {
         mcp_servers: [{ name: "s", enabled: true, config: { command: "npx", url: "https://a" } }],
       }),
     ).toThrow();
+  });
+});
+
+describe("AssistantChatParamsSchema attributes", () => {
+  it("keeps attributes as an object", () => {
+    const parsed = AssistantChatParamsSchema.parse({
+      text: "hi",
+      history: [],
+      attributes: { team: "alpha" },
+    });
+    expect(parsed.attributes).toEqual({ team: "alpha" });
+  });
+
+  it("leaves attributes absent when omitted", () => {
+    const parsed = AssistantChatParamsSchema.parse({ text: "hi", history: [] });
+    expect("attributes" in parsed).toBe(false);
   });
 });

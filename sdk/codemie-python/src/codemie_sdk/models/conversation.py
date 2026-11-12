@@ -188,6 +188,10 @@ class ConversationDetails(BaseModel):
     category: str | None
     mcp_server_single_usage: bool | None = False
     finished_at: datetime | None = None
+    attributes: dict[str, str] | None = Field(
+        default=None,
+        description="Run attributes (string key/value pairs) attached to the conversation",
+    )
 
 
 class ConversationShareRequest(BaseModel):

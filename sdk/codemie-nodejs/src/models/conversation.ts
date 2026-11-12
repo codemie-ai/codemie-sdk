@@ -125,6 +125,8 @@ export interface ConversationDetails {
   is_folder_migrated: boolean;
   category?: string;
   mcp_server_single_usage?: boolean;
+  /** Run attributes attached to the conversation */
+  attributes?: Record<string, string> | null;
 }
 
 export interface ConversationCreateRequest {

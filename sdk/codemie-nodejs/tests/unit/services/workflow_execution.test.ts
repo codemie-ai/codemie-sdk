@@ -146,6 +146,24 @@ describe("WorkflowExecutionService", () => {
       expect(result).toEqual(mockResponse);
     });
 
+    it("should send attributes in the request body", async () => {
+      apiHandler.post.mockResolvedValue(mockResponse);
+      await service.create("x", undefined, undefined, undefined, undefined, undefined, {
+        team: "alpha",
+      });
+
+      const body = apiHandler.post.mock.calls[0][1] as Record<string, unknown>;
+      expect(body.attributes).toEqual({ team: "alpha" });
+    });
+
+    it("should leave attributes undefined (dropped by JSON) when omitted", async () => {
+      apiHandler.post.mockResolvedValue(mockResponse);
+      await service.create("x");
+
+      const body = apiHandler.post.mock.calls[0][1] as Record<string, unknown>;
+      expect(body.attributes).toBeUndefined();
+    });
+
     it("should create a new workflow execution without user input", async () => {
       apiHandler.post.mockResolvedValue(mockResponse);
       const result = await service.create();

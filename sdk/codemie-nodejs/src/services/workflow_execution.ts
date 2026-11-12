@@ -47,6 +47,7 @@ export class WorkflowExecutionService {
     propagateHeaders?: boolean,
     headers?: Record<string, string>,
     tags?: string[],
+    attributes?: Record<string, string>,
   ): Promise<AnyJson> {
     const params = WorkflowExecutionCreateParamsSchema.parse({
       user_input: userInput,
@@ -54,6 +55,7 @@ export class WorkflowExecutionService {
       session_id: sessionId,
       propagate_headers: propagateHeaders,
       tags,
+      attributes,
     });
     return this.api.post(`/v1/workflows/${this.workflowId}/executions`, params, {}, headers);
   }

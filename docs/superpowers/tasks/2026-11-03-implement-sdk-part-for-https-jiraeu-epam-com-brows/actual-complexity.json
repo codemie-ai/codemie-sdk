@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "generated": "2026-11-03T00:00:00Z",
+  "dimensions": {
+    "component_scope":      { "score": 4, "label": "L" },
+    "requirements_clarity": { "score": 2, "label": "S" },
+    "technical_risk":       { "score": 2, "label": "S" },
+    "file_change_estimate": { "score": 6, "label": "XXL" },
+    "dependencies":         { "score": 1, "label": "XS" },
+    "affected_layers":      { "score": 2, "label": "S" }
+  },
+  "total": 17,
+  "size": "M",
+  "band_range": "15-20",
+  "files_changed": 23,
+  "routing": "brainstorming",
+  "key_reasoning": [
+    { "dimension": "file_change_estimate", "reason": "diffstat reports 23 files (about 696 insertions, 10 deletions) across the Node.js and Python SDKs, which maps to XXL. Roughly 8 of the files are tests, and 2 Python test files are new." },
+    { "dimension": "component_scope", "reason": "The same feature is built twice, in the Python and Node.js SDKs. Each side touches the analytics service (2 changed endpoints, 3 new), the workflow execution service, and the conversation, workflow and assistant models/schemas. The Node.js side also changes the workflow mapper. The work follows the existing pattern in both SDKs, so it stays at L." }
+  ],
+  "red_flags_applied": [],
+  "split_recommendation": null
+}
