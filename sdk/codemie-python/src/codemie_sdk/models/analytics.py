@@ -160,6 +160,14 @@ class PaginatedAnalyticsQueryParams(AnalyticsQueryParams):
 
     page: int = Field(0, description="Zero-indexed page number")
     per_page: int = Field(20, description="Items per page")
+    assistant_id: str | None = Field(
+        None,
+        description="Exact assistant id (assistants-requests endpoint only)",
+    )
+    client_source: str | None = Field(
+        None,
+        description='Client source: "platform", "ms-teams-bot", "chrome_extension" or "other"',
+    )
 
 
 # ── CLI Analytics: /v1/analytics/cli-analytics/* ─────────────────────────────
