@@ -147,17 +147,23 @@ def test_list_versions_parses_absolute_revision_index():
     assert result.total_revisions == 22
 
 
-def test_list_versions_requires_revision_index():
+def test_list_versions_accepts_revision_without_revision_index():
+    # Older backends return history entries without revision_index; the page must still parse.
     revision = {
         key: value
         for key, value in VERSIONS_WIRE_PAYLOAD["revisions"][0].items()
         if key != "revision_index"
     }
     service = WorkflowService("https://api.example.com", "token")
-    service._api = DummyApi({**VERSIONS_WIRE_PAYLOAD, "revisions": [revision]})
+    with_index = VERSIONS_WIRE_PAYLOAD["revisions"][0]
+    service._api = DummyApi(
+        {**VERSIONS_WIRE_PAYLOAD, "revisions": [revision, with_index]}
+    )
 
-    with pytest.raises(ValidationError):
-        service.list_versions("wf-123")
+    result = service.list_versions("wf-123")
+
+    assert result.revisions[0].revision_index is None
+    assert result.revisions[1].revision_index == 0
 
 
 def test_list_versions_sends_no_params_by_default():

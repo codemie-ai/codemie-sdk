@@ -331,7 +331,8 @@ class WorkflowService:
         revision_index is the 0-based position in the full revision history, the value
         list_versions reports as revision_index on each revision (not an offset into the
         returned page). The index is positional — it shifts on every save or rollback, so
-        always fetch the list fresh before rolling back.
+        always fetch the list fresh before rolling back. Backends that predate paging omit
+        revision_index (it is None); use a newer backend to roll back by index.
 
         Args:
             workflow_id: ID of the workflow.

@@ -180,11 +180,15 @@ class WorkflowGeneratorResponse(BaseModel):
 
 
 class WorkflowRevision(BaseModel):
-    """A single workflow revision entry in the history list."""
+    """A single workflow revision entry in the history list.
+
+    revision_index is None when the backend predates it (before the paged history
+    endpoint); such a revision cannot be addressed by rollback().
+    """
 
     model_config = ConfigDict(extra="ignore")
 
-    revision_index: int
+    revision_index: int | None = None
     yaml_config: str
     date: datetime
     created_by: User | None = None
