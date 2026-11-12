@@ -95,11 +95,13 @@ def test_analytics_query_params_serialize_dict_attributes_to_json():
 
 def test_get_assistants_requests_sends_filters_and_parses_rows():
     service = AnalyticsService("https://api.example.com", "token")
-    params = PaginatedAnalyticsQueryParams(attributes={"team": "alpha"})
+    params = PaginatedAnalyticsQueryParams(
+        attributes={"team": "alpha"}, assistant_id="asst-1"
+    )
 
     with patch("codemie_sdk.utils.http.requests.get") as get:
         get.return_value = _ok_response(_TABULAR_BODY)
-        result = service.get_assistants_requests(params, assistant_id="asst-1")
+        result = service.get_assistants_requests(params)
 
     kwargs = get.call_args.kwargs
     assert kwargs["url"] == "https://api.example.com/v1/analytics/assistants-requests"

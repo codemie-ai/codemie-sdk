@@ -99,12 +99,13 @@ class AnalyticsService:
 
         Args:
             params: Query parameters (filters + pagination); ``assistant_id``
-                limits the rows to one assistant, ``client_source`` to one client
+                limits the rows to one assistant, ``client_source`` to one client,
+                ``attributes`` to requests that carry those run attributes
 
         Returns:
             TabularResponse with one row per assistant request, newest first,
             including conversation and request identifiers, tokens, cost,
-            execution time and status
+            execution time, status and the run ``attributes`` column
         """
         query_params = params.model_dump(exclude_none=True) if params else {}
         return self._api.get(
@@ -129,32 +130,6 @@ class AnalyticsService:
         query_params = params.model_dump(exclude_none=True) if params else {}
         return self._api.get(
             "/v1/analytics/workflows",
-            TabularResponse,
-            params=query_params,
-            wrap_response=False,
-        )
-
-    def get_assistants_requests(
-        self,
-        params: PaginatedAnalyticsQueryParams | None = None,
-        assistant_id: str | None = None,
-    ) -> TabularResponse:
-        """Get per-request assistant analytics, one row per assistant request.
-
-        Args:
-            params: Query parameters (filters + pagination); ``params.attributes``
-                narrows the rows to requests that carry those run attributes
-            assistant_id: Optional exact assistant id to list the requests of
-
-        Returns:
-            TabularResponse with one row per request, including the run
-            ``attributes`` column
-        """
-        query_params = params.model_dump(exclude_none=True) if params else {}
-        if assistant_id is not None:
-            query_params["assistant_id"] = assistant_id
-        return self._api.get(
-            "/v1/analytics/assistants-requests",
             TabularResponse,
             params=query_params,
             wrap_response=False,
