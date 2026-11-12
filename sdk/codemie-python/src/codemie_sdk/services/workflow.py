@@ -290,23 +290,29 @@ class WorkflowService:
     ) -> WorkflowVersionHistoryResponse:
         """Get one page of the revision history for a workflow.
 
-        page and per_page are sent as given and validated by the API; when omitted the
-        API returns its default first page.
+        page and per_page are validated like in list() (page >= 0, per_page > 0) and only
+        the given ones are sent; when omitted the API returns its default first page.
 
         Args:
             workflow_id: ID of the workflow.
-            page: Optional 0-based page number.
-            per_page: Optional page size.
+            page: Optional 0-based page number. Must be >= 0.
+            per_page: Optional page size. Must be > 0.
 
         Returns:
             WorkflowVersionHistoryResponse with one page of revisions, each carrying its
             absolute revision_index, and total_revisions for the full history.
         """
+        # PaginationParams needs both fields, so an omitted one gets a valid placeholder
+        # for validation only and is not sent.
+        validated = PaginationParams(
+            page=0 if page is None else page,
+            per_page=1 if per_page is None else per_page,
+        ).to_dict()
         params: dict[str, Any] = {}
         if page is not None:
-            params["page"] = page
+            params["page"] = validated["page"]
         if per_page is not None:
-            params["per_page"] = per_page
+            params["per_page"] = validated["per_page"]
         return self._api.get(
             f"/v1/workflows/{workflow_id}/versions",
             WorkflowVersionHistoryResponse,

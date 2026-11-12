@@ -203,14 +203,25 @@ def test_list_versions_sends_page_zero():
     assert dummy.last_call.params == {"page": 0}
 
 
-def test_list_versions_leaves_paging_validation_to_the_api():
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"page": -1},
+        {"per_page": 0},
+        {"per_page": -5},
+        {"page": -1, "per_page": 10},
+        {"page": 0, "per_page": 0},
+    ],
+)
+def test_list_versions_rejects_invalid_paging_locally(kwargs):
     service = WorkflowService("https://api.example.com", "token")
     dummy = DummyApi()
     service._api = dummy
 
-    service.list_versions("wf-123", page=-1, per_page=101)
+    with pytest.raises(ValidationError):
+        service.list_versions("wf-123", **kwargs)
 
-    assert dummy.last_call.params == {"page": -1, "per_page": 101}
+    assert dummy.last_call.endpoint is None
 
 
 def test_rollback_rejects_negative_revision_index():
