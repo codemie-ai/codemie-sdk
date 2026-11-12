@@ -1,8 +1,9 @@
 """Models for analytics-related data structures."""
 
+import json
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ResponseMetadata(BaseModel):
@@ -139,6 +140,19 @@ class AnalyticsQueryParams(BaseModel):
     )
     users: str | None = Field(None, description="Comma-separated user IDs")
     projects: str | None = Field(None, description="Comma-separated project names")
+    attributes: str | None = Field(
+        None,
+        description="Run attributes filter: a JSON object of string keys and string "
+        "values. A dict is serialized to JSON; a string is sent as it is.",
+    )
+
+    @field_validator("attributes", mode="before")
+    @classmethod
+    def _serialize_attributes(cls, value: Any) -> Any:
+        """Send a dict as the JSON object the endpoints expect in the query string."""
+        if isinstance(value, dict):
+            return json.dumps(value)
+        return value
 
 
 class PaginatedAnalyticsQueryParams(AnalyticsQueryParams):

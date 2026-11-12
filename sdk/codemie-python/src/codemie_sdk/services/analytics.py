@@ -99,12 +99,13 @@ class AnalyticsService:
 
         Args:
             params: Query parameters (filters + pagination); ``assistant_id``
-                limits the rows to one assistant, ``client_source`` to one client
+                limits the rows to one assistant, ``client_source`` to one client,
+                ``attributes`` to requests that carry those run attributes
 
         Returns:
             TabularResponse with one row per assistant request, newest first,
             including conversation and request identifiers, tokens, cost,
-            execution time and status
+            execution time, status and the run ``attributes`` column
         """
         query_params = params.model_dump(exclude_none=True) if params else {}
         return self._api.get(
@@ -129,6 +130,54 @@ class AnalyticsService:
         query_params = params.model_dump(exclude_none=True) if params else {}
         return self._api.get(
             "/v1/analytics/workflows",
+            TabularResponse,
+            params=query_params,
+            wrap_response=False,
+        )
+
+    def get_workflows_executions(
+        self, params: PaginatedAnalyticsQueryParams | None = None
+    ) -> TabularResponse:
+        """Get per-execution workflow analytics, one row per workflow execution.
+
+        Args:
+            params: Query parameters (filters + pagination); ``params.attributes``
+                narrows the rows to executions that carry those run attributes
+
+        Returns:
+            TabularResponse with one row per execution, including the run
+            ``attributes`` column
+        """
+        query_params = params.model_dump(exclude_none=True) if params else {}
+        return self._api.get(
+            "/v1/analytics/workflows-executions",
+            TabularResponse,
+            params=query_params,
+            wrap_response=False,
+        )
+
+    def get_attributes_usage(
+        self,
+        attribute_key: str | None = None,
+        params: PaginatedAnalyticsQueryParams | None = None,
+    ) -> TabularResponse:
+        """Get usage grouped by the values of one run attribute key.
+
+        Args:
+            attribute_key: Run attribute key to break usage down by. The server
+                requires it; when omitted it answers 422.
+            params: Query parameters (filters + pagination); ``params.attributes``
+                narrows the rows to runs that also carry those attributes
+
+        Returns:
+            TabularResponse with one row per attribute value (value, conversations,
+            workflow_executions, total_tokens, total cost, unique_users, last_used)
+        """
+        query_params = params.model_dump(exclude_none=True) if params else {}
+        if attribute_key is not None:
+            query_params["attribute_key"] = attribute_key
+        return self._api.get(
+            "/v1/analytics/attributes-usage",
             TabularResponse,
             params=query_params,
             wrap_response=False,

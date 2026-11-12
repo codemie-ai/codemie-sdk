@@ -599,6 +599,16 @@ class AssistantChatRequest(BaseModel):
             When false, MCP servers are cached and reused. \
             If not specified, uses conversation's default setting.",
     )
+    attributes: dict[str, str] | None = Field(
+        default=None,
+        description="Analytics labels for this run: string keys and string values. \
+            Fixed when the conversation starts; the server rejects invalid attributes with 422.",
+    )
+    save_history: bool | None = Field(
+        default=None,
+        description="Whether to persist the conversation history. \
+            If not specified, the server default (true) applies; false skips saving this interaction.",
+    )
 
 
 class AgentMode(str, Enum):
