@@ -46,6 +46,46 @@ def test_cost_center_ids_are_sent_as_a_list_of_strings(service):
     assert params["cost_center_ids"] == [str(_FIRST), str(_SECOND)]
 
 
+def test_cost_center_ids_are_kept_next_to_search_and_sort(service):
+    params = _list(
+        service,
+        search="alpha",
+        sort_by="name",
+        sort_order="desc",
+        cost_center_ids=[_FIRST],
+    )
+
+    assert params["cost_center_ids"] == [str(_FIRST)]
+    assert params["search"] == "alpha"
+    assert params["sort_by"] == "name"
+    assert params["sort_order"] == "desc"
+
+
+def test_cost_center_ids_accept_uuid_strings(service):
+    params = _list(service, cost_center_ids=[str(_FIRST)])
+
+    assert params["cost_center_ids"] == [str(_FIRST)]
+
+
+def test_invalid_cost_center_id_fails_before_the_request(service):
+    with patch("codemie_sdk.utils.http.requests.get") as get:
+        with pytest.raises(
+            ValueError, match="cost_center_ids contains an invalid UUID"
+        ):
+            service.list_projects(cost_center_ids=[_FIRST, "not-a-uuid"])
+
+    get.assert_not_called()
+
+
+@pytest.mark.parametrize("single", [_FIRST, str(_FIRST)], ids=["uuid", "str"])
+def test_single_cost_center_id_is_rejected_with_a_clear_error(service, single):
+    with patch("codemie_sdk.utils.http.requests.get") as get:
+        with pytest.raises(TypeError, match="cost_center_ids must be a list"):
+            service.list_projects(cost_center_ids=single)
+
+    get.assert_not_called()
+
+
 @pytest.mark.parametrize("empty", [None, []], ids=["none", "empty list"])
 def test_cost_center_ids_are_omitted_when_empty(service, empty):
     params = _list(service, cost_center_ids=empty)
