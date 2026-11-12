@@ -7,7 +7,7 @@ Measured once, locally, on 2026-11-12, with the unit suites only (the Node.js e2
 
 | SDK | Tests | Result | Lines | Branches |
 |---|---|---|---|---|
-| Python (`poetry run pytest tests/ --cov=codemie_sdk`) | 514 | all passed | 86% (4425 of 5174 statements) | not measured |
+| Python (`poetry run pytest tests/ --cov=codemie_sdk`) | 516 | all passed | 86% (4430 of 5179 statements) | not measured |
 | Node.js (`npx jest --config jest.config.mjs --coverage`) | 329 in 26 suites | all passed | 76.9% (632 of 822) | 62.6% (258 of 412) |
 
 ## Coverage Summary

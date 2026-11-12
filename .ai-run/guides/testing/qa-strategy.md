@@ -64,7 +64,7 @@ Current numbers: `.ai-run/guides/testing/qa-health.md`.
   - Python: patch the `requests` call inside the shared helper, for example `patch("codemie_sdk.utils.http.requests.get")` (`sdk/codemie-python/tests/test_marketplace_management_service.py:73`). Build fake responses with `MagicMock` (`sdk/codemie-python/tests/test_user_lifecycle_service.py:33`).
   - Node.js: mock the whole HTTP module with `jest.mock("../../../src/utils/http", ...)` (`sdk/codemie-nodejs/tests/unit/services/user.test.ts:7`).
 - **Cross-SDK parity check**: `sdk/codemie-python/tests/test_integration_models.py:57` compares the Python `CredentialTypes` enum with the Node.js model. It skips itself when the Node.js sources are not present.
-- **Source docs scanned**: `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, `CLAUDE.md`, `.ai-run/guides/*.md`, `.ai-run/guides/standards/*.md`, `.claude/skills/codemie-release/SKILL.md`, `docs/RELEASING.md`.
+- **Source docs scanned**: `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, `CLAUDE.md`, `.ai-run/guides/*.md`, `.ai-run/guides/development/*.md`, `.ai-run/guides/standards/*.md`, `.claude/skills/codemie-release/SKILL.md`, `docs/RELEASING.md`.
 - **Naming / selector conventions (from docs)**: none documented. The SDKs have no UI, so there are no `data-testid` selectors.
 - **Architecture notes (from docs)**:
   - One service class per API area, with one model module per area (`.ai-run/guides/architecture.md`). Tests follow the same split: one test file per area.
