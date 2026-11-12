@@ -24,5 +24,5 @@ Two client SDKs for the CodeMie platform: `sdk/codemie-python` and `sdk/codemie-
 3. No credentials, private hostnames, personal paths or real ticket keys in any file. Use placeholders.
 4. Do not publish a package by hand. Releases follow `docs/RELEASING.md`.
 5. Add or update tests with every behaviour change.
-6. Never do what `safety-no-go.md` lists. Claude Code enforces the same list through `.claude/settings.json`.
+6. Never do what `safety-no-go.md` lists. `.claude/settings.json` blocks the usual forms in Claude Code; it does not replace this rule.
 7. Edit the guides in this repository. Keep one topic in one guide, and keep commands only in `quality-gates.md`.
