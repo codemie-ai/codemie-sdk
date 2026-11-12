@@ -575,6 +575,29 @@ describe("WorkflowService", () => {
       expect(apiHandler.get).not.toHaveBeenCalled();
     });
 
+    it("listVersions should pass through revisions without revision_index", async () => {
+      // Backends that predate paging return history entries without revision_index.
+      const response: WorkflowVersionHistoryResponse = {
+        workflow_id: "wf-123",
+        workflow_name: "My Workflow",
+        total_revisions: 1,
+        revisions: [
+          {
+            yaml_config: "steps: []",
+            date: "2026-08-27T10:00:00",
+            created_by: null,
+            change_notes: null,
+          },
+        ],
+      };
+
+      apiHandler.get.mockResolvedValue(response);
+
+      const result = await service.listVersions("wf-123");
+
+      expect(result.revisions[0].revision_index).toBeUndefined();
+    });
+
     it("listVersions should pass through revisions without a creator", async () => {
       const response: WorkflowVersionHistoryResponse = {
         workflow_id: "wf-123",

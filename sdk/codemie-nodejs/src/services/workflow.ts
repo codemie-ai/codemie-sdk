@@ -149,6 +149,7 @@ export class WorkflowService {
    * Roll the workflow back to a prior revision by positional index.
    * revision_index is the 0-based position in the full revision history, the value
    * listVersions reports as revision_index on each revision (not an offset into the page).
+   * Backends that predate paging omit it; use a newer backend to roll back by index.
    */
   async rollback(
     workflowId: string,
