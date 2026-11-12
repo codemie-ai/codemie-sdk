@@ -19,6 +19,10 @@
     "build": "tsup src/index.ts --format cjs,esm --dts --clean --sourcemap",
     "format": "biome format --write ./src ./tests",
     "lint": "biome lint --error-on-warnings ./src",
+    "knip": "npx knip@6.41.0 --dependencies --no-config-hints",
+    "knip:development": "npm run knip -- --files",
+    "knip:production": "npm run knip -- --production --strict",
+    "knip:check": "npm run knip:development && npm run knip:production",
     "test": "jest --config jest.config.mjs",
     "test:e2e": "jest --config jest.e2e.config.mjs --runInBand"
   },
