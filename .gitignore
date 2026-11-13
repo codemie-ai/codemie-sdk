@@ -20,13 +20,6 @@ docs/superpowers/runs/
 .codegraph/
 docs/superpowers/qa-tasks/
 
-# AI
-docs/superpowers/tasks/*/**/*.local.*
-docs/superpowers/tasks/*/**/*.local/
-docs/superpowers/tasks/*/**/task-*-brief.md
-docs/superpowers/tasks/*/**/task-*-report.md
-docs/superpowers/qa-tasks/*/**/*.local.*
-
 # Coverage artifacts
 sdk/codemie-nodejs/coverage/
 .coverage

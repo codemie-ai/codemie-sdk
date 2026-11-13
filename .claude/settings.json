@@ -55,8 +55,12 @@
       "Bash(git push -f*)",
       "Bash(git push * -f*)",
       "Bash(git reset --hard*)",
+      "Bash(git reset * --hard*)",
       "Bash(git clean *)",
       "Bash(* --no-verify*)",
+      "Bash(git commit -n*)",
+      "Bash(git commit * -n*)",
+      "Bash(*core.hooksPath*)",
       "Bash(poetry publish*)",
       "Bash(make publish*)",
       "Bash(npm publish*)",
@@ -70,17 +74,21 @@
     ],
     "ask": [
       "Bash(git push *--force-with-lease*)",
-      "Bash(rm -r *)",
-      "Bash(rm -rf *)",
-      "Bash(rm -fr *)",
-      "Bash(rm -R *)",
+      "Bash(rm -r*)",
+      "Bash(rm -R*)",
+      "Bash(rm -fr*)",
+      "Bash(rm -fR*)",
+      "Bash(rm --recursive*)",
+      "Bash(rm * -r*)",
+      "Bash(rm * -R*)",
+      "Bash(rm * --recursive*)",
       "Bash(gh workflow run publish*)",
       "Bash(gh release create*)",
       "Bash(gh release delete*)",
       "Bash(gh release edit*)",
-      "Edit(.github/workflows/**)",
-      "Edit(.gitleaks.toml)",
-      "Edit(.claude/settings.json)"
+      "Edit(/.github/workflows/**)",
+      "Edit(/.gitleaks.toml)",
+      "Edit(/.claude/settings.json)"
     ]
   }
 }

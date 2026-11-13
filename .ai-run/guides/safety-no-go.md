@@ -24,9 +24,9 @@ You may read and edit the committed template `sdk/codemie-nodejs/.env.e2e.exampl
 | Command | Why |
 |---------|-----|
 | `git push --force`, `git push -f` | It rewrites shared history and can delete the work of other people. Push a new commit instead. For a rebase of your own feature branch, see `--force-with-lease` in the next section. |
-| `git reset --hard` | It deletes uncommitted work with no undo. Use `git stash` or a new branch. |
+| `git reset --hard` (flag in any position) | It deletes uncommitted work with no undo. Use `git stash` or a new branch. |
 | `git clean` with any option | It deletes untracked files, which can be local notes, `.env` files or work in progress. |
-| `git commit --no-verify`, any command with `--no-verify` | It skips hooks and checks. Fix the failing check instead. |
+| `git commit --no-verify`, `git commit -n`, any command with `--no-verify` or `core.hooksPath` | It skips hooks and checks. Fix the failing check instead. A commit message that names `--no-verify` is refused too; write around it. |
 | `poetry publish`, `make publish`, `npm publish`, `npm dist-tag`, `twine upload` | Releases go only through the GitHub Release workflow in `docs/RELEASING.md`. A hand upload skips the version gate and the checks. |
 | `git push --tags`, `git push <remote> python-v*`, `git push <remote> node-v*`, `git push <remote> refs/tags/*` | A tag names a release version. A wrong tag on the remote can block or confuse a release. |
 
@@ -37,13 +37,14 @@ You may read and edit the committed template `sdk/codemie-nodejs/.env.e2e.exampl
 | `gh release create`, `gh release edit`, `gh release delete` | A published GitHub Release starts the publish workflow, and a version on PyPI or npm cannot be changed or removed. The `codemie-release` skill runs this step only after an explicit "yes" from the user; Claude Code also asks before it runs. |
 | `gh workflow run publish-python.yml`, `gh workflow run publish-node.yml` | A manual dispatch can publish a package to a public registry. Claude Code asks before it runs. |
 | `git push --force-with-lease` on your own feature branch | Use it only after a rebase of a branch that no other person uses. Never on `main`. Claude Code asks before it runs. |
-| `rm -r`, `rm -rf` (recursive delete) | A wrong path deletes files with no undo. Prefer to delete named files one by one. Claude Code asks before it runs. |
+| `rm -r`, `rm -R`, `rm --recursive` (any flag order) | A wrong path deletes files with no undo. Prefer to delete named files one by one. Claude Code asks before it runs. |
 | Approval of the `release` environment in GitHub Actions | It is the last gate before the upload to a public registry. |
 | Merge of a PR to `main` | Every PR needs one approval from a collaborator with write access (`CONTRIBUTING.md`, section "Review Rule"). |
 | A change to `.github/workflows/`, `.gitleaks.toml` or `.claude/settings.json` | These files control CI, secret scans and agent permissions. A maintainer must review the change on purpose. Claude Code asks before it edits them. |
 
 ## Limits
 
+- A Bash rule matches the whole command text, and the part before the first `*` is literal. Flag clusters such as `rm -vrf` or `git commit -an`, an alias, a script or a subprocess are not matched. Do not use them to get around a rule.
 - Claude Code loads the project `.claude/settings.json` only when the session starts at the repository root. A session started in a package folder has no rules from this file. Start Claude Code at the root.
 - The path rules are anchored to the repository root (`/**/...`), so a `cd` into a package does not change them. Do not change them to `**/...`: that form is relative to the current folder.
 - Do not add a `!` exception (for example `Read(!/**/.env.example)`) to a root-anchored rule. Claude Code ignores it, and the rule blocks the excepted file too. List the blocked names instead of a broad `.env.*`.
