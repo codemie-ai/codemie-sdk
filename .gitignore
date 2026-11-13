@@ -19,3 +19,8 @@ docs/superpowers/runs/
 .superpowers
 .codegraph/
 docs/superpowers/qa-tasks/
+
+# Coverage artifacts
+sdk/codemie-nodejs/coverage/
+.coverage
+htmlcov/
