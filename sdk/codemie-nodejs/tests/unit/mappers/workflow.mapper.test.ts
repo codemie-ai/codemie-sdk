@@ -1,6 +1,11 @@
 import { describe, it, expect } from "@jest/globals";
 import { WorkflowMapper } from "../../../src/mappers/workflow.mapper";
-import type { WorkflowResponse, WorkflowExecutionResponse } from "../../../src/models";
+import type {
+  ExecutionStatusType,
+  WorkflowExecutionResponse,
+  WorkflowExecutionState,
+  WorkflowResponse,
+} from "../../../src/models";
 import { WorkflowMode, ExecutionStatus } from "../../../src/models/workflow";
 
 describe("WorkflowMapper", () => {
@@ -89,6 +94,51 @@ describe("WorkflowMapper", () => {
   });
 
   describe("mapWorkflowExecutionResponse", () => {
+    const responseForStatus = (status: ExecutionStatusType): WorkflowExecutionResponse => ({
+      id: "exec-123",
+      execution_id: "execution-123",
+      workflow_id: "workflow-123",
+      overall_status: status,
+      date: "2025-01-01",
+      prompt: "test prompt",
+      created_by: { username: "user1", name: "User One" },
+    });
+
+    it.each<[keyof typeof ExecutionStatus, ExecutionStatusType]>([
+      ["IN_PROGRESS", "In Progress"],
+      ["NOT_STARTED", "Not Started"],
+      ["INTERRUPTED", "Interrupted"],
+      ["FAILED", "Failed"],
+      ["SUCCEEDED", "Succeeded"],
+      ["ABORTED", "Aborted"],
+    ])("preserves legacy %s status", (member, wireValue) => {
+      expect(ExecutionStatus[member]).toBe(wireValue);
+      const result = WorkflowMapper.mapWorkflowExecutionResponse(responseForStatus(wireValue));
+      expect(result.overall_status).toBe(wireValue);
+    });
+
+    it.each<["RECOVERING" | "NEEDS_TRIAGE" | "AUTHENTICATION_REQUIRED", ExecutionStatusType]>([
+      ["RECOVERING", ExecutionStatus.RECOVERING],
+      ["NEEDS_TRIAGE", ExecutionStatus.NEEDS_TRIAGE],
+      ["AUTHENTICATION_REQUIRED", ExecutionStatus.AUTHENTICATION_REQUIRED],
+    ])("exports and preserves %s status", (wireValue, constant) => {
+      expect(constant).toBe(wireValue);
+      const result = WorkflowMapper.mapWorkflowExecutionResponse(responseForStatus(wireValue));
+      expect(result.overall_status).toBe(wireValue);
+    });
+
+    it("accepts new literal values in execution and state status types", () => {
+      const executionStatuses: ExecutionStatusType[] = ["RECOVERING", "NEEDS_TRIAGE"];
+      const stateStatuses: WorkflowExecutionState["status"][] = ["RECOVERING", "NEEDS_TRIAGE"];
+      expect(executionStatuses).toEqual(["RECOVERING", "NEEDS_TRIAGE"]);
+      expect(stateStatuses).toEqual(["RECOVERING", "NEEDS_TRIAGE"]);
+    });
+
+    it("passes an unknown server status through without validation", () => {
+      const response = responseForStatus("FUTURE_STATUS" as ExecutionStatusType);
+      expect(WorkflowMapper.mapWorkflowExecutionResponse(response).overall_status).toBe("FUTURE_STATUS");
+    });
+
     it("should correctly map all execution fields", () => {
       // Arrange
       const apiResponse: WorkflowExecutionResponse = {
