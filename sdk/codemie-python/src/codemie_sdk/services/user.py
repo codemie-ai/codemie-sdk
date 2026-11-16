@@ -3,6 +3,7 @@
 from typing import Any, Dict, List, Optional
 
 from ..models.user import (
+    AdminUserConversation,
     AdminUserProject,
     CodeMieUserDetail,
     PaginatedUserListResponse,
@@ -218,5 +219,45 @@ class UserService:
         return self._api.post(
             f"/v1/admin/users/{user_id}/reactivate",
             CodeMieUserDetail,
+            wrap_response=False,
+        )
+
+    def remap_user(self, old_user_id: str, new_user_id: str) -> CodeMieUserDetail:
+        """Remap a pre-Keycloak user id to a new id (SuperAdmin only).
+
+        Rewrites the user's row and every table that references it (true FKs,
+        denormalized user_id/created_by columns, JSONB CreatedByUser blobs) from
+        `old_user_id` to `new_user_id` in one transaction. Re-running the same pair
+        after a successful remap is a no-op that returns the existing user.
+
+        Args:
+            old_user_id: The id currently on the row.
+            new_user_id: The id to move the row (and its content) to.
+
+        Returns:
+            The remapped user's details, at its new id.
+        """
+        return self._api.post(
+            "/v1/admin/users/remap",
+            CodeMieUserDetail,
+            json_data={"old_user_id": old_user_id, "new_user_id": new_user_id},
+            wrap_response=False,
+        )
+
+    def get_admin_user_conversation(
+        self, user_id: str, conversation_id: str
+    ) -> AdminUserConversation:
+        """Get a conversation, scoped to the user id it must belong to (admin only).
+
+        Args:
+            user_id: The id the conversation's `user_id` must match.
+            conversation_id: The conversation's unique identifier.
+
+        Returns:
+            The conversation, including its own `user_id`.
+        """
+        return self._api.get(
+            f"/v1/admin/users/{user_id}/conversations/{conversation_id}",
+            AdminUserConversation,
             wrap_response=False,
         )
