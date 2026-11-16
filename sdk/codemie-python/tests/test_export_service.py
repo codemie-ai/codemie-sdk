@@ -37,6 +37,18 @@ def service():
 
 
 class TestExport:
+    @pytest.mark.parametrize(
+        "kind",
+        ["assistant", "workflow", "datasource", "integration", "skill", "category"],
+    )
+    def test_exports_every_kind(self, service, kind):
+        with patch("codemie_sdk.utils.http.requests.get") as get:
+            get.return_value = _ok(_DOCUMENT)
+            result = service.export(kind, "id-1")
+
+        assert get.call_args.kwargs["url"].endswith(f"/v1/export/{kind}/id-1")
+        assert result == _DOCUMENT
+
     def test_returns_raw_document(self, service):
         with patch("codemie_sdk.utils.http.requests.get") as get:
             get.return_value = _ok(_DOCUMENT)
@@ -65,6 +77,23 @@ class TestExport:
 
         assert exc_info.value.response.status_code == 404
         assert exc_info.value.response.json() == body
+
+    def test_raises_http_error_on_403(self, service):
+        body = {"error": {"message": "Forbidden", "details": None}}
+        with patch("codemie_sdk.utils.http.requests.get") as get:
+            get.return_value = _error(403, body)
+            with pytest.raises(requests.HTTPError) as exc_info:
+                service.export("assistant", "abc")
+
+        assert exc_info.value.response.status_code == 403
+        assert exc_info.value.response.json() == body
+
+
+def test_export_service_importable_from_package_root():
+    import codemie_sdk
+
+    assert codemie_sdk.ExportService is ExportService
+    assert "ExportService" in codemie_sdk.__all__
 
 
 class TestExportRaw:

@@ -213,6 +213,7 @@ from .models.provisioning import (
     ProvisioningBudgetResult,
 )
 from .services.provisioning import ProvisioningService
+from .services.export import ExportService
 
 try:
     __version__ = _pkg_version("codemie-sdk-python")
@@ -365,6 +366,7 @@ __all__ = [
     "ProvisioningBudgetResponse",
     "ProvisioningBudgetResult",
     "ProvisioningService",
+    "ExportService",
     "MarketplaceStatusFilter",
     "MarketplaceGateResult",
     "MarketplacePendingOrderBy",
