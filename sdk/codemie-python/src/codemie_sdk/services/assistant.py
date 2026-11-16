@@ -37,6 +37,7 @@ from ..models.assistant import (
 from ..models.common import PaginationParams
 from ..models.conversation import BaseResponse
 from ..utils import ApiRequestHandler, TokenSource
+from ..utils.payload import without_none
 
 
 class AssistantService:
@@ -614,6 +615,121 @@ class AssistantService:
         """
         return self._api.post(
             f"/v1/assistants/{assistant_id}/marketplace/publish/validate", dict
+        )
+
+    def generate(
+        self,
+        text: str,
+        include_tools: bool = True,
+        llm_model: str | None = None,
+    ) -> dict:
+        """Generate assistant details (name, description, system prompt, ...) from a text with AI.
+
+        Nothing is created: the result is a draft to review.
+
+        Args:
+            text: Description of the desired assistant
+            include_tools: Whether to suggest toolkits
+            llm_model: LLM model to use; platform default when omitted
+
+        Returns:
+            Dict with the generated assistant details
+        """
+        return self._api.post(
+            "/v1/assistants/generate",
+            dict,
+            json_data=without_none(
+                {"text": text, "include_tools": include_tools, "llm_model": llm_model}
+            ),
+            wrap_response=False,
+        )
+
+    def generate_prompt(
+        self,
+        text: str | None = None,
+        system_prompt: str | None = None,
+        llm_model: str | None = None,
+    ) -> dict:
+        """Generate or improve an assistant system prompt with AI.
+
+        Args:
+            text: Description of what the assistant should do
+            system_prompt: Existing system prompt to improve
+            llm_model: LLM model to use; platform default when omitted
+
+        Returns:
+            Dict with the generated `system_prompt`
+        """
+        return self._api.post(
+            "/v1/assistants/prompt/generate",
+            dict,
+            json_data=without_none(
+                {
+                    "text": text,
+                    "system_prompt": system_prompt,
+                    "llm_model": llm_model,
+                }
+            ),
+            wrap_response=False,
+        )
+
+    def refine(
+        self,
+        name: str | None = None,
+        description: str | None = None,
+        conversation_starters: list[str] | None = None,
+        system_prompt: str | None = None,
+        toolkits: list[dict] | None = None,
+        context: list[dict] | None = None,
+        categories: list[str] | None = None,
+        refine_prompt: str | None = None,
+        llm_model: str | None = None,
+        include_tools: bool = True,
+        include_context: bool = True,
+        include_categories: bool = True,
+        project: str | None = None,
+    ) -> dict:
+        """Ask AI for recommendations to improve an assistant draft.
+
+        Args:
+            name: Draft assistant name
+            description: Draft assistant description
+            conversation_starters: Draft conversation starters
+            system_prompt: Draft system prompt
+            toolkits: Selected toolkits
+            context: Selected contexts, each with `name` and `context_type`
+            categories: Selected categories
+            refine_prompt: Custom refinement instructions
+            llm_model: LLM model to use; platform default when omitted
+            include_tools: Whether to assess toolkits
+            include_context: Whether to assess contexts
+            include_categories: Whether to assess categories
+            project: Project the draft belongs to
+
+        Returns:
+            Dict with the recommendations
+        """
+        return self._api.post(
+            "/v1/assistants/refine",
+            dict,
+            json_data=without_none(
+                {
+                    "name": name,
+                    "description": description,
+                    "conversation_starters": conversation_starters,
+                    "system_prompt": system_prompt,
+                    "toolkits": toolkits,
+                    "context": context,
+                    "categories": categories,
+                    "refine_prompt": refine_prompt,
+                    "llm_model": llm_model,
+                    "include_tools": include_tools,
+                    "include_context": include_context,
+                    "include_categories": include_categories,
+                    "project": project,
+                }
+            ),
+            wrap_response=False,
         )
 
     def resume_tool_call(

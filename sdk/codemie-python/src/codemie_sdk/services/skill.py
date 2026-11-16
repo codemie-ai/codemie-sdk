@@ -24,6 +24,7 @@ from ..models.skill import (
     SingleSkillStatsResponse,
 )
 from ..utils.http import ApiRequestHandler, TokenSource
+from ..utils.payload import without_none
 
 
 class SkillService:
@@ -460,5 +461,73 @@ class SkillService:
                 "skill_name": skill_name,
                 "llm_model": llm_model,
             },
+            wrap_response=False,
+        )
+
+    def generate(
+        self,
+        text: str,
+        include_tools: bool = True,
+        llm_model: str | None = None,
+    ) -> dict:
+        """Generate skill details (name, description, instructions, ...) from a text with AI.
+
+        Nothing is created: the result is a draft to review.
+
+        Args:
+            text: Description of the desired skill
+            include_tools: Whether to suggest toolkits
+            llm_model: LLM model to use; platform default when omitted
+
+        Returns:
+            Dict with the generated skill details
+        """
+        return self._api.post(
+            "/v1/skills/generate",
+            dict,
+            json_data=without_none(
+                {"text": text, "include_tools": include_tools, "llm_model": llm_model}
+            ),
+            wrap_response=False,
+        )
+
+    def refine(
+        self,
+        name: str | None = None,
+        description: str | None = None,
+        instructions: str | None = None,
+        categories: list[str] | None = None,
+        toolkits: list[dict] | None = None,
+        refine_prompt: str | None = None,
+        llm_model: str | None = None,
+    ) -> dict:
+        """Ask AI for recommendations to improve a skill draft.
+
+        Args:
+            name: Current skill name
+            description: Current skill description
+            instructions: Current skill instructions
+            categories: Current skill categories
+            toolkits: Current skill toolkits
+            refine_prompt: Custom refinement instructions
+            llm_model: LLM model to use; platform default when omitted
+
+        Returns:
+            Dict with the recommendations
+        """
+        return self._api.post(
+            "/v1/skills/refine",
+            dict,
+            json_data=without_none(
+                {
+                    "name": name,
+                    "description": description,
+                    "instructions": instructions,
+                    "categories": categories,
+                    "toolkits": toolkits,
+                    "refine_prompt": refine_prompt,
+                    "llm_model": llm_model,
+                }
+            ),
             wrap_response=False,
         )
