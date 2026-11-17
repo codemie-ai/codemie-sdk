@@ -2,11 +2,14 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from .headroom import HeadroomSavings
+
 
 class TokensUsage(BaseModel):
     input_tokens: int | None = None
     output_tokens: int | None = None
     money_spent: float | None = None
+    headroom: HeadroomSavings | None = None
 
     model_config = ConfigDict(extra="ignore")
 

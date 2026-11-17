@@ -8,6 +8,7 @@ from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field
 
 from codemie_sdk.models.assistant import ContextType
+from codemie_sdk.models.headroom import HeadroomSavings
 
 
 class Conversation(BaseModel):
@@ -94,6 +95,7 @@ class HistoryItem(BaseModel):
     executionId: str | None = None
     # WorkflowExecutionStatusEnum value, e.g. "In Progress"
     executionStatus: str | None = None
+    headroom: HeadroomSavings | None = None
 
 
 class ContextItem(BaseModel):

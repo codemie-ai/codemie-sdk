@@ -1,6 +1,7 @@
 /** Models for assistant-related data structures. */
 
 import type { BaseUser } from "./common";
+import type { HeadroomConfig } from "./headroom";
 import type { Integration } from "./integration";
 import type { AgentErrorDetails, ToolErrorDetails } from "./errors";
 
@@ -107,6 +108,7 @@ export interface Assistant extends AssistantBase {
   is_global: boolean;
   is_react: boolean;
   hide_tool_outputs?: boolean;
+  headroom_config?: HeadroomConfig;
   llm_model_type?: string;
   mcp_servers: MCPServerDetails[];
   nested_assistants: Partial<Assistant>[];

@@ -6,6 +6,7 @@ from enum import StrEnum, Enum
 from pydantic import BaseModel, ConfigDict, Field
 
 from codemie_sdk.models.common import User, TokensUsage
+from codemie_sdk.models.headroom import HeadroomOverride
 
 
 class WorkflowMode(StrEnum):
@@ -69,6 +70,7 @@ class Workflow(BaseModel):
     created_by: User | None = None
     display_name: str | None = None
     required_variables: list[str] = Field(default_factory=list)
+    headroom_config: HeadroomOverride | None = None
 
 
 class WorkflowRevision(BaseModel):

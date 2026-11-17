@@ -11,6 +11,7 @@ from .categories import Category
 from .common import User
 from .integration import Integration
 from .errors import AgentErrorDetails, ToolErrorDetails
+from .headroom import HeadroomConfig
 
 
 class ToolDetails(BaseModel):
@@ -365,6 +366,7 @@ class Assistant(AssistantBase):
         description="Reason given by the reviewer who rejected the assistant",
     )
     hedging_config: HedgingConfig | None = None
+    headroom_config: HeadroomConfig | None = None
     interactive_enabled: bool = False
     enable_image_generation: bool | None = False
     file_attachment_enabled: bool | None = None
@@ -407,6 +409,7 @@ class AssistantRequestBase(AssistantBase):
     skip_integration_validation: bool | None = Field(default=False)
     tool_permissions: ToolPermissionsConfig | None = None
     hedging_config: HedgingConfig | None = None
+    headroom_config: HeadroomConfig | None = None
     # None (not sent) on requests so an update never resets the stored flag.
     interactive_enabled: bool | None = None
     enable_image_generation: bool | None = None

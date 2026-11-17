@@ -145,6 +145,17 @@ describe("AssistantService", () => {
       expect(result).toEqual(mockAssistant);
     });
 
+    it("should return headroom_config from the response", async () => {
+      apiHandler.get.mockResolvedValue({
+        ...mockAssistant,
+        headroom_config: { enabled: true, strategy: "balanced" },
+      });
+
+      const result = await service.get("1");
+
+      expect(result.headroom_config).toEqual({ enabled: true, strategy: "balanced" });
+    });
+
     it("should return hide_tool_outputs from the response", async () => {
       apiHandler.get.mockResolvedValue({ ...mockAssistant, hide_tool_outputs: true });
 
@@ -216,6 +227,27 @@ describe("AssistantService", () => {
 
       expect(apiHandler.post).toHaveBeenCalledWith("/v1/assistants", createRequest);
       expect(result).toEqual({ ...mockResponse, assistant_id: "123" });
+    });
+
+    it("should send headroom_config on create when provided", async () => {
+      apiHandler.post.mockResolvedValue({ id: "123", success: true });
+
+      await service.create({
+        ...createRequest,
+        headroom_config: { enabled: true, compress_user_messages: false },
+      });
+
+      const body = apiHandler.post.mock.calls[0][1] as Record<string, unknown>;
+      expect(body.headroom_config).toEqual({ enabled: true, compress_user_messages: false });
+    });
+
+    it("should not send headroom_config on create when omitted", async () => {
+      apiHandler.post.mockResolvedValue({ id: "123", success: true });
+
+      await service.create(createRequest);
+
+      const body = apiHandler.post.mock.calls[0][1] as Record<string, unknown>;
+      expect("headroom_config" in body).toBe(false);
     });
 
     it("should preserve mcp_config_id in outbound create payload", async () => {
@@ -317,6 +349,27 @@ describe("AssistantService", () => {
 
       const body = apiHandler.put.mock.calls[0][1] as Record<string, unknown>;
       expect("hide_tool_outputs" in body).toBe(false);
+    });
+
+    it("should send headroom_config on update when provided", async () => {
+      apiHandler.put.mockResolvedValue({ success: true });
+
+      await service.update("123", {
+        ...updateRequest,
+        headroom_config: { enabled: true, strategy: "lossless" },
+      });
+
+      const body = apiHandler.put.mock.calls[0][1] as Record<string, unknown>;
+      expect(body.headroom_config).toEqual({ enabled: true, strategy: "lossless" });
+    });
+
+    it("should not send headroom_config on update when omitted", async () => {
+      apiHandler.put.mockResolvedValue({ success: true });
+
+      await service.update("123", updateRequest);
+
+      const body = apiHandler.put.mock.calls[0][1] as Record<string, unknown>;
+      expect("headroom_config" in body).toBe(false);
     });
 
     it("should preserve mcp_config_id in outbound update payload", async () => {

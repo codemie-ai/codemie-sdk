@@ -115,20 +115,20 @@ describe("AssistantCreateParamsSchema mcp_servers.config", () => {
   });
 });
 
-describe("hide_tool_outputs", () => {
-  const VALID = {
-    name: "A",
-    description: "D",
-    system_prompt: "P",
-    project: "proj",
-    context: [],
-    llm_model_type: "gpt-4",
-    toolkits: [],
-    conversation_starters: [],
-    assistant_ids: [],
-    mcp_servers: [],
-  };
+const VALID = {
+  name: "A",
+  description: "D",
+  system_prompt: "P",
+  project: "proj",
+  context: [],
+  llm_model_type: "gpt-4",
+  toolkits: [],
+  conversation_starters: [],
+  assistant_ids: [],
+  mcp_servers: [],
+};
 
+describe("hide_tool_outputs", () => {
   it("accepts true and false on create", () => {
     expect(
       AssistantCreateParamsSchema.parse({ ...VALID, hide_tool_outputs: true }).hide_tool_outputs,
@@ -146,6 +146,35 @@ describe("hide_tool_outputs", () => {
   it("rejects non-boolean values", () => {
     expect(() =>
       AssistantCreateParamsSchema.parse({ ...VALID, hide_tool_outputs: "yes" }),
+    ).toThrow();
+  });
+});
+
+describe("headroom_config on assistant params", () => {
+  it("keeps headroom_config on create", () => {
+    const parsed = AssistantCreateParamsSchema.parse({
+      ...VALID,
+      headroom_config: { enabled: true, strategy: "aggressive" },
+    });
+    expect(parsed.headroom_config).toEqual({ enabled: true, strategy: "aggressive" });
+  });
+
+  it("keeps headroom_config on update", () => {
+    const parsed = AssistantUpdateParamsSchema.parse({
+      ...VALID,
+      headroom_config: { compress_tool_outputs: false },
+    });
+    expect(parsed.headroom_config).toEqual({ compress_tool_outputs: false });
+  });
+
+  it("leaves the key absent when not provided (update must not reset it)", () => {
+    expect("headroom_config" in AssistantCreateParamsSchema.parse(VALID)).toBe(false);
+    expect("headroom_config" in AssistantUpdateParamsSchema.parse(VALID)).toBe(false);
+  });
+
+  it("rejects an unknown strategy", () => {
+    expect(() =>
+      AssistantCreateParamsSchema.parse({ ...VALID, headroom_config: { strategy: "bogus" } }),
     ).toThrow();
   });
 });

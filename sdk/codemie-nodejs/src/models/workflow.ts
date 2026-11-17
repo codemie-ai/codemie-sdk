@@ -1,5 +1,6 @@
 /** Models for workflow functionality */
 import type { BaseUser, TokensUsage } from "./common";
+import type { HeadroomOverride } from "./headroom";
 
 /** Available workflow modes */
 export const WorkflowMode = {
@@ -43,6 +44,8 @@ export interface WorkflowResponse {
   update_date: string;
   /** Creator information */
   created_by: BaseUser;
+  /** Headroom settings from the workflow YAML (detail endpoint) */
+  headroom_config?: HeadroomOverride;
 }
 
 /** Workflow model */
@@ -71,6 +74,8 @@ export interface Workflow {
   created_by: BaseUser;
   /** Project display name, populated at response time */
   display_name?: string | null;
+  /** Headroom settings from the workflow YAML (detail endpoint) */
+  headroom_config?: HeadroomOverride;
 }
 
 /** Workflow execution API response */

@@ -103,6 +103,12 @@ from .models.analytics import (
     CliAnalyticsSessionDetailResponse,
     CliAnalyticsRepositoriesResponse,
 )
+from .models.headroom import (
+    HeadroomConfig,
+    HeadroomOverride,
+    HeadroomSavings,
+    HeadroomStrategy,
+)
 from .services.customer_config_service import CustomerConfigService
 from .services.vendor_assistant import VendorAssistantService
 from .services.vendor_workflow import VendorWorkflowService
@@ -303,6 +309,10 @@ __all__ = [
     "UsersListResponse",
     "AnalyticsQueryParams",
     "PaginatedAnalyticsQueryParams",
+    "HeadroomConfig",
+    "HeadroomOverride",
+    "HeadroomSavings",
+    "HeadroomStrategy",
     "CliAnalyticsQueryParams",
     "CliAnalyticsSessionsQueryParams",
     "CliAnalyticsCostResponse",

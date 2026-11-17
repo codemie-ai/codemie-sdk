@@ -20,6 +20,7 @@ export class WorkflowMapper {
       created_date: response.date,
       update_date: response.update_date,
       created_by: response.created_by,
+      headroom_config: response.headroom_config,
     });
   }
 
