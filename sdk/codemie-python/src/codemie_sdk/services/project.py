@@ -23,6 +23,8 @@ from ..models.project import (
     BulkAssignmentUserItem,
     CsvImportValidationResponse,
     PaginatedProjectListResponse,
+    ProjectAllowedModelsResponse,
+    ProjectAllowedModelsUpdateRequest,
     ProjectAssignmentRequest,
     ProjectAssignmentResponse,
     ProjectAssignmentUpdateRequest,
@@ -230,6 +232,55 @@ class ProjectService:
             f"/v1/projects/{project_name}",
             response_model=ProjectUpdateResponse,
             json_data=payload.model_dump(mode="json", exclude_none=True),
+        )
+
+    def update_allowed_models(
+        self,
+        project_name: str,
+        allowed_models: list[str] | None = None,
+        default_model: str | None = None,
+    ) -> ProjectAllowedModelsResponse:
+        """Change the models a project may use and the model it starts on.
+
+        Args:
+            project_name: Project name
+            allowed_models: Models the project is limited to (optional); a value
+                requires a default model, stored or passed
+            default_model: New default model (optional); the stored one is kept
+                when it is not passed
+
+        Returns:
+            ProjectAllowedModelsResponse with the stored model settings
+
+        Raises:
+            HTTPException: 400 when a model cannot be chosen, 403 without the
+                project admin or maintainer role, 404 when the project is unknown
+        """
+        payload = ProjectAllowedModelsUpdateRequest(
+            allowed_models=allowed_models, default_model=default_model
+        )
+        return self._api.patch(
+            f"/v1/projects/{project_name}/allowed-models",
+            response_model=ProjectAllowedModelsResponse,
+            json_data=payload.model_dump(mode="json", exclude_none=True),
+        )
+
+    def reset_allowed_models(self, project_name: str) -> ProjectAllowedModelsResponse:
+        """Remove the project's model restriction and its default model.
+
+        Args:
+            project_name: Project name
+
+        Returns:
+            ProjectAllowedModelsResponse with both settings cleared
+
+        Raises:
+            HTTPException: 403 without the project admin or maintainer role,
+                404 when the project is unknown
+        """
+        return self._api.delete(
+            f"/v1/projects/{project_name}/allowed-models",
+            response_model=ProjectAllowedModelsResponse,
         )
 
     def delete_project(self, project_name: str) -> ProjectDeleteResponse:

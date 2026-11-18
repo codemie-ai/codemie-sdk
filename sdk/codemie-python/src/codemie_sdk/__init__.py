@@ -214,6 +214,28 @@ from .models.provisioning import (
 )
 from .services.provisioning import ProvisioningService
 from .services.export import ExportService
+from .models.hosted_application import (
+    HostedApplication,
+    HostedApplicationCapabilities,
+    HostedApplicationCreator,
+    HostedApplicationDeletion,
+    HostedApplicationDeletionStatus,
+    HostedApplicationLaunch,
+    HostedApplicationList,
+    HostedApplicationSharableUsers,
+    HostedApplicationSharedWith,
+    HostedApplicationShareLink,
+    HostedApplicationShareLinkInfo,
+    HostedApplicationShareLinkTarget,
+    HostedApplicationUploadReceipt,
+    HostedApplicationUsage,
+    HostedApplicationValidationReport,
+    HostedApplicationVersion,
+    HostedApplicationVersionList,
+    HostedApplicationVersionQueued,
+    HostedApplicationVersionStart,
+)
+from .services.hosted_application import HostedApplicationService
 
 try:
     __version__ = _pkg_version("codemie-sdk-python")
@@ -383,4 +405,24 @@ __all__ = [
     "MarketplaceForcePublishResponse",
     "MarketplaceDecisionRequest",
     "MarketplaceManagementService",
+    "HostedApplication",
+    "HostedApplicationCapabilities",
+    "HostedApplicationCreator",
+    "HostedApplicationDeletion",
+    "HostedApplicationDeletionStatus",
+    "HostedApplicationLaunch",
+    "HostedApplicationList",
+    "HostedApplicationSharableUsers",
+    "HostedApplicationSharedWith",
+    "HostedApplicationShareLink",
+    "HostedApplicationShareLinkInfo",
+    "HostedApplicationShareLinkTarget",
+    "HostedApplicationUploadReceipt",
+    "HostedApplicationUsage",
+    "HostedApplicationValidationReport",
+    "HostedApplicationVersion",
+    "HostedApplicationVersionList",
+    "HostedApplicationVersionQueued",
+    "HostedApplicationVersionStart",
+    "HostedApplicationService",
 ]

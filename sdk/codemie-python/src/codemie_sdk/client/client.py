@@ -37,6 +37,7 @@ from ..services.provisioning import ProvisioningService
 from ..services.usage_attribution import UsageAttributionService
 from ..services.marketplace_management import MarketplaceManagementService
 from ..services.export import ExportService
+from ..services.hosted_application import HostedApplicationService
 
 
 class CodeMieClient:
@@ -203,6 +204,9 @@ class CodeMieClient:
             self._api_domain, _token_source, verify_ssl=self._verify_ssl
         )
         self.provisioning = ProvisioningService(
+            self._api_domain, _token_source, verify_ssl=self._verify_ssl
+        )
+        self.hosted_applications = HostedApplicationService(
             self._api_domain, _token_source, verify_ssl=self._verify_ssl
         )
 

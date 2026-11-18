@@ -157,6 +157,23 @@ class MCPServerDetails(BaseModel):
     tools: list[str] | None = None
 
 
+class SubAssistantPublishSettings(BaseModel):
+    """Settings for one sub-assistant when the parent is published to the marketplace.
+
+    Mirrors the backend's ``SubAssistantPublishSettings``
+    (``codemie/src/codemie/rest_api/models/assistant.py``); sent as
+    ``sub_assistants_settings`` on ``AssistantService.publish``.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    assistant_id: str
+    is_global: bool = True
+    toolkits: list[ToolKitDetails] | None = None
+    mcp_servers: list[MCPServerDetails] | None = None
+    categories: list[str] | None = Field(default_factory=list)
+
+
 class SystemPromptHistory(BaseModel):
     """Model for system prompt history."""
 

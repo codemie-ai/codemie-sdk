@@ -120,6 +120,14 @@ class ProjectDetailResponse(BaseModel):
     cost_center_name: str | None = None
     members: list[ProjectMember]
     chargeback_attribution: str = "project"
+    allowed_models: list[str] | None = Field(
+        default=None,
+        description="Models the project is limited to; None means no restriction",
+    )
+    default_model: str | None = Field(
+        default=None,
+        description="Model the project's assistants and chats start on",
+    )
     cli_analytics_enabled: bool | None = None
 
 
@@ -179,6 +187,32 @@ class ProjectUpdateRequest(BaseModel):
     enforce_member_spend_limits: bool | None = None
     chargeback_attribution: str | None = None
     cli_analytics_enabled: bool | None = None
+
+
+class ProjectAllowedModelsUpdateRequest(BaseModel):
+    """Request to change the models a project may use and its default model."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    allowed_models: list[str] | None = None
+    default_model: str | None = None
+
+
+class ProjectAllowedModelsResponse(BaseModel):
+    """Project model settings after an update or a reset."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    name: str
+    display_name: str | None = None
+    description: str | None = None
+    project_type: str
+    created_by: str
+    created_at: datetime
+    cost_center_id: UUID | None = None
+    cost_center_name: str | None = None
+    allowed_models: list[str] | None = None
+    default_model: str | None = None
 
 
 class ProjectOwnershipUpdateRequest(BaseModel):
