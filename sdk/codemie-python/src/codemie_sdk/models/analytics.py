@@ -123,6 +123,15 @@ class UsersListResponse(BaseModel):
     metadata: ResponseMetadata = Field(description="Response metadata")
 
 
+class AnalyticsDetailResponse(BaseModel):
+    """Response for analytics detail/drilldown endpoints."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    data: dict[str, Any] = Field(description="Detail payload")
+    metadata: ResponseMetadata = Field(description="Response metadata")
+
+
 class AnalyticsQueryParams(BaseModel):
     """Query parameters for analytics endpoints."""
 
@@ -177,6 +186,15 @@ class RunAttributesQueryParams(PaginatedAnalyticsQueryParams):
         if isinstance(value, dict):
             return json.dumps(value)
         return value
+
+
+class CliInsightsUserDetailQueryParams(AnalyticsQueryParams):
+    """Query parameters of the CLI Insights user detail drilldown."""
+
+    user_name: str = Field(description="User name or e-mail the detail is about")
+    user_id: str | None = Field(
+        None, description="User id; when set it is checked before the name"
+    )
 
 
 # ── CLI Analytics: /v1/analytics/cli-analytics/* ─────────────────────────────
