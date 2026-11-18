@@ -1,14 +1,22 @@
 """Admin service implementation."""
 
+from urllib.parse import quote
+
 from ..models.admin import (
+    AdminLLMModel,
     AdminUserListItem,
     AdminUserListResponse,
     ApplicationCreateRequest,
     ApplicationCreateResponse,
     ApplicationsListResponse,
+    GlobalDefaultLLMModel,
+    LLMModelStatusBulkItem,
+    LLMModelStatusBulkResult,
+    LLMModelStatusUpdate,
     LocalUserCreateRequest,
     LocalUserDetail,
 )
+from ..models.llm import ModelStatus
 from ..utils import ApiRequestHandler, TokenSource
 
 
@@ -137,3 +145,87 @@ class AdminService:
             dict,
             wrap_response=False,
         )
+
+    def list_llm_model_statuses(self) -> list[AdminLLMModel]:
+        """List the chat and embedding models an administrator can manage.
+
+        Models the provider reports as unavailable are not listed.
+
+        Returns:
+            Models with their persisted status
+        """
+        return self._api.get("/v1/admin/llm/status", list[AdminLLMModel])
+
+    def set_llm_model_status(
+        self, base_name: str, status: ModelStatus | str
+    ) -> LLMModelStatusUpdate:
+        """Set the status of one model.
+
+        Args:
+            base_name: Base name of the model
+            status: New status: enabled, disabled or deprecated
+
+        Returns:
+            The base name and the status that was stored
+        """
+        return self._api.put(
+            f"/v1/admin/llm/{quote(base_name, safe='')}/status",
+            LLMModelStatusUpdate,
+            json_data={"status": ModelStatus(status).value},
+        )
+
+    def bulk_set_llm_model_statuses(
+        self, updates: list[LLMModelStatusBulkItem]
+    ) -> LLMModelStatusBulkResult:
+        """Set the status of several models in one call.
+
+        Every item is processed on its own: one failing item does not stop the
+        others, and its error is reported in the result.
+
+        Args:
+            updates: Up to 100 items, each with a different base name
+
+        Returns:
+            Totals and the per-item results
+        """
+        return self._api.post(
+            "/v1/admin/llm/status/bulk",
+            LLMModelStatusBulkResult,
+            json_data={"updates": [item.model_dump() for item in updates]},
+        )
+
+    def get_global_default_llm_model(self) -> GlobalDefaultLLMModel:
+        """Get the global default model: the saved choice and the effective one."""
+        return self._api.get(
+            "/v1/admin/llm/default", GlobalDefaultLLMModel, wrap_response=False
+        )
+
+    def set_global_default_llm_model(self, base_name: str) -> GlobalDefaultLLMModel:
+        """Save a model as the global default.
+
+        Args:
+            base_name: Base name of a model that is enabled and available
+
+        Returns:
+            The global default after the change
+        """
+        return self._api.put(
+            "/v1/admin/llm/default",
+            GlobalDefaultLLMModel,
+            json_data={"base_name": base_name},
+            wrap_response=False,
+        )
+
+    def reset_global_default_llm_model(self) -> GlobalDefaultLLMModel:
+        """Remove the saved global default so the configured one applies again.
+
+        Returns:
+            The global default after the reset
+        """
+        result = self._api.delete(
+            "/v1/admin/llm/default", GlobalDefaultLLMModel, wrap_response=False
+        )
+        if result is None:
+            # The platform may answer 204 No Content; read the state back instead.
+            return self.get_global_default_llm_model()
+        return result

@@ -32,6 +32,7 @@ from ..services.dynamic_config import DynamicConfigService
 from ..services.mcp_configs import MCPConfigsService
 from ..services.cost_center import CostCenterService
 from ..services.customer_config_service import CustomerConfigService
+from ..services.budgets import BudgetsService
 from ..services.project_budget_groups import ProjectBudgetGroupsService
 from ..services.provisioning import ProvisioningService
 from ..services.usage_attribution import UsageAttributionService
@@ -183,6 +184,9 @@ class CodeMieClient:
             self._api_domain, _token_source, verify_ssl=self._verify_ssl
         )
         self.cost_centers = CostCenterService(
+            self._api_domain, _token_source, verify_ssl=self._verify_ssl
+        )
+        self.budgets = BudgetsService(
             self._api_domain, _token_source, verify_ssl=self._verify_ssl
         )
         self.project_budget_groups = ProjectBudgetGroupsService(
