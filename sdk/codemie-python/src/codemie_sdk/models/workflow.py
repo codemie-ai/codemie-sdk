@@ -158,6 +158,7 @@ class WorkflowExecution(BaseModel):
     created_by: User
     conversation_id: str | None = None
     tokens_usage: TokensUsage | None = None
+    attributes: dict[str, str] | None = None
 
 
 class WorkflowEvaluationRequest(BaseModel):

@@ -307,6 +307,10 @@ class Assistant(AssistantBase):
     system_prompt_history: list[SystemPromptHistory] = Field(default_factory=list)
     project: str
     llm_model_type: str | None = None
+    effective_llm_model_reason: str | None = Field(
+        default=None,
+        description="Why the assistant detail shows a different model than the stored one",
+    )
     toolkits: list[ToolKitDetails] = Field(default_factory=list)
     conversation_starters: list[str] = Field(
         default_factory=list,
@@ -370,6 +374,7 @@ class Assistant(AssistantBase):
     interactive_enabled: bool = False
     enable_image_generation: bool | None = False
     file_attachment_enabled: bool | None = None
+    disabled_context_tools: list[str] = Field(default_factory=list)
 
 
 class AssistantRequestBase(AssistantBase):
@@ -414,6 +419,7 @@ class AssistantRequestBase(AssistantBase):
     interactive_enabled: bool | None = None
     enable_image_generation: bool | None = None
     file_attachment_enabled: bool | None = None
+    disabled_context_tools: list[str] | None = None
 
 
 class AssistantCreateRequest(AssistantRequestBase):
@@ -534,6 +540,7 @@ class AssistantVersion(BaseModel):
     assistant_ids: list[str] = Field(default_factory=list)
     skill_ids: list[str] | None = None
     prompt_variables: list[PromptVariable] = Field(default_factory=list)
+    disabled_context_tools: list[str] = Field(default_factory=list)
 
 
 class ChatRole(str, Enum):
@@ -618,6 +625,16 @@ class AssistantChatRequest(BaseModel):
             When true, MCP servers are created fresh and destroyed after use. \
             When false, MCP servers are cached and reused. \
             If not specified, uses conversation's default setting.",
+    )
+    attributes: dict[str, str] | None = Field(
+        default=None,
+        description="Analytics labels for this run: string keys and string values. \
+            Fixed when the conversation starts; the server rejects invalid attributes with 422.",
+    )
+    save_history: bool | None = Field(
+        default=None,
+        description="Whether to persist the conversation history. \
+            If not specified, the server default (true) applies; false skips saving this interaction.",
     )
 
 

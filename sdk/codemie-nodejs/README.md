@@ -1165,6 +1165,10 @@ Then run the tests:
 npm run test:e2e
 ```
 
+#### Disabled Context Tools
+
+`disabled_context_tools` (list of default datasource tool names opted out, e.g. `["search_kb"]`) is accepted by `create`/`update` and returned on `Assistant` and `AssistantVersion` (defaults to `[]`). Omit it on update to leave the current value unchanged; pass `[]` to clear it.
+
 ### Assistant Versioning via SDK
 
 The Node.js SDK exposes assistant versioning capabilities delivered in recent releases.
