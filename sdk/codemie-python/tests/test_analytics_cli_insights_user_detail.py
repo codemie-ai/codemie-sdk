@@ -10,7 +10,7 @@ from codemie_sdk.models.analytics import (
 from codemie_sdk.services.analytics import AnalyticsService
 
 _DETAIL_BODY = {
-    "data": {"key_metrics": {"sessions": 0}},
+    "data": {"user_name": "jane@example.com", "total_sessions": 0, "repositories": []},
     "metadata": {
         "timestamp": "2026-01-01T00:00:00Z",
         "data_as_of": "2026-01-01T00:00:00Z",
@@ -51,7 +51,11 @@ def test_get_cli_insights_user_detail_requests_endpoint_and_parses_detail():
         "time_period": "last_7_days",
     }
     assert isinstance(result, AnalyticsDetailResponse)
-    assert result.data == {"key_metrics": {"sessions": 0}}
+    assert result.data == {
+        "user_name": "jane@example.com",
+        "total_sessions": 0,
+        "repositories": [],
+    }
 
 
 def test_get_cli_insights_user_detail_omits_unset_user_id():
@@ -84,3 +88,20 @@ def test_get_cli_insights_user_detail_raises_on_unmatched_user():
 def test_cli_insights_user_detail_params_require_user_name():
     with pytest.raises(ValueError):
         CliInsightsUserDetailQueryParams()
+
+
+@pytest.mark.parametrize("user_name", ["", "   ", " \t "])
+def test_cli_insights_user_detail_params_reject_blank_user_name(user_name):
+    with pytest.raises(ValueError):
+        CliInsightsUserDetailQueryParams(user_name=user_name)
+
+
+def test_cli_insights_user_detail_params_strip_user_name():
+    params = CliInsightsUserDetailQueryParams(user_name="  jane@example.com  ")
+
+    assert params.user_name == "jane@example.com"
+
+
+def test_cli_insights_user_detail_params_reject_users_filter():
+    with pytest.raises(ValueError, match="users"):
+        CliInsightsUserDetailQueryParams(user_name="jane", users="u-2,u-3")

@@ -564,7 +564,8 @@ class AnalyticsService:
 
         Args:
             params: ``user_name`` (required), optional ``user_id`` and the
-                dashboard filters (time period or dates, users, projects)
+                dashboard filters (time period or dates, projects); the shared
+                ``users`` filter is rejected, name the user with ``user_name``
 
         Returns:
             AnalyticsDetailResponse with the user's detail payload
