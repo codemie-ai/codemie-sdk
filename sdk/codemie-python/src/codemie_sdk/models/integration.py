@@ -85,6 +85,26 @@ class Integration(BaseModel):
         return dt.isoformat() if dt is not None else None
 
 
+class IntegrationListPagination(BaseModel):
+    """Pagination block of a combined integrations list response."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    page: int
+    per_page: int
+    total: int
+    pages: int
+
+
+class PaginatedIntegrationResponse(BaseModel):
+    """Response of ``GET /v1/settings``: one page of integrations plus its pagination."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    data: list[Integration]
+    pagination: IntegrationListPagination
+
+
 class IntegrationTestRequest(BaseModel):
     """Model for integration test request."""
 
