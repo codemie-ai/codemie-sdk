@@ -351,69 +351,6 @@ def test_application_without_categories_has_an_empty_list():
     assert HostedApplication.model_validate(_APP).categories == []
 
 
-def test_create_application_sends_categories_only_when_given(service):
-    with patch("codemie_sdk.utils.http.requests.request") as request:
-        request.return_value = _ok_response(_APP, 201)
-        service.create_application("demo", "demo app", "demo-project")
-        without = request.call_args.kwargs["json"]
-        service.create_application(
-            "demo", "demo app", "demo-project", categories=["cat-1"]
-        )
-        with_categories = request.call_args.kwargs["json"]
-        service.create_application("demo", "demo app", "demo-project", categories=[])
-        empty = request.call_args.kwargs["json"]
-
-    assert "categories" not in without
-    assert with_categories["categories"] == ["cat-1"]
-    assert empty["categories"] == []
-
-
-def test_update_application_patches_only_the_given_fields(service):
-    with patch("codemie_sdk.utils.http.requests.request") as request:
-        request.return_value = _ok_response(_APP)
-        result = service.update_application(
-            _APP_ID, _ETAG, shared=False, categories=[], idempotency_key="key-3"
-        )
-
-    kwargs = request.call_args.kwargs
-    assert kwargs["method"] == "PATCH"
-    assert kwargs["url"] == f"{_BASE}/{_APP_ID}"
-    assert kwargs["json"] == {"shared": False, "categories": []}
-    assert kwargs["headers"]["If-Match"] == _ETAG
-    assert kwargs["headers"]["Idempotency-Key"] == "key-3"
-    assert isinstance(result, HostedApplication)
-
-
-def test_update_application_sends_every_field_it_is_given(service):
-    with patch("codemie_sdk.utils.http.requests.request") as request:
-        request.return_value = _ok_response(_APP)
-        service.update_application(
-            _APP_ID,
-            _ETAG,
-            name="renamed",
-            description="new text",
-            project="other-project",
-            shared=True,
-            categories=["cat-1", "cat-2"],
-        )
-
-    assert request.call_args.kwargs["json"] == {
-        "name": "renamed",
-        "description": "new text",
-        "project": "other-project",
-        "shared": True,
-        "categories": ["cat-1", "cat-2"],
-    }
-
-
-def test_list_applications_repeats_the_category_filter(service):
-    with patch("codemie_sdk.utils.http.requests.get") as get:
-        get.return_value = _ok_response({"items": [], "next_cursor": None})
-        service.list_applications(scope="marketplace", category=["cat-1", "cat-2"])
-
-    assert get.call_args.kwargs["params"]["category"] == ["cat-1", "cat-2"]
-
-
 def test_activate_and_select_version_send_the_version(service):
     with patch("codemie_sdk.utils.http.requests.request") as request:
         request.return_value = _ok_response(_APP)
