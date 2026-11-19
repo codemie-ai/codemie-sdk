@@ -3,6 +3,7 @@
 import json
 
 from ..models.analytics import (
+    AnalyticsDetailResponse,
     AnalyticsQueryParams,
     CliAnalyticsCostResponse,
     CliAnalyticsQueryParams,
@@ -11,6 +12,7 @@ from ..models.analytics import (
     CliAnalyticsSessionsQueryParams,
     CliAnalyticsSessionsResponse,
     CliAnalyticsUsersResponse,
+    CliInsightsUserDetailQueryParams,
     PaginatedAnalyticsQueryParams,
     RunAttributesQueryParams,
     SummariesResponse,
@@ -552,6 +554,30 @@ class AnalyticsService:
             "/v1/analytics/cli-repositories",
             TabularResponse,
             params=query_params,
+            wrap_response=False,
+        )
+
+    def get_cli_insights_user_detail(
+        self, params: CliInsightsUserDetailQueryParams
+    ) -> AnalyticsDetailResponse:
+        """Get the CLI Insights drilldown for one user.
+
+        Args:
+            params: ``user_name`` (required), optional ``user_id`` and the
+                dashboard filters (time period or dates, projects); the shared
+                ``users`` filter is rejected, name the user with ``user_name``
+
+        Returns:
+            AnalyticsDetailResponse with the user's detail payload
+
+        Raises:
+            requests.HTTPError: 404 when the identifier matches no CodeMie user
+                and no activity in the period
+        """
+        return self._api.get(
+            "/v1/analytics/cli-insights-user-detail",
+            AnalyticsDetailResponse,
+            params=params.model_dump(exclude_none=True),
             wrap_response=False,
         )
 
