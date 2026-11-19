@@ -164,6 +164,8 @@ from .models.assistant import (
     BuiltinSubagent,
 )
 from .models.integration import (
+    IntegrationListPagination,
+    PaginatedIntegrationResponse,
     TransferMode,
     TransferItem,
     TransferSettingsResponse,
@@ -365,6 +367,8 @@ __all__ = [
     "SkillPagination",
     "SkillService",
     "BuiltinSubagent",
+    "IntegrationListPagination",
+    "PaginatedIntegrationResponse",
     "TransferMode",
     "TransferItem",
     "TransferSettingsResponse",

@@ -11,6 +11,7 @@ from ..models.integration import (
     Integration,
     IntegrationType,
     IntegrationTestRequest,
+    PaginatedIntegrationResponse,
     TransferSettingsResponse,
     TypeOfIntegration,
 )
@@ -91,6 +92,50 @@ class IntegrationService:
 
         return self._api.get(
             self._get_base_path(setting_type), list[Integration], params=params
+        )
+
+    def list_combined(
+        self,
+        scope: str | None = "all",
+        page: int = 0,
+        per_page: int = 10,
+        filters: dict[str, Any] | str | None = None,
+    ) -> PaginatedIntegrationResponse:
+        """Get one page of integrations across scopes, newest first.
+
+        Calls ``GET /v1/settings``. Unlike ``list``, the response keeps its
+        pagination block, and ``scope``, ``page`` and ``per_page`` are sent as
+        given, without client-side checks, so out-of-range values reach the API.
+
+        Args:
+            scope: ``"all"`` (user and project integrations together), ``"user"``
+                or ``"project"``. ``None`` omits the parameter, which the API
+                treats as ``"all"``. Any other string is sent unchanged.
+            page: Zero-based page number
+            per_page: Number of items per page
+            filters: Filters to apply, as a dict (sent as JSON) or as a raw
+                string sent unchanged
+
+        Returns:
+            The integrations of the page and the pagination of the whole result
+
+        Raises:
+            requests.exceptions.HTTPError: On 422 (unknown scope, page or
+                per_page out of range, malformed ``filters``).
+        """
+        params: dict[str, Any] = {"page": page, "per_page": per_page}
+        if scope is not None:
+            params["scope"] = scope
+        if filters is not None:
+            params["filters"] = (
+                filters if isinstance(filters, str) else json.dumps(filters)
+            )
+
+        return self._api.get(
+            "/v1/settings",
+            PaginatedIntegrationResponse,
+            params=params,
+            wrap_response=False,
         )
 
     def get(
