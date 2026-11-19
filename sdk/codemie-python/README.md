@@ -102,6 +102,9 @@ Each LLM model contains:
 # List available LLM models
 llm_models = client.llms.list()
 
+# Include all models, not only the default set
+all_llm_models = client.llms.list(include_all=True)
+
 # List available embedding models
 embedding_models = client.llms.list_embeddings()
 ```
