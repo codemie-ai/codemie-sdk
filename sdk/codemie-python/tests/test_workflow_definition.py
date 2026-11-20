@@ -19,6 +19,7 @@ import yaml
 from pydantic import ValidationError
 
 from codemie_sdk.models.assistant import MCPServerConfig
+from codemie_sdk.models.llm import EffortLevel
 from codemie_sdk.models.workflow import WorkflowMode
 from codemie_sdk.builders.workflow.definition import (
     WorkflowAssistant,
@@ -94,6 +95,17 @@ class TestWorkflowAssistant:
     def test_temperature_below_range_raises(self):
         with pytest.raises(ValidationError):
             WorkflowAssistant(system_prompt="p", temperature=-0.1)
+
+    def test_effort_accepts_a_level(self):
+        assistant = WorkflowAssistant(system_prompt="p", effort="low")
+        assert assistant.effort == EffortLevel.LOW
+
+    def test_effort_defaults_to_none(self):
+        assert WorkflowAssistant(system_prompt="p").effort is None
+
+    def test_unknown_effort_raises(self):
+        with pytest.raises(ValidationError):
+            WorkflowAssistant(system_prompt="p", effort="extreme")
 
     def test_missing_all_identity_fields_raises(self):
         """No system_prompt/assistant_id/name: nothing to render or resolve."""
@@ -534,6 +546,19 @@ class TestWorkflowDefinitionRender:
         second = definition.to_yaml_config()
         assert first == second
         assert isinstance(first, str)
+
+    def test_effort_renders_as_a_plain_string(self):
+        definition = WorkflowDefinition(
+            name="demo",
+            mode=WorkflowMode.SEQUENTIAL,
+            assistants={
+                "planner": WorkflowAssistant(system_prompt="Plan.", effort="high"),
+                "coder": WorkflowAssistant(system_prompt="Code."),
+            },
+        )
+        planner, coder = yaml.safe_load(definition.to_yaml_config())["assistants"]
+        assert planner["effort"] == "high"
+        assert "effort" not in coder
 
     def test_round_trips_to_flat_assistants_and_states_lists(self):
         definition = self._build_definition()

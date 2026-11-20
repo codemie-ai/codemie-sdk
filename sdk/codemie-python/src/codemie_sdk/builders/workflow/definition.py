@@ -32,6 +32,7 @@ from pydantic import (
 )
 
 from ...models.assistant import MCPServerConfig
+from ...models.llm import EffortLevel
 from ...models.workflow import WorkflowMode
 
 # These models are the builder's own input surface, not API response models
@@ -115,6 +116,7 @@ class WorkflowAssistant(BaseModel):
     name: str | None = None
     model: str | None = None
     temperature: float | None = None
+    effort: EffortLevel | None = None
     system_prompt: str | None = None
     limit_tool_output_tokens: int | None = Field(default=10000)
     tools: list[WorkflowAssistantTool] = Field(default_factory=list)
@@ -130,6 +132,11 @@ class WorkflowAssistant(BaseModel):
         if value is not None and not 0 <= value <= 2:
             raise ValueError(f"Temperature value should be 0..2, but set: '{value}'")
         return value
+
+    @field_serializer("effort")
+    def serialize_effort(self, value: EffortLevel | None) -> str | None:
+        """Dump the plain level string, which ``yaml.safe_dump`` can represent."""
+        return value.value if value is not None else None
 
     @model_validator(mode="after")
     def validate_mcp_servers(self) -> "WorkflowAssistant":
