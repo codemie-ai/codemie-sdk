@@ -55,4 +55,4 @@ Other scripts in `package.json`: `npm run format` (writes files), `npm run test:
 
 ## Repository checks
 
-The CI jobs `internal-refs` ("Internal references") and `secrets-detection` ("Security") use reusable workflows. They scan for internal ticket keys, internal hosts, personal paths and secrets. See `.ai-run/guides/security.md`.
+The CI jobs `internal-refs` ("Internal references") and `secrets-detection` ("Security") use reusable workflows. They scan for internal ticket keys, internal hosts, personal paths and secrets. See `.ai-run/guides/development/security-patterns.md`.

@@ -10,6 +10,8 @@ Sources: `SECURITY.md` (reporting policy) and `CONTRIBUTING.md`, section "Intern
 - Do not disable TLS certificate checks in SDK code, examples or tests.
 - Do not log credentials, tokens or full request headers.
 
+Files, commands and actions that are off limits for agents and people: `.ai-run/guides/safety-no-go.md`.
+
 ## CI scans
 
 Two jobs in `.github/workflows/ci.yml` block a PR:
