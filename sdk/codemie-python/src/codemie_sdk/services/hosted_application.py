@@ -163,8 +163,11 @@ class HostedApplicationService:
         project: str,
         shared: bool = False,
         idempotency_key: str | None = None,
+        categories: list[str] | None = None,
     ) -> HostedApplication:
         """Create a private application, or one shared with every member of ``project``."""
+        # ``categories`` holds up to 3 category ids; an empty list is sent as given and
+        # ``None`` leaves the key out of the request.
         return self._api.request(
             "POST",
             _BASE,
@@ -174,8 +177,51 @@ class HostedApplicationService:
                 "description": description,
                 "project": project,
                 "shared": shared,
+                **({"categories": categories} if categories is not None else {}),
             },
             extra_headers=self._headers(idempotency_key=idempotency_key),
+            wrap_response=False,
+        )
+
+    def update_application(
+        self,
+        app_id: str,
+        if_match: str,
+        name: str | None = None,
+        description: str | None = None,
+        project: str | None = None,
+        shared: bool | None = None,
+        categories: list[str] | None = None,
+        idempotency_key: str | None = None,
+    ) -> HostedApplication:
+        """Change the metadata of an application; only the values given are sent.
+
+        Args:
+            app_id: Application id
+            if_match: ``etag`` of the application
+            name: New name
+            description: New description
+            project: New project
+            shared: New sharing with the project members
+            categories: Up to 3 category ids that replace the current ones; an empty list
+                clears them. A published application must keep at least one.
+            idempotency_key: Key to repeat the request safely
+        """
+        changes = {
+            "name": name,
+            "description": description,
+            "project": project,
+            "shared": shared,
+            "categories": categories,
+        }
+        return self._api.request(
+            "PATCH",
+            self._path(app_id),
+            HostedApplication,
+            json_data={
+                key: value for key, value in changes.items() if value is not None
+            },
+            extra_headers=self._headers(if_match, idempotency_key),
             wrap_response=False,
         )
 
