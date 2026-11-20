@@ -109,6 +109,7 @@ class ProjectDetailResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     name: str
+    project_instance_id: UUID | None = None
     display_name: str | None = None
     description: str | None = None
     project_type: str

@@ -12,8 +12,12 @@ class ActivityEventListItem(BaseModel):
     id: str
     domain: str
     event_type: str
+    label: Optional[str] = None
+    category: Optional[str] = None
     entity_type: Optional[str] = None
     entity_id: Optional[str] = None
+    entity_label: Optional[str] = None
+    project_name: Optional[str] = None
     actor_id: Optional[str] = None
     actor_email: Optional[str] = None
     actor_name: Optional[str] = None
@@ -43,3 +47,32 @@ class ActivityEventFilterOptions(BaseModel):
     domains: List[str]
     event_types: List[str]
     entity_types: List[str]
+
+
+class ProjectActivityEventsResponse(BaseModel):
+    """Project-scoped activity trail page."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    data: List[ActivityEventListItem]
+    pagination: ActivityEventPagination
+    recording_enabled: bool
+
+
+class ActivityEventTypeInfo(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    event_type: str
+    label: str
+    category: str
+
+
+class ActivityEventProjectMetadata(BaseModel):
+    """Event types, domains and categories present in one project's trail."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    domains: List[str]
+    event_types: List[ActivityEventTypeInfo]
+    categories: List[str]
+    recording_enabled: bool
