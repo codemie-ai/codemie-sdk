@@ -3,7 +3,14 @@
 import json
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 
 
 class ResponseMetadata(BaseModel):
@@ -123,6 +130,19 @@ class UsersListResponse(BaseModel):
     metadata: ResponseMetadata = Field(description="Response metadata")
 
 
+class AnalyticsDetailResponse(BaseModel):
+    """Response for analytics detail/drilldown endpoints.
+
+    ``data`` is intentionally open-ended: each drilldown endpoint returns its own
+    sections, so the payload is not typed here.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    data: dict[str, Any] = Field(description="Detail payload")
+    metadata: ResponseMetadata = Field(description="Response metadata")
+
+
 class AnalyticsQueryParams(BaseModel):
     """Query parameters for analytics endpoints."""
 
@@ -177,6 +197,39 @@ class RunAttributesQueryParams(PaginatedAnalyticsQueryParams):
         if isinstance(value, dict):
             return json.dumps(value)
         return value
+
+
+class CliInsightsUserDetailQueryParams(AnalyticsQueryParams):
+    """Query parameters of the CLI Insights user detail drilldown.
+
+    The drilldown targets one user through ``user_name`` (and optionally
+    ``user_id``), so the shared ``users`` filter is rejected: it could name a
+    different user than the one asked for.
+    """
+
+    user_name: str = Field(
+        min_length=1, description="User name or e-mail the detail is about"
+    )
+    user_id: str | None = Field(
+        None, description="User id; when set it is checked before the name"
+    )
+
+    @field_validator("user_name", mode="before")
+    @classmethod
+    def _strip_user_name(cls, value: Any) -> Any:
+        """Strip whitespace so a blank name fails the min_length check."""
+        if isinstance(value, str):
+            return value.strip()
+        return value
+
+    @model_validator(mode="after")
+    def _reject_users_filter(self) -> "CliInsightsUserDetailQueryParams":
+        if self.users is not None:
+            raise ValueError(
+                "'users' is not supported for the user detail drilldown; "
+                "use 'user_name' and 'user_id' to name the user"
+            )
+        return self
 
 
 # ── CLI Analytics: /v1/analytics/cli-analytics/* ─────────────────────────────

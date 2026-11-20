@@ -19,13 +19,22 @@ class LLMService:
         """
         self._api = ApiRequestHandler(api_domain, token, verify_ssl)
 
-    def list(self) -> list[LLMModel]:
+    def list(self, include_all: bool = False) -> list[LLMModel]:
         """Get list of available LLM models.
+
+        Args:
+            include_all: Whether to include all models, not only the default set.
+                Sent as the ``include_all`` query parameter. Default: False
 
         Returns:
             List of LLM models
         """
-        return self._api.get("/v1/llm_models", list[LLMModel], wrap_response=False)
+        return self._api.get(
+            "/v1/llm_models",
+            list[LLMModel],
+            params={"include_all": "true"} if include_all else None,
+            wrap_response=False,
+        )
 
     def list_embeddings(self) -> list[LLMModel]:
         """Get list of available embeddings models.

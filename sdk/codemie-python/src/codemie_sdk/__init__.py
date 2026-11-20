@@ -93,6 +93,7 @@ from .models.analytics import (
     SummariesResponse,
     TabularResponse,
     UsersListResponse,
+    AnalyticsDetailResponse,
     AnalyticsQueryParams,
     PaginatedAnalyticsQueryParams,
     CliAnalyticsQueryParams,
@@ -102,6 +103,7 @@ from .models.analytics import (
     CliAnalyticsSessionsResponse,
     CliAnalyticsSessionDetailResponse,
     CliAnalyticsRepositoriesResponse,
+    CliInsightsUserDetailQueryParams,
 )
 from .services.customer_config_service import CustomerConfigService
 from .services.vendor_assistant import VendorAssistantService
@@ -162,6 +164,8 @@ from .models.assistant import (
     BuiltinSubagent,
 )
 from .models.integration import (
+    IntegrationListPagination,
+    PaginatedIntegrationResponse,
     TransferMode,
     TransferItem,
     TransferSettingsResponse,
@@ -324,6 +328,7 @@ __all__ = [
     "SummariesResponse",
     "TabularResponse",
     "UsersListResponse",
+    "AnalyticsDetailResponse",
     "AnalyticsQueryParams",
     "PaginatedAnalyticsQueryParams",
     "CliAnalyticsQueryParams",
@@ -333,6 +338,7 @@ __all__ = [
     "CliAnalyticsSessionsResponse",
     "CliAnalyticsSessionDetailResponse",
     "CliAnalyticsRepositoriesResponse",
+    "CliInsightsUserDetailQueryParams",
     "AnalyticsService",
     "CustomerConfigService",
     "MermaidDiagramRequest",
@@ -362,6 +368,8 @@ __all__ = [
     "SkillPagination",
     "SkillService",
     "BuiltinSubagent",
+    "IntegrationListPagination",
+    "PaginatedIntegrationResponse",
     "TransferMode",
     "TransferItem",
     "TransferSettingsResponse",
