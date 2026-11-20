@@ -34,6 +34,7 @@ export class WorkflowMapper {
       updated_date: response.updated_date,
       created_by: response.created_by,
       tokens_usage: response.tokens_usage,
+      attributes: response.attributes,
     });
   }
 }

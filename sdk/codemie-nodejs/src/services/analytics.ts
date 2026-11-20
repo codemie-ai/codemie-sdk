@@ -2,11 +2,28 @@ import type { AuthConfig } from "../models/common";
 import type { SummariesResponse, TabularResponse, UsersListResponse } from "../models/analytics";
 import {
   AnalyticsQueryParamsSchema,
+  AssistantsRequestsQueryParamsSchema,
+  AttributesAnalyticsQueryParamsSchema,
+  AttributesUsageQueryParamsSchema,
   PaginatedAnalyticsQueryParamsSchema,
   type AnalyticsQueryParams,
+  type AssistantsRequestsQueryParams,
+  type AttributesAnalyticsQueryParams,
+  type AttributesUsageQueryParams,
   type PaginatedAnalyticsQueryParams,
 } from "../schemas/analytics";
 import { ApiRequestHandler } from "../utils/http";
+
+/**
+ * Axios would serialize an object as `attributes[team]=alpha`; the backend expects a JSON string.
+ * Returns the params with `attributes` JSON-encoded, or without the key when it is absent.
+ */
+function toQueryParams<T extends { attributes?: Record<string, string> }>(
+  params: T,
+): Omit<T, "attributes"> & { attributes?: string } {
+  const { attributes, ...rest } = params;
+  return attributes === undefined ? rest : { ...rest, attributes: JSON.stringify(attributes) };
+}
 
 export class AnalyticsService {
   private api: ApiRequestHandler;
@@ -31,15 +48,34 @@ export class AnalyticsService {
   }
 
   async getAssistantsChats(
-    _params: PaginatedAnalyticsQueryParams = {},
+    _params: AttributesAnalyticsQueryParams = {},
   ): Promise<TabularResponse> {
-    const params = PaginatedAnalyticsQueryParamsSchema.parse(_params);
+    const params = toQueryParams(AttributesAnalyticsQueryParamsSchema.parse(_params));
     return this.api.get<TabularResponse>("/v1/analytics/assistants-chats", params);
   }
 
-  async getWorkflows(_params: PaginatedAnalyticsQueryParams = {}): Promise<TabularResponse> {
-    const params = PaginatedAnalyticsQueryParamsSchema.parse(_params);
+  async getWorkflows(_params: AttributesAnalyticsQueryParams = {}): Promise<TabularResponse> {
+    const params = toQueryParams(AttributesAnalyticsQueryParamsSchema.parse(_params));
     return this.api.get<TabularResponse>("/v1/analytics/workflows", params);
+  }
+
+  async getAssistantsRequests(
+    _params: AssistantsRequestsQueryParams = {},
+  ): Promise<TabularResponse> {
+    const params = toQueryParams(AssistantsRequestsQueryParamsSchema.parse(_params));
+    return this.api.get<TabularResponse>("/v1/analytics/assistants-requests", params);
+  }
+
+  async getWorkflowsExecutions(
+    _params: AttributesAnalyticsQueryParams = {},
+  ): Promise<TabularResponse> {
+    const params = toQueryParams(AttributesAnalyticsQueryParamsSchema.parse(_params));
+    return this.api.get<TabularResponse>("/v1/analytics/workflows-executions", params);
+  }
+
+  async getAttributesUsage(_params: AttributesUsageQueryParams): Promise<TabularResponse> {
+    const params = toQueryParams(AttributesUsageQueryParamsSchema.parse(_params));
+    return this.api.get<TabularResponse>("/v1/analytics/attributes-usage", params);
   }
 
   async getToolsUsage(_params: PaginatedAnalyticsQueryParams = {}): Promise<TabularResponse> {

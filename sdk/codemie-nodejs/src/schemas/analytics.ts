@@ -38,3 +38,36 @@ export const PaginatedAnalyticsQueryParamsSchema = analyticsQueryParamsBase
 export type PaginatedAnalyticsQueryParams = Partial<
   z.infer<typeof PaginatedAnalyticsQueryParamsSchema>
 >;
+
+const attributesAnalyticsQueryParamsBase = analyticsQueryParamsBase.extend({
+  page: z.number().int().min(0).default(0),
+  per_page: z.number().int().min(1).default(20),
+  /** One of: platform, ms-teams-bot, chrome_extension, other. */
+  client_source: z.string().optional(),
+  /** Run attributes filter; sent as a JSON string. All pairs must match. */
+  attributes: z.record(z.string(), z.string()).optional(),
+});
+
+export const AttributesAnalyticsQueryParamsSchema = attributesAnalyticsQueryParamsBase.readonly();
+
+export type AttributesAnalyticsQueryParams = Partial<
+  z.infer<typeof AttributesAnalyticsQueryParamsSchema>
+>;
+
+export const AssistantsRequestsQueryParamsSchema = attributesAnalyticsQueryParamsBase
+  .extend({
+    assistant_id: z.string().optional(),
+  })
+  .readonly();
+
+export type AssistantsRequestsQueryParams = Partial<
+  z.infer<typeof AssistantsRequestsQueryParamsSchema>
+>;
+
+export const AttributesUsageQueryParamsSchema = attributesAnalyticsQueryParamsBase
+  .extend({
+    attribute_key: z.string(),
+  })
+  .readonly();
+
+export type AttributesUsageQueryParams = z.input<typeof AttributesUsageQueryParamsSchema>;
