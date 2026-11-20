@@ -1323,6 +1323,14 @@ print(f"Task Status: {task.status}")
 print(f"Progress: {task.progress}")
 ```
 
+### Export Service
+
+The Export service returns the raw export document (a dict) for an assistant, workflow, datasource, integration, skill or category. It raises `requests.HTTPError` on 404/403.
+
+```python
+doc = client.export.export("assistant", "assistant-id")
+```
+
 ### Webhook Service
 
 The Webhook service provides access to trigger available webhooks in CodeMie.
