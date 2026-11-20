@@ -102,6 +102,9 @@ Each LLM model contains:
 # List available LLM models
 llm_models = client.llms.list()
 
+# Include all models, not only the default set
+all_llm_models = client.llms.list(include_all=True)
+
 # List available embedding models
 embedding_models = client.llms.list_embeddings()
 ```
@@ -1318,6 +1321,14 @@ The Task service enables monitoring of background tasks.
 task = client.tasks.get("task-id")
 print(f"Task Status: {task.status}")
 print(f"Progress: {task.progress}")
+```
+
+### Export Service
+
+The Export service returns the raw export document (a dict) for an assistant, workflow, datasource, integration, skill or category. It raises `requests.HTTPError` on 404/403.
+
+```python
+doc = client.export.export("assistant", "assistant-id")
 ```
 
 ### Webhook Service

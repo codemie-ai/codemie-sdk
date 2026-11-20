@@ -93,6 +93,7 @@ from .models.analytics import (
     SummariesResponse,
     TabularResponse,
     UsersListResponse,
+    AnalyticsDetailResponse,
     AnalyticsQueryParams,
     PaginatedAnalyticsQueryParams,
     CliAnalyticsQueryParams,
@@ -102,6 +103,7 @@ from .models.analytics import (
     CliAnalyticsSessionsResponse,
     CliAnalyticsSessionDetailResponse,
     CliAnalyticsRepositoriesResponse,
+    CliInsightsUserDetailQueryParams,
 )
 from .services.customer_config_service import CustomerConfigService
 from .services.vendor_assistant import VendorAssistantService
@@ -215,6 +217,7 @@ from .models.provisioning import (
     ProvisioningBudgetResult,
 )
 from .services.provisioning import ProvisioningService
+from .services.export import ExportService
 from .models.hosted_application import (
     HostedApplication,
     HostedApplicationCapabilities,
@@ -326,6 +329,7 @@ __all__ = [
     "SummariesResponse",
     "TabularResponse",
     "UsersListResponse",
+    "AnalyticsDetailResponse",
     "AnalyticsQueryParams",
     "PaginatedAnalyticsQueryParams",
     "CliAnalyticsQueryParams",
@@ -335,6 +339,7 @@ __all__ = [
     "CliAnalyticsSessionsResponse",
     "CliAnalyticsSessionDetailResponse",
     "CliAnalyticsRepositoriesResponse",
+    "CliInsightsUserDetailQueryParams",
     "AnalyticsService",
     "CustomerConfigService",
     "MermaidDiagramRequest",
@@ -392,6 +397,7 @@ __all__ = [
     "ProvisioningBudgetResponse",
     "ProvisioningBudgetResult",
     "ProvisioningService",
+    "ExportService",
     "MarketplaceStatusFilter",
     "MarketplaceGateResult",
     "MarketplacePendingOrderBy",

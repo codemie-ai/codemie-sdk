@@ -66,6 +66,22 @@ class LLMFeatures(BaseModel):
     effort: list[EffortLevel] | None = None
 
 
+class RouterTier(BaseModel):
+    """Model that a router tier resolves to."""
+
+    model: str
+    label: str | None = None
+
+
+class SwitchyardRoute(BaseModel):
+    """Switchyard router that wraps a model."""
+
+    base_name: str
+    label: str | None = None
+    efficient: str | None = None
+    mode: str | None = None
+
+
 class LLMModel(BaseModel):
     """LLM model configuration."""
 
@@ -77,10 +93,19 @@ class LLMModel(BaseModel):
     enabled: bool
     provider: LLMProvider | None = None
     default: bool | None = None
+    default_for_categories: list[str] | None = None
     cost: CostConfig | None = None
+    max_input_tokens: int | None = None
     max_output_tokens: int | None = None
     features: LLMFeatures | None = Field(default_factory=lambda: LLMFeatures())
     is_premium: bool | None = None
+    forbidden_for_web: bool | None = None
     is_router: bool | None = None
+    router_type: str | None = None
+    strategy: str | None = None
+    classifier_model: str | None = None
+    tiers: dict[str, RouterTier] | None = None
+    switchyard: list[SwitchyardRoute] | None = None
     supports_tools: bool | None = None
+    supports_image_generation: bool | None = None
     status: ModelStatusValue | None = None
