@@ -5,7 +5,7 @@ For every command (install, lint, format, test, build) see `.ai-run/guides/quali
 ## Workflow
 
 1. Create a branch from `main`. Naming: `.ai-run/guides/standards/git-workflow.md`.
-2. Change one SDK, or both when the platform API area exists in both. See `.ai-run/guides/architecture.md`.
+2. Check the peer SDK: make the matching change in both, or record the gap in `docs/PARITY.md`. See the Parity section in `.ai-run/guides/architecture.md`.
 3. Add or update tests in the same change. Python tests are in `sdk/codemie-python/tests/`, Node.js tests in `sdk/codemie-nodejs/tests/`.
 4. Run the gates for each SDK you changed. All gates must pass before you open a PR.
 5. Open a PR. Commit and PR rules: `.ai-run/guides/standards/git-workflow.md`.

@@ -19,6 +19,10 @@ This repository contains two SDKs: `sdk/codemie-python` and `sdk/codemie-nodejs`
 - Keep a PR focused on one change. Describe what changed and why.
 - Individual commit messages are not checked.
 
+## SDK Parity
+
+The two SDKs must stay in step: a service or method added or changed in one SDK needs the matching change in the other, or a recorded gap. See the [parity guide](docs/PARITY.md) for naming and known differences.
+
 ## Review Rule
 
 Every PR needs one approval from any collaborator with write access before it can be merged. All CI checks must pass.

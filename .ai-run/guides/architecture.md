@@ -35,7 +35,7 @@ Tests: `sdk/codemie-nodejs/tests/` (jest). Build output goes through `tsup` to C
 
 ## Parity
 
-The two SDKs mirror the same platform API but are not generated from each other. The Python SDK has more areas today (for example `builders/workflow`, vendor services, admin). When you add an API area to one SDK, check whether the other needs it.
+The two SDKs mirror the same platform API but are not generated from each other. The Python SDK has more areas today (for example `builders/workflow`, vendor services, admin). When you add or change a service or method in one SDK, check the peer SDK and align it in name, parameters and behaviour in the same PR, or record the gap in the parity table and say why in the PR description. Naming rules, known behavioural differences and the Python/Node.js table are in [docs/PARITY.md](../../docs/PARITY.md).
 
 ## Related repositories
 

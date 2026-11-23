@@ -109,6 +109,7 @@ class ProjectDetailResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     name: str
+    project_instance_id: UUID | None = None
     display_name: str | None = None
     description: str | None = None
     project_type: str
@@ -119,6 +120,8 @@ class ProjectDetailResponse(BaseModel):
     cost_center_id: UUID | None = None
     cost_center_name: str | None = None
     members: list[ProjectMember]
+    enforce_member_spend_limits: bool = False
+    chargeback_enabled: bool = False
     chargeback_attribution: str = "project"
     allowed_models: list[str] | None = Field(
         default=None,
