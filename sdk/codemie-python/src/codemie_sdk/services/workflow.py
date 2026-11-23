@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import mimetypes
+from pathlib import Path
 from typing import Any
 
 from .workflow_execution import WorkflowExecutionService
@@ -124,6 +126,39 @@ class WorkflowService:
             f"/v1/workflows/{workflow_id}",
             dict,
             json_data=request.model_dump(exclude_none=True),
+        )
+
+    def upload_icon(self, file_path: Path, content_type: str | None = None) -> dict:
+        """Upload an image file to use as a workflow icon.
+
+        The server accepts PNG, JPEG and SVG files up to 0.5 MB, checks that the
+        file name extension and the file content match the declared type, and
+        stores the file under a generated name.
+
+        Args:
+            file_path: Path of the image file to upload
+            content_type: Declared MIME type of the file. Guessed from the file
+                name when omitted.
+
+        Returns:
+            Dict with ``file_url``: the stored file URL to pass as ``icon_url``
+            when creating or updating a workflow.
+
+        Raises:
+            requests.HTTPError: If the server rejects the file (400)
+        """
+        with open(file_path, "rb") as file:
+            content = file.read()
+
+        mime_type = (
+            content_type
+            or mimetypes.guess_type(file_path.name)[0]
+            or "application/octet-stream"
+        )
+        return self._api.post_multipart(
+            "/v1/workflows/icon",
+            dict,
+            files=[("file", (file_path.name, content, mime_type))],
         )
 
     def list(
