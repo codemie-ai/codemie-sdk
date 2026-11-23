@@ -1,8 +1,16 @@
 """Models for analytics-related data structures."""
 
+import json
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 
 
 class ResponseMetadata(BaseModel):
@@ -122,6 +130,19 @@ class UsersListResponse(BaseModel):
     metadata: ResponseMetadata = Field(description="Response metadata")
 
 
+class AnalyticsDetailResponse(BaseModel):
+    """Response for analytics detail/drilldown endpoints.
+
+    ``data`` is intentionally open-ended: each drilldown endpoint returns its own
+    sections, so the payload is not typed here.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    data: dict[str, Any] = Field(description="Detail payload")
+    metadata: ResponseMetadata = Field(description="Response metadata")
+
+
 class AnalyticsQueryParams(BaseModel):
     """Query parameters for analytics endpoints."""
 
@@ -154,6 +175,61 @@ class PaginatedAnalyticsQueryParams(AnalyticsQueryParams):
         None,
         description='Client source: "platform", "ms-teams-bot", "chrome_extension" or "other"',
     )
+
+
+class RunAttributesQueryParams(PaginatedAnalyticsQueryParams):
+    """Query parameters of the endpoints that filter by run attributes.
+
+    Used by ``get_assistants_requests``, ``get_workflows_executions`` and
+    ``get_attributes_usage``. Other analytics endpoints do not implement the
+    ``attributes`` filter, so it is not part of the shared base class.
+    """
+
+    attributes: str | dict[str, str] | None = Field(
+        None,
+        description="Run attributes filter: a JSON object of string keys and string "
+        "values. A dict is serialized to JSON; a string is sent as it is.",
+    )
+
+    @field_serializer("attributes")
+    def _serialize_attributes(self, value: str | dict[str, str] | None) -> str | None:
+        """Send a dict as the JSON object the endpoints expect in the query string."""
+        if isinstance(value, dict):
+            return json.dumps(value)
+        return value
+
+
+class CliInsightsUserDetailQueryParams(AnalyticsQueryParams):
+    """Query parameters of the CLI Insights user detail drilldown.
+
+    The drilldown targets one user through ``user_name`` (and optionally
+    ``user_id``), so the shared ``users`` filter is rejected: it could name a
+    different user than the one asked for.
+    """
+
+    user_name: str = Field(
+        min_length=1, description="User name or e-mail the detail is about"
+    )
+    user_id: str | None = Field(
+        None, description="User id; when set it is checked before the name"
+    )
+
+    @field_validator("user_name", mode="before")
+    @classmethod
+    def _strip_user_name(cls, value: Any) -> Any:
+        """Strip whitespace so a blank name fails the min_length check."""
+        if isinstance(value, str):
+            return value.strip()
+        return value
+
+    @model_validator(mode="after")
+    def _reject_users_filter(self) -> "CliInsightsUserDetailQueryParams":
+        if self.users is not None:
+            raise ValueError(
+                "'users' is not supported for the user detail drilldown; "
+                "use 'user_name' and 'user_id' to name the user"
+            )
+        return self
 
 
 # ── CLI Analytics: /v1/analytics/cli-analytics/* ─────────────────────────────

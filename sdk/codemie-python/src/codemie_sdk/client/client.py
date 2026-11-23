@@ -33,11 +33,13 @@ from ..services.mcp_configs import MCPConfigsService
 from ..services.cost_center import CostCenterService
 from ..services.customer_config_service import CustomerConfigService
 from ..services.toolkit_policy import ToolkitPolicyService
+from ..services.budgets import BudgetsService
 from ..services.project_budget_groups import ProjectBudgetGroupsService
 from ..services.provisioning import ProvisioningService
 from ..services.usage_attribution import UsageAttributionService
 from ..services.marketplace_management import MarketplaceManagementService
 from ..services.export import ExportService
+from ..services.hosted_application import HostedApplicationService
 
 
 class CodeMieClient:
@@ -188,6 +190,9 @@ class CodeMieClient:
         self.cost_centers = CostCenterService(
             self._api_domain, _token_source, verify_ssl=self._verify_ssl
         )
+        self.budgets = BudgetsService(
+            self._api_domain, _token_source, verify_ssl=self._verify_ssl
+        )
         self.project_budget_groups = ProjectBudgetGroupsService(
             self._api_domain, _token_source, verify_ssl=self._verify_ssl
         )
@@ -207,6 +212,9 @@ class CodeMieClient:
             self._api_domain, _token_source, verify_ssl=self._verify_ssl
         )
         self.provisioning = ProvisioningService(
+            self._api_domain, _token_source, verify_ssl=self._verify_ssl
+        )
+        self.hosted_applications = HostedApplicationService(
             self._api_domain, _token_source, verify_ssl=self._verify_ssl
         )
 

@@ -31,3 +31,7 @@ class WorkflowExecutionCreateRequest(BaseModel):
     tags: list[str] | None = Field(
         None, description="Tags to attach to the workflow execution trace in Langfuse"
     )
+    attributes: dict[str, str] | None = Field(
+        None,
+        description="Analytics labels for this execution: string keys and string values",
+    )

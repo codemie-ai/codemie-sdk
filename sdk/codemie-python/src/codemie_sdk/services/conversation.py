@@ -253,7 +253,10 @@ class ConversationService:
     # History management methods
 
     def upsert_history(
-        self, conversation_id: str, request: UpsertHistoryRequest
+        self,
+        conversation_id: str,
+        request: UpsertHistoryRequest,
+        headers: dict[str, str] | None = None,
     ) -> UpsertHistoryResponse:
         """Create or update conversation with history (idempotent upsert).
 
@@ -263,6 +266,7 @@ class ConversationService:
         Args:
             conversation_id: Conversation ID (will be created if doesn't exist)
             request: History upsert request with messages
+            headers: Optional additional HTTP headers (e.g., X-CodeMie-Client)
 
         Returns:
             Upsert response with metadata about operation
@@ -271,6 +275,7 @@ class ConversationService:
             f"/v1/conversations/{conversation_id}/history",
             UpsertHistoryResponse,
             json_data=request.model_dump(mode="json", exclude_none=True),
+            extra_headers=headers,
         )
 
     def delete_history(self, conversation_id: str) -> ConversationDetails:

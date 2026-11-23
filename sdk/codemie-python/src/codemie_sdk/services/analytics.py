@@ -3,6 +3,7 @@
 import json
 
 from ..models.analytics import (
+    AnalyticsDetailResponse,
     AnalyticsQueryParams,
     CliAnalyticsCostResponse,
     CliAnalyticsQueryParams,
@@ -11,7 +12,9 @@ from ..models.analytics import (
     CliAnalyticsSessionsQueryParams,
     CliAnalyticsSessionsResponse,
     CliAnalyticsUsersResponse,
+    CliInsightsUserDetailQueryParams,
     PaginatedAnalyticsQueryParams,
+    RunAttributesQueryParams,
     SummariesResponse,
     TabularResponse,
     UsersListResponse,
@@ -99,12 +102,14 @@ class AnalyticsService:
 
         Args:
             params: Query parameters (filters + pagination); ``assistant_id``
-                limits the rows to one assistant, ``client_source`` to one client
+                limits the rows to one assistant, ``client_source`` to one client,
+                ``attributes`` (set on ``RunAttributesQueryParams``) to requests that
+                carry those run attributes
 
         Returns:
             TabularResponse with one row per assistant request, newest first,
             including conversation and request identifiers, tokens, cost,
-            execution time and status
+            execution time, status and the run ``attributes`` column
         """
         query_params = params.model_dump(exclude_none=True) if params else {}
         return self._api.get(
@@ -129,6 +134,54 @@ class AnalyticsService:
         query_params = params.model_dump(exclude_none=True) if params else {}
         return self._api.get(
             "/v1/analytics/workflows",
+            TabularResponse,
+            params=query_params,
+            wrap_response=False,
+        )
+
+    def get_workflows_executions(
+        self, params: RunAttributesQueryParams | None = None
+    ) -> TabularResponse:
+        """Get per-execution workflow analytics, one row per workflow execution.
+
+        Args:
+            params: Query parameters (filters + pagination); ``params.attributes``
+                narrows the rows to executions that carry those run attributes
+
+        Returns:
+            TabularResponse with one row per execution, including the run
+            ``attributes`` column
+        """
+        query_params = params.model_dump(exclude_none=True) if params else {}
+        return self._api.get(
+            "/v1/analytics/workflows-executions",
+            TabularResponse,
+            params=query_params,
+            wrap_response=False,
+        )
+
+    def get_attributes_usage(
+        self,
+        attribute_key: str | None = None,
+        params: RunAttributesQueryParams | None = None,
+    ) -> TabularResponse:
+        """Get usage grouped by the values of one run attribute key.
+
+        Args:
+            attribute_key: Run attribute key to break usage down by. The server
+                requires it; when omitted it answers 422.
+            params: Query parameters (filters + pagination); ``params.attributes``
+                narrows the rows to runs that also carry those attributes
+
+        Returns:
+            TabularResponse with one row per attribute value (value, conversations,
+            workflow_executions, total_tokens, total cost, unique_users, last_used)
+        """
+        query_params = params.model_dump(exclude_none=True) if params else {}
+        if attribute_key is not None:
+            query_params["attribute_key"] = attribute_key
+        return self._api.get(
+            "/v1/analytics/attributes-usage",
             TabularResponse,
             params=query_params,
             wrap_response=False,
@@ -501,6 +554,30 @@ class AnalyticsService:
             "/v1/analytics/cli-repositories",
             TabularResponse,
             params=query_params,
+            wrap_response=False,
+        )
+
+    def get_cli_insights_user_detail(
+        self, params: CliInsightsUserDetailQueryParams
+    ) -> AnalyticsDetailResponse:
+        """Get the CLI Insights drilldown for one user.
+
+        Args:
+            params: ``user_name`` (required), optional ``user_id`` and the
+                dashboard filters (time period or dates, projects); the shared
+                ``users`` filter is rejected, name the user with ``user_name``
+
+        Returns:
+            AnalyticsDetailResponse with the user's detail payload
+
+        Raises:
+            requests.HTTPError: 404 when the identifier matches no CodeMie user
+                and no activity in the period
+        """
+        return self._api.get(
+            "/v1/analytics/cli-insights-user-detail",
+            AnalyticsDetailResponse,
+            params=params.model_dump(exclude_none=True),
             wrap_response=False,
         )
 
