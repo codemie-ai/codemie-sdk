@@ -36,6 +36,37 @@ class LLMService:
             wrap_response=False,
         )
 
+    def list_for_project(
+        self, project_id: str, include_all: bool = False
+    ) -> list[LLMModel]:
+        """Get the LLM models available to the caller in a project.
+
+        The list follows the project's model settings and the caller's own model
+        override in that project; the model flagged ``default`` is the override's
+        default, else the project's default, else the platform default.
+
+        Args:
+            project_id: Name of the project to list the models for
+            include_all: Whether to include all models, not only the default set.
+                Default: False
+
+        Returns:
+            List of LLM models
+
+        Raises:
+            HTTPError: 403 when the caller has no access to the project, 404 when the
+                project is unknown
+        """
+        params = {"project_id": project_id}
+        if include_all:
+            params["include_all"] = "true"
+        return self._api.get(
+            "/v1/llm_models",
+            list[LLMModel],
+            params=params,
+            wrap_response=False,
+        )
+
     def list_embeddings(self) -> list[LLMModel]:
         """Get list of available embeddings models.
 
