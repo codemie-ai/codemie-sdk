@@ -146,3 +146,26 @@ class TestProjectUpdateRequestDisplayName:
     def test_display_name_exceeds_150_raises_validation_error(self):
         with pytest.raises(ValidationError):
             ProjectUpdateRequest(display_name="y" * 151)
+
+
+class TestProjectDetailInstanceId:
+    def test_accepts_project_instance_id(self):
+        detail = ProjectDetailResponse(
+            name="p",
+            project_instance_id="0b9f1c1e-3d6a-4a53-9b7c-7a3c2f6d1e11",
+            project_type="shared",
+            user_count=0,
+            admin_count=0,
+            members=[],
+        )
+        assert str(detail.project_instance_id) == "0b9f1c1e-3d6a-4a53-9b7c-7a3c2f6d1e11"
+
+    def test_project_instance_id_defaults_to_none(self):
+        detail = ProjectDetailResponse(
+            name="p",
+            project_type="shared",
+            user_count=0,
+            admin_count=0,
+            members=[],
+        )
+        assert detail.project_instance_id is None
