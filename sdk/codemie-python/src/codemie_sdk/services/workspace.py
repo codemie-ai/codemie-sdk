@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import requests
+
 from ..models.workspace import (
     ExecuteWorkspaceScriptResponse,
     Workspace,
@@ -115,6 +117,27 @@ class WorkspaceService:
             WorkspaceFileContent,
             params={"file_path": file_path},
         )
+
+    def download_file(self, workspace_id: str, file_path: str) -> bytes:
+        """Download the exact bytes of a workspace file.
+
+        Args:
+            workspace_id: Workspace identifier
+            file_path: Workspace-relative path
+
+        Returns:
+            The raw file content
+
+        Raises:
+            requests.HTTPError: 400 when the file or the workspace is not available to the caller
+        """
+        response = self._api.get(
+            f"/v1/workspaces/{workspace_id}/files/download",
+            requests.Response,
+            params={"file_path": file_path},
+            wrap_response=False,
+        )
+        return response.content
 
     def delete_file(
         self, workspace_id: str, file_path: str
