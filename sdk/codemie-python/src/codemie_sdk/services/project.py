@@ -396,7 +396,7 @@ class ProjectService:
         """
         self._api.delete(
             f"/v1/projects/{project_name}/user-model-overrides/{user_id}",
-            response_model=None,
+            response_model=dict,
         )
 
     def batch_user_model_overrides(

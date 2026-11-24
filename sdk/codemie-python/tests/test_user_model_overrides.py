@@ -15,6 +15,7 @@
 """Unit tests for the user model override methods of ProjectService."""
 
 import json
+from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -110,6 +111,26 @@ def test_delete_user_model_override_deletes_one_override(service):
         "/v1/projects/p/user-model-overrides/user-1"
     )
     assert result is None
+
+
+def test_delete_user_model_override_ignores_a_json_body(service):
+    with patch(
+        "codemie_sdk.utils.http.requests.delete",
+        return_value=_response({"message": "deleted"}),
+    ):
+        result = service.delete_user_model_override("p", "user-1")
+
+    assert result is None
+
+
+def test_user_model_override_dates_are_parsed_as_datetimes(service):
+    with patch(
+        "codemie_sdk.utils.http.requests.put",
+        return_value=_response({**_OVERRIDE, "update_date": "2026-01-02T00:00:00"}),
+    ):
+        result = service.set_user_model_override("p", "user-1", ["model-a"])
+
+    assert result.update_date - result.date == timedelta(days=1)
 
 
 def test_batch_user_model_overrides_grants_to_every_user(service):

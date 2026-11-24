@@ -248,8 +248,8 @@ class UserModelOverrideResponse(BaseModel):
     project_name: str
     allowed_models: list[str]
     default_model: str | None = None
-    date: str | None = None
-    update_date: str | None = None
+    date: datetime | None = None
+    update_date: datetime | None = None
 
 
 class ProjectOwnershipUpdateRequest(BaseModel):
