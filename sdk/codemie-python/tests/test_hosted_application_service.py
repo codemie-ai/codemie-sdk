@@ -144,6 +144,45 @@ def test_create_application_sends_body_and_idempotency_key(service):
     assert result.etag == _ETAG
 
 
+def test_create_application_sends_the_categories_when_given(service):
+    with patch("codemie_sdk.utils.http.requests.request") as request:
+        request.return_value = _ok_response(_APP, 201)
+        service.create_application(
+            "demo", "demo app", "demo-project", categories=["cat-1", "cat-2"]
+        )
+        service.create_application("demo", "demo app", "demo-project", categories=[])
+        service.create_application("demo", "demo app", "demo-project")
+
+    bodies = [call.kwargs["json"] for call in request.call_args_list]
+    assert bodies[0]["categories"] == ["cat-1", "cat-2"]
+    assert bodies[1]["categories"] == []
+    assert "categories" not in bodies[2]
+
+
+def test_update_application_patches_only_the_given_values(service):
+    with patch("codemie_sdk.utils.http.requests.request") as request:
+        request.return_value = _ok_response(_APP)
+        result = service.update_application(
+            _APP_ID, _ETAG, categories=["cat-1"], idempotency_key="key-1"
+        )
+
+    kwargs = request.call_args.kwargs
+    assert kwargs["method"] == "PATCH"
+    assert kwargs["url"] == f"{_BASE}/{_APP_ID}"
+    assert kwargs["json"] == {"categories": ["cat-1"]}
+    assert kwargs["headers"]["If-Match"] == _ETAG
+    assert kwargs["headers"]["Idempotency-Key"] == "key-1"
+    assert isinstance(result, HostedApplication)
+
+
+def test_update_application_sends_an_empty_category_list_to_clear_them(service):
+    with patch("codemie_sdk.utils.http.requests.request") as request:
+        request.return_value = _ok_response(_APP)
+        service.update_application(_APP_ID, _ETAG, name="renamed", categories=[])
+
+    assert request.call_args.kwargs["json"] == {"name": "renamed", "categories": []}
+
+
 def test_changes_without_a_key_get_a_fresh_key_each_call(service):
     with patch("codemie_sdk.utils.http.requests.request") as request:
         request.return_value = _ok_response(_APP)
