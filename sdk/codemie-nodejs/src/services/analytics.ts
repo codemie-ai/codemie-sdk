@@ -20,6 +20,23 @@ export class AnalyticsService {
     return this.api.get<SummariesResponse>("/v1/analytics/summaries", params);
   }
 
+  async getHeadroomSummary(_params: AnalyticsQueryParams = {}): Promise<SummariesResponse> {
+    const params = AnalyticsQueryParamsSchema.parse(_params);
+    return this.api.get<SummariesResponse>("/v1/analytics/headroom/summary", params);
+  }
+
+  async getHeadroomByStrategy(
+    _params: PaginatedAnalyticsQueryParams = {},
+  ): Promise<TabularResponse> {
+    const params = PaginatedAnalyticsQueryParamsSchema.parse(_params);
+    return this.api.get<TabularResponse>("/v1/analytics/headroom/by-strategy", params);
+  }
+
+  async getHeadroomTimeseries(_params: AnalyticsQueryParams = {}): Promise<TabularResponse> {
+    const params = AnalyticsQueryParamsSchema.parse(_params);
+    return this.api.get<TabularResponse>("/v1/analytics/headroom/timeseries", params);
+  }
+
   async getCliSummary(_params: AnalyticsQueryParams = {}): Promise<SummariesResponse> {
     const params = AnalyticsQueryParamsSchema.parse(_params);
     return this.api.get<SummariesResponse>("/v1/analytics/cli-summary", params);

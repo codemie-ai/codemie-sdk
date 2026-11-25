@@ -1,3 +1,5 @@
+import type { HeadroomSavings } from "./headroom";
+
 export interface Conversation {
   id: string;
   name: string;
@@ -57,6 +59,7 @@ export interface HistoryItem {
   fileNames: string[];
   assistantId?: string;
   thoughts?: Thought[];
+  headroom?: HeadroomSavings;
 }
 
 export interface ContextItem {

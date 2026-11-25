@@ -1,7 +1,10 @@
+import type { HeadroomSavings } from "./headroom";
+
 export interface TokensUsage {
   input_tokens?: number;
   output_tokens?: number;
   money_spent?: number;
+  headroom?: HeadroomSavings;
 }
 
 export interface BaseUser {

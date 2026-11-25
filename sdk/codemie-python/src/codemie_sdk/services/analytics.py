@@ -55,6 +55,63 @@ class AnalyticsService:
             wrap_response=False,
         )
 
+    def get_headroom_summary(
+        self, params: AnalyticsQueryParams | None = None
+    ) -> SummariesResponse:
+        """Get Headroom (token compression) summary metrics.
+
+        Args:
+            params: Query parameters (time filters, user/project filters)
+
+        Returns:
+            SummariesResponse with Headroom savings metrics
+        """
+        query_params = params.model_dump(exclude_none=True) if params else {}
+        return self._api.get(
+            "/v1/analytics/headroom/summary",
+            SummariesResponse,
+            params=query_params,
+            wrap_response=False,
+        )
+
+    def get_headroom_by_strategy(
+        self, params: PaginatedAnalyticsQueryParams | None = None
+    ) -> TabularResponse:
+        """Get Headroom savings broken down by compression strategy.
+
+        Args:
+            params: Query parameters (filters + pagination)
+
+        Returns:
+            TabularResponse with one row per strategy and pagination metadata
+        """
+        query_params = params.model_dump(exclude_none=True) if params else {}
+        return self._api.get(
+            "/v1/analytics/headroom/by-strategy",
+            TabularResponse,
+            params=query_params,
+            wrap_response=False,
+        )
+
+    def get_headroom_timeseries(
+        self, params: AnalyticsQueryParams | None = None
+    ) -> TabularResponse:
+        """Get Headroom savings over time.
+
+        Args:
+            params: Query parameters (time filters, user/project filters)
+
+        Returns:
+            TabularResponse with Headroom savings per time bucket
+        """
+        query_params = params.model_dump(exclude_none=True) if params else {}
+        return self._api.get(
+            "/v1/analytics/headroom/timeseries",
+            TabularResponse,
+            params=query_params,
+            wrap_response=False,
+        )
+
     def get_cli_summary(
         self, params: AnalyticsQueryParams | None = None
     ) -> SummariesResponse:

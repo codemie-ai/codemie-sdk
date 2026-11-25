@@ -46,6 +46,41 @@ describe("WorkflowMapper", () => {
       });
     });
 
+    it("should map headroom_config from the response", () => {
+      const apiResponse: WorkflowResponse = {
+        id: "workflow-123",
+        project: "project-1",
+        name: "Test Workflow",
+        mode: WorkflowMode.SEQUENTIAL,
+        shared: false,
+        date: "2025-01-01",
+        update_date: "2025-01-02",
+        created_by: { username: "user1", name: "User One" },
+        headroom_config: { strategy: "aggressive" },
+      };
+
+      const result = WorkflowMapper.mapWorkflowResponse(apiResponse);
+
+      expect(result.headroom_config).toEqual({ strategy: "aggressive" });
+    });
+
+    it("should omit headroom_config when the response has none", () => {
+      const apiResponse: WorkflowResponse = {
+        id: "workflow-123",
+        project: "project-1",
+        name: "Test Workflow",
+        mode: WorkflowMode.SEQUENTIAL,
+        shared: false,
+        date: "2025-01-01",
+        update_date: "2025-01-02",
+        created_by: { username: "user1", name: "User One" },
+      };
+
+      const result = WorkflowMapper.mapWorkflowResponse(apiResponse);
+
+      expect("headroom_config" in result).toBe(false);
+    });
+
     it("should handle empty values", () => {
       // Arrange
       const apiResponse: WorkflowResponse = {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { HeadroomConfigSchema } from "./headroom";
 
 export const AssistantListParamsSchema = z
   .object({
@@ -80,6 +81,7 @@ export const AssistantCreateParamsSchema = z
     shared: z.boolean().optional(),
     is_react: z.boolean().optional(),
     hide_tool_outputs: z.boolean().optional(),
+    headroom_config: HeadroomConfigSchema.optional(),
     is_global: z.boolean().optional(),
     slug: z.string().optional().nullable(),
     temperature: z.number().optional().nullable(),

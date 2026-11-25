@@ -5,6 +5,7 @@ export * from "./conversation";
 export * from "./datasource";
 export * from "./errors";
 export * from "./file";
+export * from "./headroom";
 export * from "./integration";
 export * from "./llm";
 export * from "./skill";

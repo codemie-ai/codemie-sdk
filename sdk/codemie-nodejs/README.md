@@ -17,6 +17,7 @@ See the [parity guide](../../docs/PARITY.md) for how this SDK relates to the Pyt
     - [LLM Service](#llm-service)
     - [Assistant Service](#assistant-service)
       - [Core Methods](#core-methods)
+      - [Headroom (token compression)](#headroom-token-compression)
       - [Advanced Features](#advanced-features)
     - [Datasource Service](#datasource-service)
       - [Supported Datasource Types](#supported-datasource-types)
@@ -241,6 +242,47 @@ await client.assistants.update("assistant-id", params);
 5. **Delete Assistant**
 ```typescript
 await client.assistants.delete("assistant-id");
+```
+
+#### Headroom (token compression)
+
+Headroom compresses user messages and tool outputs before they reach the model. It takes effect on LangGraphAgent runs only. For AIToolsAgent runs the config is stored but has no effect. The backend feature must be enabled.
+
+Set it on an assistant. Leaving `headroom_config` out of an update keeps the stored value:
+```typescript
+const params: AssistantCreateParams = {
+  name: "My Assistant",
+  description: "Assistant description",
+  system_prompt: "Instructions.",
+  project: "my_project",
+  llm_model_type: "gpt-4o",
+  toolkits: [],
+  conversation_starters: [],
+  context: [],
+  mcp_servers: [],
+  assistant_ids: [],
+  headroom_config: { enabled: true, strategy: "balanced" }, // lossless | balanced | aggressive
+};
+await client.assistants.create(params);
+
+const assistant = await client.assistants.get("assistant-id");
+console.log(assistant.headroom_config);
+```
+
+For a workflow, add a top-level `headroom:` key to `yaml_config`. A per-assistant override inside `assistants[]` is also set in the YAML only. Read the result back with `client.workflows.get(...)`, which exposes `headroom_config` (every field optional).
+```yaml
+headroom:
+  enabled: true
+  strategy: aggressive
+```
+
+Message history items (`HistoryItem.headroom`) and `TokensUsage.headroom` carry the savings (`HeadroomSavings`: `tokens_original`, `tokens_compacted`, `tokens_saved`, `mode`, `strategy`, `calls`).
+
+Analytics methods return a 404 when the backend feature is disabled:
+```typescript
+const summary = await client.analytics.getHeadroomSummary({ time_period: "last_7_days" });
+const timeseries = await client.analytics.getHeadroomTimeseries({ time_period: "last_7_days" });
+const byStrategy = await client.analytics.getHeadroomByStrategy({ time_period: "last_7_days", page: 0, per_page: 20 });
 ```
 
 #### Advanced Features
