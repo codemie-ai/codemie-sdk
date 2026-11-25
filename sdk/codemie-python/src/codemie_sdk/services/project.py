@@ -38,6 +38,9 @@ from ..models.project import (
     ProjectOwnershipUpdateResponse,
     ProjectUpdateRequest,
     ProjectUpdateResponse,
+    UserModelOverrideBatchRequest,
+    UserModelOverrideRequest,
+    UserModelOverrideResponse,
 )
 from ..utils.http import ApiRequestHandler, TokenSource
 
@@ -301,6 +304,141 @@ class ProjectService:
         return self._api.delete(
             f"/v1/projects/{project_name}/allowed-models",
             response_model=ProjectAllowedModelsResponse,
+        )
+
+    def set_user_model_override(
+        self,
+        project_name: str,
+        user_id: str,
+        allowed_models: list[str],
+        default_model: str | None = None,
+    ) -> UserModelOverrideResponse:
+        """Set (replace) the models one project member may use.
+
+        Args:
+            project_name: Project name
+            user_id: ID of the project member
+            allowed_models: Models the member is limited to, whatever the project allows
+            default_model: Model the member starts on; must be one of allowed_models
+
+        Returns:
+            UserModelOverrideResponse with the stored override
+
+        Raises:
+            HTTPError: 400 when a model is unknown, disabled, blank, deprecated and not
+                already held, or the default is not in allowed_models or the user is not a
+                member; 404 when the project or user is unknown or the caller cannot write
+                to the project; 501 when the feature is off
+        """
+        payload = UserModelOverrideRequest(
+            allowed_models=allowed_models, default_model=default_model
+        )
+        return self._api.put(
+            f"/v1/projects/{project_name}/user-model-overrides/{user_id}",
+            response_model=UserModelOverrideResponse,
+            json_data=payload.model_dump(mode="json", exclude_none=True),
+        )
+
+    def get_user_model_override(
+        self, project_name: str, user_id: str
+    ) -> UserModelOverrideResponse:
+        """Get the model override of one project member.
+
+        Args:
+            project_name: Project name
+            user_id: ID of the project member
+
+        Returns:
+            UserModelOverrideResponse with the stored override
+
+        Raises:
+            HTTPError: 404 when the member has no override or the caller cannot write
+                to the project
+        """
+        return self._api.get(
+            f"/v1/projects/{project_name}/user-model-overrides/{user_id}",
+            response_model=UserModelOverrideResponse,
+        )
+
+    def list_user_model_overrides(
+        self, project_name: str, skip: int = 0, limit: int = 100
+    ) -> list[UserModelOverrideResponse]:
+        """List the model overrides of a project.
+
+        Args:
+            project_name: Project name
+            skip: Number of overrides to skip
+            limit: Maximum number of overrides to return (1-500)
+
+        Returns:
+            List of UserModelOverrideResponse
+
+        Raises:
+            HTTPError: 404 when the project is unknown or the caller cannot write to it
+        """
+        return self._api.get(
+            f"/v1/projects/{project_name}/user-model-overrides",
+            response_model=list[UserModelOverrideResponse],
+            params={"skip": skip, "limit": limit},
+            wrap_response=False,
+        )
+
+    def delete_user_model_override(self, project_name: str, user_id: str) -> None:
+        """Remove the model override of one project member.
+
+        Args:
+            project_name: Project name
+            user_id: ID of the project member
+
+        Raises:
+            HTTPError: 404 when the member has no override or the caller cannot write
+                to the project
+        """
+        self._api.delete(
+            f"/v1/projects/{project_name}/user-model-overrides/{user_id}",
+            response_model=dict,
+        )
+
+    def batch_user_model_overrides(
+        self,
+        project_name: str,
+        operation: str,
+        user_ids: list[str],
+        allowed_models: list[str] | None = None,
+        default_model: str | None = None,
+    ) -> list[UserModelOverrideResponse]:
+        """Grant or revoke the model override of several project members at once.
+
+        The batch is atomic: when one user fails, no user is changed.
+
+        Args:
+            project_name: Project name
+            operation: "grant" saves the same override for every user, "revoke" removes it;
+                any other value is refused by the platform
+            user_ids: IDs of the project members (1-500)
+            allowed_models: Models to grant; required for "grant"
+            default_model: Model the users start on; must be one of allowed_models
+
+        Returns:
+            List of UserModelOverrideResponse, one per user granted, or the removed
+            overrides for "revoke"
+
+        Raises:
+            HTTPError: 400 when the batch fails ("Batch operation failed; no users updated")
+                or the request is invalid; 404 when the project is unknown or the caller
+                cannot write to it; 501 when the feature is off
+        """
+        payload = UserModelOverrideBatchRequest(
+            operation=operation,
+            user_ids=user_ids,
+            allowed_models=allowed_models,
+            default_model=default_model,
+        )
+        return self._api.post(
+            f"/v1/projects/{project_name}/user-model-overrides/batch",
+            response_model=list[UserModelOverrideResponse],
+            json_data=payload.model_dump(mode="json", exclude_none=True),
+            wrap_response=False,
         )
 
     def delete_project(self, project_name: str) -> ProjectDeleteResponse:

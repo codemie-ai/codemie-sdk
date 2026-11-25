@@ -244,6 +244,16 @@ from .models.hosted_application import (
     HostedApplicationVersionStart,
 )
 from .services.hosted_application import HostedApplicationService
+from .models.scheduler import (
+    SchedulerLastRun,
+    SchedulerListItem,
+    SchedulerListResponse,
+    SchedulerPagination,
+    SchedulerProjectRef,
+    SchedulerResourceRef,
+    SchedulerSchedule,
+)
+from .services.scheduler import SchedulerService
 
 try:
     __version__ = _pkg_version("codemie-sdk-python")
@@ -442,4 +452,12 @@ __all__ = [
     "HostedApplicationVersionQueued",
     "HostedApplicationVersionStart",
     "HostedApplicationService",
+    "SchedulerLastRun",
+    "SchedulerListItem",
+    "SchedulerListResponse",
+    "SchedulerPagination",
+    "SchedulerProjectRef",
+    "SchedulerResourceRef",
+    "SchedulerSchedule",
+    "SchedulerService",
 ]
