@@ -205,6 +205,10 @@ from .models.marketplace_management import (
     MarketplaceReviewActionResponse,
     MarketplaceForcePublishResponse,
     MarketplaceDecisionRequest,
+    MarketplaceCleanupBucket,
+    MarketplaceCleanupRow,
+    MarketplaceCleanupResponse,
+    MarketplaceAuditStatus,
 )
 from .services.marketplace_management import MarketplaceManagementService
 from .models.provisioning import (
@@ -423,6 +427,10 @@ __all__ = [
     "MarketplaceReviewActionResponse",
     "MarketplaceForcePublishResponse",
     "MarketplaceDecisionRequest",
+    "MarketplaceCleanupBucket",
+    "MarketplaceCleanupRow",
+    "MarketplaceCleanupResponse",
+    "MarketplaceAuditStatus",
     "MarketplaceManagementService",
     "HostedApplication",
     "HostedApplicationCapabilities",

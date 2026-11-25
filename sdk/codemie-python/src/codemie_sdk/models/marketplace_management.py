@@ -30,6 +30,15 @@ class MarketplaceStatusFilter(str, Enum):
     REJECTED = "REJECTED"
 
 
+class MarketplaceCleanupBucket(str, Enum):
+    """Bucket filter of the Cleanup list; ALL lists every bucket, VERIFIED included."""
+
+    ALL = "ALL"
+    VERIFIED = "VERIFIED"
+    COMMUNITY = "COMMUNITY"
+    DELETE = "DELETE"
+
+
 class MarketplaceGateResult(str, Enum):
     """Filter of the pending queue by the result of the live gate checks."""
 
@@ -103,6 +112,67 @@ class MarketplaceAssistantsResponse(BaseModel):
     page: int
     page_size: int
     items: list[MarketplaceAssistantRow] = Field(default_factory=list)
+
+
+class MarketplaceCleanupRow(BaseModel):
+    """A row of the Cleanup list, as the table renders it.
+
+    ``creator`` is the latest submitter's display name, else the author's display
+    name, else ``None``. Unknown keys are kept, and ``model_fields_set`` lists
+    exactly the keys the server sent.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    id: str
+    name: str | None = None
+    creator: str | None = None
+    categories: list[str] = Field(default_factory=list)
+    unique_users_count: int | None = None
+    unique_likes_count: int | None = None
+    usage_tier: str | None = None
+    bucket: str | None = None
+    bucket_reason: str | None = None
+    verdict_kind: str | None = None
+    cleanup_reason: str | None = None
+    canonical_id: str | None = None
+    canonical_name: str | None = None
+    canonical_users: int | None = None
+    critical_count: int = 0
+    optional_count: int = 0
+    detail: str | None = None
+    top_similar: dict[str, Any] | None = None
+
+
+class MarketplaceCleanupResponse(BaseModel):
+    """One page of the Cleanup list; ``total`` counts the whole filtered set."""
+
+    model_config = ConfigDict(extra="allow")
+
+    total: int
+    page: int
+    page_size: int
+    items: list[MarketplaceCleanupRow] = Field(default_factory=list)
+
+
+class MarketplaceAuditStatus(BaseModel):
+    """State of the current or most recent audit run of the marketplace."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    is_running: bool
+    run_id: str | None = None
+    started_at: float | None = Field(None, description="POSIX timestamp of the start")
+    finished_at: float | None = Field(None, description="POSIX timestamp of the end")
+    error: str | None = None
+    status: str | None = Field(
+        None,
+        description="PENDING, RUNNING, SUCCEEDED, PARTIAL, FAILED or CANCELLED",
+    )
+    similarity_backend: str | None = None
+    es_doc_count: int | None = None
+    degraded: bool = False
+    degraded_reason: str | None = None
 
 
 class MarketplacePendingStats(BaseModel):

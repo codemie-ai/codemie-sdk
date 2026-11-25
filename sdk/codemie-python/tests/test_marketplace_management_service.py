@@ -22,6 +22,9 @@ from codemie_sdk.client.client import CodeMieClient
 from codemie_sdk.models.assistant import Assistant
 from codemie_sdk.models.marketplace_management import (
     MarketplaceAssistantsResponse,
+    MarketplaceAuditStatus,
+    MarketplaceCleanupBucket,
+    MarketplaceCleanupResponse,
     MarketplaceForcePublishResponse,
     MarketplaceGateResult,
     MarketplaceOverview,
@@ -350,3 +353,80 @@ def test_publish_defaults_keep_the_previous_request_body():
         "categories": ["quality-assurance"],
         "ignore_recommendations": True,
     }
+
+
+def test_list_cleanup_sends_only_given_filters(service):
+    body = {
+        "total": 1,
+        "page": 1,
+        "page_size": 50,
+        "items": [
+            {
+                "id": "a-1",
+                "name": "Demo",
+                "creator": "Jane Doe",
+                "categories": ["quality-assurance"],
+                "bucket": "VERIFIED",
+                "critical_count": 0,
+                "optional_count": 1,
+                "top_similar": None,
+            }
+        ],
+    }
+
+    with patch("codemie_sdk.utils.http.requests.get") as get:
+        get.return_value = _ok_response(body)
+        result = service.list_cleanup(bucket=MarketplaceCleanupBucket.ALL, q="Demo")
+
+    assert get.call_args.kwargs["url"] == f"{_BASE}/cleanup"
+    assert get.call_args.kwargs["params"] == {
+        "bucket": "ALL",
+        "q": "Demo",
+        "page": 1,
+        "page_size": 50,
+    }
+    assert isinstance(result, MarketplaceCleanupResponse)
+    row = result.items[0]
+    assert row.creator == "Jane Doe"
+    assert row.top_similar is None
+    assert "canonical_id" not in row.model_fields_set
+    assert "creator" in row.model_fields_set
+
+
+def test_start_audit_posts_without_body_and_parses_status(service):
+    body = {"is_running": True, "run_id": "run-1", "status": "RUNNING", "error": None}
+    response = _ok_response(body)
+    response.status_code = 202
+
+    with patch("codemie_sdk.utils.http.requests.post") as post:
+        post.return_value = response
+        result = service.start_audit()
+
+    assert post.call_args.kwargs["url"] == f"{_BASE}/audit/run"
+    assert post.call_args.kwargs["json"] is None
+    assert isinstance(result, MarketplaceAuditStatus)
+    assert result.is_running is True
+    assert result.run_id == "run-1"
+
+
+def test_get_audit_status_parses_finished_run(service):
+    body = {
+        "is_running": False,
+        "run_id": "run-1",
+        "started_at": 1787000000.0,
+        "finished_at": 1787000090.5,
+        "error": None,
+        "status": "PARTIAL",
+        "degraded": True,
+        "degraded_reason": "similarity backend unavailable",
+    }
+
+    with patch("codemie_sdk.utils.http.requests.get") as get:
+        get.return_value = _ok_response(body)
+        result = service.get_audit_status()
+
+    assert get.call_args.kwargs["url"] == f"{_BASE}/audit/status"
+    assert result.is_running is False
+    assert result.status == "PARTIAL"
+    assert result.finished_at == 1787000090.5
+    assert result.degraded is True
