@@ -15,6 +15,7 @@
 """Scheduler service for the CodeMie SDK."""
 
 from ..models.scheduler import SchedulerListResponse
+from ..models.scheduler import SchedulerListItem
 from ..utils import ApiRequestHandler, TokenSource
 
 
@@ -62,5 +63,28 @@ class SchedulerService:
             "/v1/schedulers",
             SchedulerListResponse,
             params=params,
+            wrap_response=False,
+        )
+
+    def update(self, scheduler_id: str, is_enabled: bool) -> SchedulerListItem:
+        """Enable or disable a scheduler.
+
+        Calls ``PATCH /v1/schedulers/{scheduler_id}`` with the body
+        ``{"isEnabled": <bool>}``, the field name the API defines.
+
+        Args:
+            scheduler_id: ID of the scheduler to change
+            is_enabled: The new enabled state
+
+        Returns:
+            SchedulerListItem with the scheduler after the change
+
+        Raises:
+            HTTPError: If the request fails
+        """
+        return self._api.patch(
+            f"/v1/schedulers/{scheduler_id}",
+            SchedulerListItem,
+            json_data={"isEnabled": is_enabled},
             wrap_response=False,
         )

@@ -87,3 +87,15 @@ def test_list_parses_items_and_pagination():
     assert item.schedule.next_run_at == "2026-01-01T01:00:00+00:00"
     assert item.last_run is None
     assert result.pagination.total == 1
+
+
+def test_update_sends_is_enabled_and_parses_the_item():
+    with patch("codemie_sdk.utils.http.requests.patch") as patch_req:
+        patch_req.return_value = _ok_response(_BODY["items"][0])
+        result = _service().update("scheduler-1", is_enabled=False)
+
+    kwargs = patch_req.call_args.kwargs
+    assert kwargs["url"] == "https://api.example.com/v1/schedulers/scheduler-1"
+    assert kwargs["json"] == {"isEnabled": False}
+    assert result.id == "scheduler-1"
+    assert result.is_enabled is False
