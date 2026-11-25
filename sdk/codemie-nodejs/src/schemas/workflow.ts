@@ -89,6 +89,8 @@ export const WorkflowExecutionCreateParamsSchema = z
     session_id: z.string().optional(),
     propagate_headers: z.boolean().optional(),
     tags: z.array(z.string()).optional(),
+    /** Run attributes attached to the execution. */
+    attributes: z.record(z.string(), z.string()).optional(),
   })
   .readonly();
 export type WorkflowExecutionCreateParams = z.infer<typeof WorkflowExecutionCreateParamsSchema>;
