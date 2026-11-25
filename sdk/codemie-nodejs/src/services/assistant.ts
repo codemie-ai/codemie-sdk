@@ -11,6 +11,7 @@ import type {
   AssistantUpdateResponse,
 } from "../models/assistant";
 import type { AnyJson, AuthConfig, PaginatedResponse } from "../models/common";
+import type { ConversationMetrics } from "../models/conversation";
 import { z } from "zod";
 import {
   AssistantChatParamsSchema,
@@ -95,6 +96,16 @@ export class AssistantService {
   async getBySlug(slug: string): Promise<Assistant> {
     const assistant = await this.api.get<Assistant>(`/v1/assistants/slug/${slug}`);
     return { ...assistant, disabled_context_tools: assistant.disabled_context_tools ?? [] };
+  }
+
+  /**
+   * Get token and cost totals of a conversation with an assistant or a workflow.
+   * The Headroom fields are set only when Headroom saved tokens in the conversation.
+   */
+  async getConversationMetrics(conversationId: string): Promise<ConversationMetrics> {
+    return this.api.get<ConversationMetrics>(
+      `/v1/assistants/metrics/${encodeURIComponent(conversationId)}`,
+    );
   }
 
   /**

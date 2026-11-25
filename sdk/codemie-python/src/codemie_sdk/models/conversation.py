@@ -29,6 +29,27 @@ class Conversation(BaseModel):
     finished_at: datetime | None = None
 
 
+class ConversationMetrics(BaseModel):
+    """Token and cost totals of one conversation with an assistant or a workflow.
+
+    Returned by ``GET /v1/assistants/metrics/{conversation_id}``. The backend drops
+    ``None`` fields from the body, so every total is optional. The Headroom fields are
+    present only when Headroom saved tokens in the conversation.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    conversation_id: str
+    total_input_tokens: int | None = None
+    total_output_tokens: int | None = None
+    total_money_spent: float | None = None
+    total_classifier_cost_usd: float | None = None
+    money_spent_pending: bool | None = None
+    money_spent_unavailable: bool | None = None
+    headroom_tokens_saved: int | None = None
+    headroom_tokens_original: int | None = None
+
+
 class Mark(BaseModel):
     """Model for conversation review/mark data."""
 

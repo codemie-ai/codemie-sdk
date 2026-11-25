@@ -200,6 +200,32 @@ describe("AssistantService", () => {
     });
   });
 
+  describe("getConversationMetrics", () => {
+    it("should get conversation totals with the Headroom fields", async () => {
+      const metrics = {
+        conversation_id: "conversation-1",
+        total_input_tokens: 1200,
+        total_output_tokens: 80,
+        headroom_tokens_saved: 300,
+        headroom_tokens_original: 1500,
+      };
+      apiHandler.get.mockResolvedValue(metrics);
+
+      const result = await service.getConversationMetrics("conversation-1");
+
+      expect(apiHandler.get).toHaveBeenCalledWith("/v1/assistants/metrics/conversation-1");
+      expect(result).toEqual(metrics);
+    });
+
+    it("should encode the conversation ID in the path", async () => {
+      apiHandler.get.mockResolvedValue({ conversation_id: "a/b" });
+
+      await service.getConversationMetrics("a/b");
+
+      expect(apiHandler.get).toHaveBeenCalledWith("/v1/assistants/metrics/a%2Fb");
+    });
+  });
+
   describe("getBySlug", () => {
     const slugAssistant: Assistant = {
       ...mockAssistant,

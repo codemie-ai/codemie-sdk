@@ -35,7 +35,7 @@ from ..models.assistant import (
     SubAssistantPublishSettings,
 )
 from ..models.common import PaginationParams
-from ..models.conversation import BaseResponse
+from ..models.conversation import BaseResponse, ConversationMetrics
 from ..utils import ApiRequestHandler, TokenSource
 from ..utils.payload import without_none
 
@@ -110,6 +110,22 @@ class AssistantService:
             Assistant details
         """
         return self._api.get(f"/v1/assistants/slug/{slug}", Assistant)
+
+    def get_conversation_metrics(self, conversation_id: str) -> ConversationMetrics:
+        """Get token and cost totals of a conversation with an assistant or a workflow.
+
+        Args:
+            conversation_id: ID of the conversation
+
+        Returns:
+            Conversation totals; the Headroom fields are set only when Headroom saved
+            tokens in the conversation
+        """
+        return self._api.get(
+            f"/v1/assistants/metrics/{conversation_id}",
+            ConversationMetrics,
+            wrap_response=False,
+        )
 
     def create(self, request: AssistantCreateRequest) -> AssistantCreateResponse:
         """Create a new assistant.

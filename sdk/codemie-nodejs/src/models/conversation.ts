@@ -10,6 +10,24 @@ export interface Conversation {
   initial_assistant_id?: string;
 }
 
+/**
+ * Token and cost totals of one conversation with an assistant or a workflow,
+ * from GET /v1/assistants/metrics/{conversation_id}. The backend drops null fields,
+ * so every total is optional. The Headroom fields are present only when Headroom
+ * saved tokens in the conversation.
+ */
+export interface ConversationMetrics {
+  conversation_id: string;
+  total_input_tokens?: number | null;
+  total_output_tokens?: number | null;
+  total_money_spent?: number | null;
+  total_classifier_cost_usd?: number | null;
+  money_spent_pending?: boolean | null;
+  money_spent_unavailable?: boolean | null;
+  headroom_tokens_saved?: number | null;
+  headroom_tokens_original?: number | null;
+}
+
 export interface Mark {
   mark: string;
   rating: number;
