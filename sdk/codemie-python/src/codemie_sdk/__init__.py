@@ -209,6 +209,13 @@ from .models.marketplace_management import (
     MarketplaceCleanupRow,
     MarketplaceCleanupResponse,
     MarketplaceAuditStatus,
+    MarketplaceCleanupOrderBy,
+    MarketplaceCleanupReason,
+    MarketplaceUsageTier,
+    MarketplaceVerdictKind,
+    MarketplaceGateRule,
+    MarketplaceAuditRunStatus,
+    MarketplaceSimilarPair,
 )
 from .services.marketplace_management import MarketplaceManagementService
 from .models.provisioning import (
@@ -431,6 +438,13 @@ __all__ = [
     "MarketplaceCleanupRow",
     "MarketplaceCleanupResponse",
     "MarketplaceAuditStatus",
+    "MarketplaceCleanupOrderBy",
+    "MarketplaceCleanupReason",
+    "MarketplaceUsageTier",
+    "MarketplaceVerdictKind",
+    "MarketplaceGateRule",
+    "MarketplaceAuditRunStatus",
+    "MarketplaceSimilarPair",
     "MarketplaceManagementService",
     "HostedApplication",
     "HostedApplicationCapabilities",
