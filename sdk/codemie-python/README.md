@@ -2,6 +2,8 @@
 
 Python SDK for CodeMie services. This SDK provides a comprehensive interface to interact with CodeMie services, including LLM (Large Language Models), assistants, workflows, and tools.
 
+See the [parity guide](../../docs/PARITY.md) for how this SDK relates to the Node.js SDK.
+
 ## Table of Contents
 
 - [Installation](#installation)
@@ -13,6 +15,7 @@ Python SDK for CodeMie services. This SDK provides a comprehensive interface to 
     - [Core Methods](#core-methods)
     - [Advanced Features](#advanced-features)
     - [Prompt Variables Support](#prompt-variables-support)
+    - [Headroom (token compression)](#headroom-token-compression)
     - [Assistant Versioning](#assistant-versioning)
   - [Datasource Service](#datasource-service)
     - [Supported Datasource Types](#supported-datasource-types)
@@ -23,6 +26,7 @@ Python SDK for CodeMie services. This SDK provides a comprehensive interface to 
     - [Integration Types](#integration-types)
     - [Core Methods](#core-methods-2)
     - [Best Practices for Integrations](#best-practices-for-integrations)
+  - [Project Service](#project-service)
   - [Workflow Service](#workflow-service)
     - [Core Methods](#core-methods-3)
     - [Workflow Execution](#workflow-execution)
@@ -101,6 +105,9 @@ Each LLM model contains:
 ```python
 # List available LLM models
 llm_models = client.llms.list()
+
+# Include all models, not only the default set
+all_llm_models = client.llms.list(include_all=True)
 
 # List available embedding models
 embedding_models = client.llms.list_embeddings()
@@ -259,6 +266,10 @@ prebuilt_assistant = client.assistants.get_prebuilt_by_slug("assistant-slug")
 tools = client.assistants.get_tools()
 ```
 
+#### Disabled Context Tools
+
+`disabled_context_tools` (list of default datasource tool names opted out, e.g. `["search_kb"]`) is available on assistant create/update requests and on `Assistant` / `AssistantVersion` responses (defaults to `[]`). Omit it on update to leave the current value unchanged; pass `[]` to clear it.
+
 #### Prompt Variables Support
 
 The SDK supports assistant-level prompt variables that the backend already exposes via the `prompt_variables` field.
@@ -295,6 +306,54 @@ update_req = AssistantUpdateRequest(
     ],
 )
 client.assistants.update("assistant-id", update_req)
+```
+
+#### Headroom (token compression)
+
+Headroom compresses user messages and tool outputs before they reach the model. It takes effect on LangGraphAgent runs only. For AIToolsAgent runs the config is stored but has no effect. The backend feature must be enabled.
+
+Set it on an assistant. Leaving `headroom_config` out of an update keeps the stored value:
+```python
+from codemie_sdk.models.assistant import AssistantCreateRequest
+from codemie_sdk.models.headroom import HeadroomConfig
+
+create_req = AssistantCreateRequest(
+    name="My Assistant",
+    description="Assistant description",
+    system_prompt="Instructions.",
+    project="my_project",
+    llm_model_type="gpt-4o",
+    headroom_config=HeadroomConfig(enabled=True, strategy="balanced"),  # lossless | balanced | aggressive
+)
+client.assistants.create(create_req)
+
+assistant = client.assistants.get("assistant-id")
+print(assistant.headroom_config)
+```
+
+For a workflow, add a top-level `headroom:` key to `yaml_config`. A per-assistant override inside `assistants[]` is also set in the YAML only. Read the result back with `client.workflows.get(...)`, which exposes `headroom_config` (every field optional).
+```yaml
+headroom:
+  enabled: true
+  strategy: aggressive
+assistants:
+  - id: reviewer
+    model: gpt-4.1-mini
+    system_prompt: You review pull requests.
+```
+
+Message history items (`HistoryItem.headroom`) and `TokensUsage.headroom` carry the savings (`HeadroomSavings`: `tokens_original`, `tokens_compacted`, `tokens_saved`, `mode`, `strategy`, `calls`).
+
+Analytics methods return a 404 when the backend feature is disabled:
+```python
+from codemie_sdk.models.analytics import AnalyticsQueryParams, PaginatedAnalyticsQueryParams
+
+params = AnalyticsQueryParams(time_period="last_7_days")
+summary = client.analytics.get_headroom_summary(params)
+timeseries = client.analytics.get_headroom_timeseries(params)
+by_strategy = client.analytics.get_headroom_by_strategy(
+    PaginatedAnalyticsQueryParams(time_period="last_7_days", page=0, per_page=20)
+)
 ```
 
 #### Assistant Versioning
@@ -655,6 +714,36 @@ result = client.integrations.delete(
    - Regularly review and update integration settings
    - Use project-level integrations for team-wide settings
    - Use user-level integrations for personal settings
+
+### Project Service
+
+Manage projects and their members through `client.projects`.
+
+```python
+created = client.projects.create_project(name="my-project", description="Demo")
+page = client.projects.list_projects(page=0, per_page=20, search="my")
+detail = client.projects.get_project_detail("my-project")
+client.projects.update_project("my-project", description="New text")
+client.projects.delete_project("my-project")
+
+# Members
+client.projects.assign_user_to_project("my-project", user_id, is_project_admin=False)
+client.projects.update_user_project_assignment("my-project", user_id, is_project_admin=True)
+client.projects.remove_user_from_project("my-project", user_id)
+client.projects.transfer_ownership("my-project", user_id)
+
+# Bulk and CSV
+client.projects.bulk_assign_users_to_project("my-project", users)
+client.projects.bulk_remove_users_from_project("my-project", [user_id])
+client.projects.validate_users_from_csv("my-project", csv_bytes)
+client.projects.import_users_from_csv("my-project", csv_bytes)
+
+# Existence check
+if client.projects.project_exists("my-project"):
+    ...
+```
+
+`project_exists` returns `False` when the project is not found or not visible to the caller (HTTP 404); other HTTP errors are re-raised. Any 404 on that path counts, including one caused by a wrong base URL, a proxy or an older backend, so a misconfigured `api_domain` reports every project as missing. It reads the full project detail. The SDK sets no default request timeout. A failed bulk call may be partly applied, so re-read the members before retrying a remove. See the [parity guide](../../docs/PARITY.md) for differences from the Node.js SDK.
 
 ### Workflow Service
 
@@ -1314,6 +1403,14 @@ The Task service enables monitoring of background tasks.
 task = client.tasks.get("task-id")
 print(f"Task Status: {task.status}")
 print(f"Progress: {task.progress}")
+```
+
+### Export Service
+
+The Export service returns the raw export document (a dict) for an assistant, workflow, datasource, integration, skill or category. It raises `requests.HTTPError` on 404/403.
+
+```python
+doc = client.export.export("assistant", "assistant-id")
 ```
 
 ### Webhook Service

@@ -11,6 +11,7 @@ import type {
   AssistantUpdateResponse,
 } from "../models/assistant";
 import type { AnyJson, AuthConfig, PaginatedResponse } from "../models/common";
+import type { ConversationMetrics } from "../models/conversation";
 import { z } from "zod";
 import {
   AssistantChatParamsSchema,
@@ -85,14 +86,26 @@ export class AssistantService {
    * Get assistant by ID.
    */
   async get(assistantId: string): Promise<Assistant> {
-    return this.api.get<Assistant>(`/v1/assistants/id/${assistantId}`);
+    const assistant = await this.api.get<Assistant>(`/v1/assistants/id/${assistantId}`);
+    return { ...assistant, disabled_context_tools: assistant.disabled_context_tools ?? [] };
   }
 
   /**
    * Get assistant by slug.
    */
   async getBySlug(slug: string): Promise<Assistant> {
-    return this.api.get<Assistant>(`/v1/assistants/slug/${slug}`);
+    const assistant = await this.api.get<Assistant>(`/v1/assistants/slug/${slug}`);
+    return { ...assistant, disabled_context_tools: assistant.disabled_context_tools ?? [] };
+  }
+
+  /**
+   * Get token and cost totals of a conversation with an assistant or a workflow.
+   * The Headroom fields are set only when Headroom saved tokens in the conversation.
+   */
+  async getConversationMetrics(conversationId: string): Promise<ConversationMetrics> {
+    return this.api.get<ConversationMetrics>(
+      `/v1/assistants/metrics/${encodeURIComponent(conversationId)}`,
+    );
   }
 
   /**
@@ -195,9 +208,10 @@ export class AssistantService {
    * Get a specific assistant version by number.
    */
   async getVersion(assistantId: string, versionNumber: number): Promise<AssistantVersion> {
-    return this.api.get<AssistantVersion>(
+    const version = await this.api.get<AssistantVersion>(
       `/v1/assistants/${assistantId}/versions/${versionNumber}`,
     );
+    return { ...version, disabled_context_tools: version.disabled_context_tools ?? [] };
   }
 
   /**

@@ -48,6 +48,7 @@ describe("AssistantService", () => {
     mcp_servers: [],
     assistant_ids: [],
     nested_assistants: [],
+    disabled_context_tools: [],
   };
 
   beforeEach(() => {
@@ -145,6 +146,17 @@ describe("AssistantService", () => {
       expect(result).toEqual(mockAssistant);
     });
 
+    it("should return headroom_config from the response", async () => {
+      apiHandler.get.mockResolvedValue({
+        ...mockAssistant,
+        headroom_config: { enabled: true, strategy: "balanced" },
+      });
+
+      const result = await service.get("1");
+
+      expect(result.headroom_config).toEqual({ enabled: true, strategy: "balanced" });
+    });
+
     it("should return hide_tool_outputs from the response", async () => {
       apiHandler.get.mockResolvedValue({ ...mockAssistant, hide_tool_outputs: true });
 
@@ -161,10 +173,56 @@ describe("AssistantService", () => {
       expect(result.hide_tool_outputs).toBeUndefined();
     });
 
+    it("should default disabled_context_tools to [] when absent", async () => {
+      const { disabled_context_tools: _omit, ...withoutField } = mockAssistant;
+      apiHandler.get.mockResolvedValue(withoutField);
+
+      const result = await service.get("1");
+
+      expect(result.disabled_context_tools).toEqual([]);
+    });
+
+    it("should return disabled_context_tools when present", async () => {
+      apiHandler.get.mockResolvedValue({
+        ...mockAssistant,
+        disabled_context_tools: ["search_kb"],
+      });
+
+      const result = await service.get("1");
+
+      expect(result.disabled_context_tools).toEqual(["search_kb"]);
+    });
+
     it("should handle not found error", async () => {
       const error = new NotFoundError("Assistant", "non-existent");
       apiHandler.get.mockRejectedValue(error);
       await expect(service.get("non-existent")).rejects.toThrow(error);
+    });
+  });
+
+  describe("getConversationMetrics", () => {
+    it("should get conversation totals with the Headroom fields", async () => {
+      const metrics = {
+        conversation_id: "conversation-1",
+        total_input_tokens: 1200,
+        total_output_tokens: 80,
+        headroom_tokens_saved: 300,
+        headroom_tokens_original: 1500,
+      };
+      apiHandler.get.mockResolvedValue(metrics);
+
+      const result = await service.getConversationMetrics("conversation-1");
+
+      expect(apiHandler.get).toHaveBeenCalledWith("/v1/assistants/metrics/conversation-1");
+      expect(result).toEqual(metrics);
+    });
+
+    it("should encode the conversation ID in the path", async () => {
+      apiHandler.get.mockResolvedValue({ conversation_id: "a/b" });
+
+      await service.getConversationMetrics("a/b");
+
+      expect(apiHandler.get).toHaveBeenCalledWith("/v1/assistants/metrics/a%2Fb");
     });
   });
 
@@ -181,6 +239,26 @@ describe("AssistantService", () => {
 
       expect(apiHandler.get).toHaveBeenCalledWith("/v1/assistants/slug/test-assistant");
       expect(result).toEqual(slugAssistant);
+    });
+
+    it("should default disabled_context_tools to [] when absent", async () => {
+      const { disabled_context_tools: _omit, ...withoutField } = slugAssistant;
+      apiHandler.get.mockResolvedValue(withoutField);
+
+      const result = await service.getBySlug("test-assistant");
+
+      expect(result.disabled_context_tools).toEqual([]);
+    });
+
+    it("should return disabled_context_tools when present", async () => {
+      apiHandler.get.mockResolvedValue({
+        ...slugAssistant,
+        disabled_context_tools: ["search_code_repo"],
+      });
+
+      const result = await service.getBySlug("test-assistant");
+
+      expect(result.disabled_context_tools).toEqual(["search_code_repo"]);
     });
 
     it("should handle not found error", async () => {
@@ -208,6 +286,35 @@ describe("AssistantService", () => {
       skip_integration_validation: false,
     };
 
+    it("should send disabled_context_tools when set", async () => {
+      apiHandler.post.mockResolvedValue({ id: "123" });
+      await service.create({ ...createRequest, disabled_context_tools: ["search_kb"] });
+      const body = apiHandler.post.mock.calls[0][1] as Record<string, unknown>;
+      expect(body.disabled_context_tools).toEqual(["search_kb"]);
+    });
+
+    it("should send an explicit empty disabled_context_tools", async () => {
+      apiHandler.post.mockResolvedValue({ id: "123" });
+      await service.create({ ...createRequest, disabled_context_tools: [] });
+      const body = apiHandler.post.mock.calls[0][1] as Record<string, unknown>;
+      expect(body.disabled_context_tools).toEqual([]);
+    });
+
+    it("should omit disabled_context_tools when unset", async () => {
+      apiHandler.post.mockResolvedValue({ id: "123" });
+      await service.create(createRequest);
+      const body = apiHandler.post.mock.calls[0][1] as Record<string, unknown>;
+      expect("disabled_context_tools" in body).toBe(false);
+    });
+
+    it("should propagate backend rejection unchanged", async () => {
+      const error = new ApiError("Invalid disabled_context_tools");
+      apiHandler.post.mockRejectedValue(error);
+      await expect(
+        service.create({ ...createRequest, disabled_context_tools: ["nope"] }),
+      ).rejects.toBe(error);
+    });
+
     it("should create new assistant", async () => {
       const mockResponse = { id: "123", success: true };
       apiHandler.post.mockResolvedValue(mockResponse);
@@ -216,6 +323,27 @@ describe("AssistantService", () => {
 
       expect(apiHandler.post).toHaveBeenCalledWith("/v1/assistants", createRequest);
       expect(result).toEqual({ ...mockResponse, assistant_id: "123" });
+    });
+
+    it("should send headroom_config on create when provided", async () => {
+      apiHandler.post.mockResolvedValue({ id: "123", success: true });
+
+      await service.create({
+        ...createRequest,
+        headroom_config: { enabled: true, compress_user_messages: false },
+      });
+
+      const body = apiHandler.post.mock.calls[0][1] as Record<string, unknown>;
+      expect(body.headroom_config).toEqual({ enabled: true, compress_user_messages: false });
+    });
+
+    it("should not send headroom_config on create when omitted", async () => {
+      apiHandler.post.mockResolvedValue({ id: "123", success: true });
+
+      await service.create(createRequest);
+
+      const body = apiHandler.post.mock.calls[0][1] as Record<string, unknown>;
+      expect("headroom_config" in body).toBe(false);
     });
 
     it("should preserve mcp_config_id in outbound create payload", async () => {
@@ -300,6 +428,27 @@ describe("AssistantService", () => {
       skip_integration_validation: false,
     };
 
+    it("should send changed disabled_context_tools on update", async () => {
+      apiHandler.put.mockResolvedValue({ success: true });
+      await service.update("123", { ...updateRequest, disabled_context_tools: ["search_kb"] });
+      const body = apiHandler.put.mock.calls[0][1] as Record<string, unknown>;
+      expect(body.disabled_context_tools).toEqual(["search_kb"]);
+    });
+
+    it("should send an explicit empty disabled_context_tools on update", async () => {
+      apiHandler.put.mockResolvedValue({ success: true });
+      await service.update("123", { ...updateRequest, disabled_context_tools: [] });
+      const body = apiHandler.put.mock.calls[0][1] as Record<string, unknown>;
+      expect(body.disabled_context_tools).toEqual([]);
+    });
+
+    it("should omit disabled_context_tools on update when unset", async () => {
+      apiHandler.put.mockResolvedValue({ success: true });
+      await service.update("123", updateRequest);
+      const body = apiHandler.put.mock.calls[0][1] as Record<string, unknown>;
+      expect("disabled_context_tools" in body).toBe(false);
+    });
+
     it("should update existing assistant", async () => {
       const mockResponse = { success: true };
       apiHandler.put.mockResolvedValue(mockResponse);
@@ -317,6 +466,27 @@ describe("AssistantService", () => {
 
       const body = apiHandler.put.mock.calls[0][1] as Record<string, unknown>;
       expect("hide_tool_outputs" in body).toBe(false);
+    });
+
+    it("should send headroom_config on update when provided", async () => {
+      apiHandler.put.mockResolvedValue({ success: true });
+
+      await service.update("123", {
+        ...updateRequest,
+        headroom_config: { enabled: true, strategy: "lossless" },
+      });
+
+      const body = apiHandler.put.mock.calls[0][1] as Record<string, unknown>;
+      expect(body.headroom_config).toEqual({ enabled: true, strategy: "lossless" });
+    });
+
+    it("should not send headroom_config on update when omitted", async () => {
+      apiHandler.put.mockResolvedValue({ success: true });
+
+      await service.update("123", updateRequest);
+
+      const body = apiHandler.put.mock.calls[0][1] as Record<string, unknown>;
+      expect("headroom_config" in body).toBe(false);
     });
 
     it("should preserve mcp_config_id in outbound update payload", async () => {
@@ -405,6 +575,24 @@ describe("AssistantService", () => {
 
       expect(apiHandler.get).toHaveBeenCalledWith("/v1/assistants/tools");
       expect(result).toEqual(mockTools);
+    });
+
+    it("should return default datasource tools unchanged", async () => {
+      const datasourceTools: ToolKitDetails[] = [
+        {
+          toolkit: "datasource",
+          label: "Datasource",
+          settings_config: false,
+          is_external: false,
+          tools: ["search_kb", "search_code_repo", "get_repository_file_tree"].map((name) => ({
+            name,
+            settings_config: false,
+          })),
+        },
+      ];
+      apiHandler.get.mockResolvedValue(datasourceTools);
+      const result = await service.getTools();
+      expect(result).toEqual(datasourceTools);
     });
 
     it("should handle empty tools list", async () => {

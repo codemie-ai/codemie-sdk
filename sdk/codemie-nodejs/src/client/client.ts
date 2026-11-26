@@ -7,6 +7,7 @@ import { DatasourceService } from "../services/datasource";
 import { FileService } from "../services/files";
 import { IntegrationService } from "../services/integration";
 import { LLMService } from "../services/llm";
+import { ProjectService } from "../services/project";
 import { SkillService } from "../services/skill";
 import { TaskService } from "../services/task";
 import { UserService } from "../services/user";
@@ -47,6 +48,7 @@ export class CodeMieClient {
   private _integrations: IntegrationService;
   private _llms: LLMService;
   private _skills: SkillService;
+  private _projects: ProjectService;
   private _tasks: TaskService;
   private _users: UserService;
   private _categories: CategoryService;
@@ -125,6 +127,7 @@ export class CodeMieClient {
     this._llms = new LLMService(authConfig);
     this._tasks = new TaskService(authConfig);
     this._skills = new SkillService(authConfig);
+    this._projects = new ProjectService(authConfig);
     this._users = new UserService(authConfig);
     this._categories = new CategoryService(authConfig);
     this._workflows = new WorkflowService(authConfig);
@@ -198,6 +201,13 @@ export class CodeMieClient {
    */
   get categories(): CategoryService {
     return this._categories;
+  }
+
+  /**
+   * Get the ProjectService instance.
+   */
+  get projects(): ProjectService {
+    return this._projects;
   }
 
   /**
@@ -310,6 +320,7 @@ export class CodeMieClient {
     this._integrations = new IntegrationService(authConfig);
     this._llms = new LLMService(authConfig);
     this._skills = new SkillService(authConfig);
+    this._projects = new ProjectService(authConfig);
     this._tasks = new TaskService(authConfig);
     this._users = new UserService(authConfig);
     this._categories = new CategoryService(authConfig);

@@ -132,4 +132,144 @@ describe("UserService", () => {
       await expect(service.getData()).rejects.toThrow(error);
     });
   });
+
+  describe("admin methods", () => {
+    const base = "/v1/admin/users";
+
+    it("listAdminUsers sends paging query and returns raw body", async () => {
+      const page = { data: [{ id: "u1" }], pagination: { page: 0 } };
+      apiHandler.get.mockResolvedValue(page);
+
+      const result = await service.listAdminUsers();
+      expect(apiHandler.get).toHaveBeenCalledWith(base, { page: 0, per_page: 20 });
+      expect(result).toBe(page);
+    });
+
+    it("listAdminUsers includes search and filters", async () => {
+      apiHandler.get.mockResolvedValue({ data: [], pagination: {} });
+
+      await service.listAdminUsers(2, 5, "bob", '{"is_active":true}');
+      expect(apiHandler.get).toHaveBeenCalledWith(base, {
+        page: 2,
+        per_page: 5,
+        search: "bob",
+        filters: '{"is_active":true}',
+      });
+    });
+
+    it("getAdminUser GETs the encoded id", async () => {
+      const user = { id: "a/b" };
+      apiHandler.get.mockResolvedValue(user);
+
+      const result = await service.getAdminUser("a/b");
+      expect(apiHandler.get).toHaveBeenCalledWith(`${base}/a%2Fb`);
+      expect(result).toBe(user);
+    });
+
+    it("updateAdminUser PUTs the fields", async () => {
+      const user = { id: "u1", name: "N" };
+      apiHandler.put.mockResolvedValue(user);
+
+      const result = await service.updateAdminUser("a/b", { name: "N" });
+      expect(apiHandler.put).toHaveBeenCalledWith(`${base}/a%2Fb`, { name: "N" });
+      expect(result).toBe(user);
+    });
+
+    it("getUserProjects returns only the projects array", async () => {
+      const projects = [{ project_name: "p", is_project_admin: false, is_default: true }];
+      apiHandler.get.mockResolvedValue({ projects });
+
+      const result = await service.getUserProjects("a/b");
+      expect(apiHandler.get).toHaveBeenCalledWith(`${base}/a%2Fb/projects`);
+      expect(result).toBe(projects);
+    });
+
+    it("assignUserToProject POSTs project and admin flag", async () => {
+      apiHandler.post.mockResolvedValue({ ok: true });
+
+      const result = await service.assignUserToProject("a/b", "p");
+      expect(apiHandler.post).toHaveBeenCalledWith(`${base}/a%2Fb/projects`, {
+        project_name: "p",
+        is_project_admin: false,
+      });
+      expect(result).toEqual({ ok: true });
+    });
+
+    it("removeUserFromProject DELETEs encoded path and returns undefined", async () => {
+      apiHandler.delete.mockResolvedValue({});
+
+      const result = await service.removeUserFromProject("a/b", "my proj");
+      expect(apiHandler.delete).toHaveBeenCalledWith(`${base}/a%2Fb/projects/my%20proj`);
+      expect(result).toBeUndefined();
+    });
+
+    it("updateUserProjectRole PUTs flag and returns undefined", async () => {
+      apiHandler.put.mockResolvedValue({});
+
+      const result = await service.updateUserProjectRole("a/b", "p/q", true);
+      expect(apiHandler.put).toHaveBeenCalledWith(`${base}/a%2Fb/projects/p%2Fq`, {
+        is_project_admin: true,
+      });
+      expect(result).toBeUndefined();
+    });
+
+    it("setDefaultProject PUTs empty body and returns raw", async () => {
+      apiHandler.put.mockResolvedValue({ ok: 1 });
+
+      const result = await service.setDefaultProject("a/b", "p");
+      expect(apiHandler.put).toHaveBeenCalledWith(`${base}/a%2Fb/projects/p/default`, {});
+      expect(result).toEqual({ ok: 1 });
+    });
+
+    it("clearDefaultProject DELETEs default and returns raw", async () => {
+      apiHandler.delete.mockResolvedValue({ ok: 2 });
+
+      const result = await service.clearDefaultProject("a/b", "p");
+      expect(apiHandler.delete).toHaveBeenCalledWith(`${base}/a%2Fb/projects/p/default`);
+      expect(result).toEqual({ ok: 2 });
+    });
+
+    it("deactivateUser DELETEs and returns undefined", async () => {
+      apiHandler.delete.mockResolvedValue({});
+
+      const result = await service.deactivateUser("a/b");
+      expect(apiHandler.delete).toHaveBeenCalledWith(`${base}/a%2Fb`);
+      expect(result).toBeUndefined();
+    });
+
+    it("remapUser POSTs the pair to the remap route", async () => {
+      const user = { id: "new", is_active: true };
+      apiHandler.post.mockResolvedValue(user);
+
+      const result = await service.remapUser("old", "new");
+      expect(apiHandler.post).toHaveBeenCalledWith("/v1/admin/users/remap", {
+        old_user_id: "old",
+        new_user_id: "new",
+      });
+      expect(result).toBe(user);
+    });
+
+    it("getAdminUserConversation GETs the scoped conversation with encoded ids", async () => {
+      const conv = { conversation_id: "c/1", user_id: "a/b" };
+      apiHandler.get.mockResolvedValue(conv);
+
+      const result = await service.getAdminUserConversation("a/b", "c/1");
+      expect(apiHandler.get).toHaveBeenCalledWith(`${base}/a%2Fb/conversations/c%2F1`);
+      expect(result).toBe(conv);
+    });
+
+    it("getAdminUserConversation rejects empty ids", async () => {
+      await expect(service.getAdminUserConversation("", "c")).rejects.toThrow("must not be empty");
+      await expect(service.getAdminUserConversation("u", "")).rejects.toThrow("must not be empty");
+    });
+
+    it("reactivateUser POSTs the reactivate route and returns the user", async () => {
+      const user = { id: "u1", is_active: true };
+      apiHandler.post.mockResolvedValue(user);
+
+      const result = await service.reactivateUser("a/b");
+      expect(apiHandler.post).toHaveBeenCalledWith(`${base}/a%2Fb/reactivate`);
+      expect(result).toBe(user);
+    });
+  });
 });

@@ -1,6 +1,7 @@
 /** Models for assistant-related data structures. */
 
 import type { BaseUser } from "./common";
+import type { HeadroomConfig } from "./headroom";
 import type { Integration } from "./integration";
 import type { AgentErrorDetails, ToolErrorDetails } from "./errors";
 
@@ -100,6 +101,7 @@ export interface Assistant extends AssistantBase {
   assistant_ids: string[];
   categories?: AssistantCategory[];
   context: Context[];
+  disabled_context_tools: string[];
   skill_ids?: string[];
   conversation_starters: string[];
   created_date?: string;
@@ -107,6 +109,7 @@ export interface Assistant extends AssistantBase {
   is_global: boolean;
   is_react: boolean;
   hide_tool_outputs?: boolean;
+  headroom_config?: HeadroomConfig;
   llm_model_type?: string;
   mcp_servers: MCPServerDetails[];
   nested_assistants: Partial<Assistant>[];
@@ -174,6 +177,7 @@ export interface AssistantVersion {
   mcp_servers: MCPServerDetails[];
   assistant_ids: string[];
   prompt_variables?: PromptVariable[];
+  disabled_context_tools: string[];
   // allow future fields without breaking consumers
   [key: string]: unknown;
 }

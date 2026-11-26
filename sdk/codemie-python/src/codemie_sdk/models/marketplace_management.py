@@ -30,6 +30,79 @@ class MarketplaceStatusFilter(str, Enum):
     REJECTED = "REJECTED"
 
 
+class MarketplaceCleanupBucket(str, Enum):
+    """Bucket filter of the Cleanup list; ALL lists every bucket, VERIFIED included."""
+
+    ALL = "ALL"
+    VERIFIED = "VERIFIED"
+    COMMUNITY = "COMMUNITY"
+    DELETE = "DELETE"
+
+
+class MarketplaceCleanupOrderBy(str, Enum):
+    """Sort order of the Cleanup list."""
+
+    SCORE_DESC = "score_desc"
+    USERS_DESC = "users_desc"
+    USERS_ASC = "users_asc"
+    LIKES_DESC = "likes_desc"
+    LIKES_ASC = "likes_asc"
+    NAME_ASC = "name_asc"
+    NAME_DESC = "name_desc"
+
+
+class MarketplaceCleanupReason(str, Enum):
+    """Why an assistant sits in the Cleanup list."""
+
+    DUPLICATE = "duplicate"
+    PURPOSE_DUPLICATE = "purpose_duplicate"
+    SEMANTIC_CLONE = "semantic_clone"
+    INVALID = "invalid"
+    DEAD = "dead"
+
+
+class MarketplaceUsageTier(str, Enum):
+    """Usage tier of an assistant in the audit."""
+
+    HOT = "HOT"
+    WARM = "WARM"
+    COLD = "COLD"
+    DEAD = "DEAD"
+
+
+class MarketplaceVerdictKind(str, Enum):
+    """Triage verdict of the audit for one assistant."""
+
+    KEEP = "KEEP"
+    REVIEW = "REVIEW"
+    CANDIDATE_FOR_CLEANUP = "CANDIDATE_FOR_CLEANUP"
+
+
+class MarketplaceGateRule(str, Enum):
+    """Identifier of a deterministic quality check."""
+
+    NAME_LENGTH = "name_length"
+    NAME_NOT_BANNED = "name_not_banned"
+    DESCRIPTION_LENGTH = "description_length"
+    DESCRIPTION_NOT_EQUAL_NAME = "description_not_equal_name"
+    SYSTEM_PROMPT_LENGTH = "system_prompt_length"
+    AT_LEAST_ONE_CATEGORY = "at_least_one_category"
+    SUBSTANCE = "substance"
+    NO_INLINE_CREDENTIALS = "no_inline_credentials"
+    CREDENTIAL_SCAN_TIMEOUT = "credential_scan_timeout"
+
+
+class MarketplaceAuditRunStatus(str, Enum):
+    """Lifecycle of one audit run; PENDING and RUNNING are the active states."""
+
+    PENDING = "PENDING"
+    RUNNING = "RUNNING"
+    SUCCEEDED = "SUCCEEDED"
+    PARTIAL = "PARTIAL"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+
+
 class MarketplaceGateResult(str, Enum):
     """Filter of the pending queue by the result of the live gate checks."""
 
@@ -103,6 +176,93 @@ class MarketplaceAssistantsResponse(BaseModel):
     page: int
     page_size: int
     items: list[MarketplaceAssistantRow] = Field(default_factory=list)
+
+
+class MarketplaceSimilarPair(BaseModel):
+    """The closest other assistant the audit found for a Cleanup row."""
+
+    model_config = ConfigDict(extra="allow")
+
+    a_id: str
+    b_id: str
+    b_name: str | None = None
+    b_slug: str | None = None
+    b_project: str | None = None
+    signals: dict[str, float] = Field(default_factory=dict)
+    combined: float
+    severity: str | None = None
+    reason: str | None = None
+    b_verdict_kind: str | None = None
+
+
+class MarketplaceCleanupRow(BaseModel):
+    """A row of the Cleanup list, as the table renders it.
+
+    ``creator`` is the latest submitter's display name, else the author's display
+    name, else ``None``. Unknown keys are kept, and ``model_fields_set`` lists
+    exactly the keys the server sent.
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    id: str
+    name: str | None = None
+    creator: str | None = None
+    categories: list[str] = Field(default_factory=list)
+    unique_users_count: int | None = None
+    unique_likes_count: int | None = None
+    usage_tier: MarketplaceUsageTier | str | None = Field(
+        None, union_mode="left_to_right"
+    )
+    bucket: MarketplaceCleanupBucket | str | None = Field(
+        None, union_mode="left_to_right"
+    )
+    bucket_reason: str | None = None
+    verdict_kind: MarketplaceVerdictKind | str | None = Field(
+        None, union_mode="left_to_right"
+    )
+    cleanup_reason: MarketplaceCleanupReason | str | None = Field(
+        None, union_mode="left_to_right"
+    )
+    canonical_id: str | None = None
+    canonical_name: str | None = None
+    canonical_users: int | None = None
+    critical_count: int = 0
+    optional_count: int = 0
+    detail: str | None = None
+    top_similar: MarketplaceSimilarPair | None = None
+
+
+class MarketplaceCleanupResponse(BaseModel):
+    """One page of the Cleanup list; ``total`` counts the whole filtered set."""
+
+    model_config = ConfigDict(extra="allow")
+
+    total: int
+    page: int
+    page_size: int
+    items: list[MarketplaceCleanupRow] = Field(default_factory=list)
+
+
+class MarketplaceAuditStatus(BaseModel):
+    """State of the current or most recent audit run of the marketplace."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    is_running: bool
+    run_id: str | None = None
+    started_at: float | None = Field(None, description="POSIX timestamp of the start")
+    finished_at: float | None = Field(None, description="POSIX timestamp of the end")
+    error: str | None = None
+    status: MarketplaceAuditRunStatus | str | None = Field(
+        None,
+        union_mode="left_to_right",
+        description="Status of the run; a value this SDK does not know stays a string",
+    )
+    similarity_backend: str | None = None
+    es_doc_count: int | None = None
+    degraded: bool = False
+    degraded_reason: str | None = None
 
 
 class MarketplacePendingStats(BaseModel):

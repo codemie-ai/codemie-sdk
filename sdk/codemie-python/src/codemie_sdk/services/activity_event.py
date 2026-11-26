@@ -1,10 +1,13 @@
 """Activity event service implementation (maintainer only)."""
 
 from typing import List, Optional
+from uuid import UUID
 
 from ..models.activity_event import (
     ActivityEventFilterOptions,
+    ActivityEventProjectMetadata,
     PaginatedActivityEventResponse,
+    ProjectActivityEventsResponse,
 )
 from ..utils import ApiRequestHandler, TokenSource
 
@@ -99,5 +102,87 @@ class ActivityEventService:
         return self._api.get(
             "/v1/admin/activity-events/filter-options",
             ActivityEventFilterOptions,
+            wrap_response=False,
+        )
+
+    def list_project_events(
+        self,
+        project_instance_id: UUID | str,
+        *,
+        actor_id: Optional[str] = None,
+        domain: Optional[List[str]] = None,
+        event_type: Optional[List[str]] = None,
+        category: Optional[List[str]] = None,
+        from_dt: Optional[str] = None,
+        to_dt: Optional[str] = None,
+        sort_dir: Optional[str] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+    ) -> ProjectActivityEventsResponse:
+        """List the activity trail of one project.
+
+        Callable by a platform admin or maintainer for any non-personal project,
+        and by the administrator of an active project. Any other caller, an
+        unknown project and a personal project all get HTTP 404.
+
+        Args:
+            project_instance_id: Project instance id (``project_instance_id`` of
+                the project detail), not the project name
+            actor_id: Filter by actor user ID
+            domain: Filter by domain(s)
+            event_type: Filter by event type(s)
+            category: Filter by category (Budget, Members, Settings, Account)
+            from_dt: ISO 8601 lower bound datetime (maps to 'from' query param)
+            to_dt: ISO 8601 upper bound datetime (maps to 'to' query param)
+            sort_dir: 'asc' or 'desc' (default 'desc')
+            limit: Results per page, 1-1000 (default 50)
+            offset: Pagination offset (default 0)
+
+        Returns:
+            ProjectActivityEventsResponse
+        """
+        params: dict = {}
+        if actor_id is not None:
+            params["actor_id"] = actor_id
+        if domain is not None:
+            params["domain"] = domain
+        if event_type is not None:
+            params["event_type"] = event_type
+        if category is not None:
+            params["category"] = category
+        if from_dt is not None:
+            params["from"] = from_dt
+        if to_dt is not None:
+            params["to"] = to_dt
+        if sort_dir is not None:
+            params["sort_dir"] = sort_dir
+        if limit is not None:
+            params["limit"] = limit
+        if offset is not None:
+            params["offset"] = offset
+
+        return self._api.get(
+            f"/v1/projects/{project_instance_id}/activity-events",
+            ProjectActivityEventsResponse,
+            params=params if params else None,
+            wrap_response=False,
+        )
+
+    def get_project_event_metadata(
+        self, project_instance_id: UUID | str
+    ) -> ActivityEventProjectMetadata:
+        """Get the event types, domains and categories present in a project's trail.
+
+        Same access rules as ``list_project_events``.
+
+        Args:
+            project_instance_id: Project instance id
+
+        Returns:
+            ActivityEventProjectMetadata
+        """
+        return self._api.get(
+            f"/v1/projects/{project_instance_id}/activity-events/metadata",
+            ActivityEventProjectMetadata,
             wrap_response=False,
         )

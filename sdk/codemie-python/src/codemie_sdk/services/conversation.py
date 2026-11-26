@@ -25,6 +25,7 @@ from ..models.conversation import (
     FeedbackCreateRequest,
     FeedbackCreateResponse,
     FeedbackDeleteRequest,
+    FeedbackEntry,
 )
 from ..models.assistant import AssistantChatRequest
 from ..utils import ApiRequestHandler, TokenSource
@@ -253,7 +254,10 @@ class ConversationService:
     # History management methods
 
     def upsert_history(
-        self, conversation_id: str, request: UpsertHistoryRequest
+        self,
+        conversation_id: str,
+        request: UpsertHistoryRequest,
+        headers: dict[str, str] | None = None,
     ) -> UpsertHistoryResponse:
         """Create or update conversation with history (idempotent upsert).
 
@@ -263,6 +267,7 @@ class ConversationService:
         Args:
             conversation_id: Conversation ID (will be created if doesn't exist)
             request: History upsert request with messages
+            headers: Optional additional HTTP headers (e.g., X-CodeMie-Client)
 
         Returns:
             Upsert response with metadata about operation
@@ -271,6 +276,7 @@ class ConversationService:
             f"/v1/conversations/{conversation_id}/history",
             UpsertHistoryResponse,
             json_data=request.model_dump(mode="json", exclude_none=True),
+            extra_headers=headers,
         )
 
     def delete_history(self, conversation_id: str) -> ConversationDetails:
@@ -369,6 +375,32 @@ class ConversationService:
             FeedbackCreateResponse,
             json_data=request.model_dump(by_alias=True, exclude_none=True),
         )
+
+    def list_feedback(self) -> list[FeedbackEntry]:
+        """List feedback entries visible to the current user.
+
+        An admin gets every entry; any other user gets only the entries on
+        their own conversations.
+
+        Returns:
+            List of feedback entries
+        """
+        return self._api.get("/v1/feedback", list[FeedbackEntry])
+
+    def get_feedback(self, document_id: str) -> FeedbackEntry:
+        """Get a feedback entry by id.
+
+        Args:
+            document_id: Id of the feedback entry
+
+        Returns:
+            The feedback entry
+
+        Raises:
+            requests.HTTPError: 404 when the entry does not exist or belongs
+                to another user's conversation and the caller is not an admin
+        """
+        return self._api.get(f"/v1/feedback/{document_id}", FeedbackEntry)
 
     def delete_feedback(self, request: FeedbackDeleteRequest) -> BaseResponse:
         """Delete a previously submitted feedback entry.

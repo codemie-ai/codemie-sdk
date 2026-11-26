@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import mimetypes
+from pathlib import Path
 from typing import Any
 
 from .workflow_execution import WorkflowExecutionService
@@ -13,6 +15,9 @@ from ..models.workflow import (
     WorkflowEvaluationRequest,
     WorkflowGeneratorRequest,
     WorkflowGeneratorResponse,
+    WorkflowRollbackRequest,
+    WorkflowRollbackResponse,
+    WorkflowVersionHistoryResponse,
     Workflow,
 )
 from ..utils import ApiRequestHandler, TokenSource
@@ -123,6 +128,39 @@ class WorkflowService:
             json_data=request.model_dump(exclude_none=True),
         )
 
+    def upload_icon(self, file_path: Path, content_type: str | None = None) -> dict:
+        """Upload an image file to use as a workflow icon.
+
+        The server accepts PNG, JPEG and SVG files up to 0.5 MB, checks that the
+        file name extension and the file content match the declared type, and
+        stores the file under a generated name.
+
+        Args:
+            file_path: Path of the image file to upload
+            content_type: Declared MIME type of the file. Guessed from the file
+                name when omitted.
+
+        Returns:
+            Dict with ``file_url``: the stored file URL to pass as ``icon_url``
+            when creating or updating a workflow.
+
+        Raises:
+            requests.HTTPError: If the server rejects the file (400)
+        """
+        with open(file_path, "rb") as file:
+            content = file.read()
+
+        mime_type = (
+            content_type
+            or mimetypes.guess_type(file_path.name)[0]
+            or "application/octet-stream"
+        )
+        return self._api.post_multipart(
+            "/v1/workflows/icon",
+            dict,
+            files=[("file", (file_path.name, content, mime_type))],
+        )
+
     def list(
         self,
         page: int = 0,
@@ -190,6 +228,7 @@ class WorkflowService:
         headers: dict[str, str] | None = None,
         tags: list[str] | None = None,
         file_names: list[str] | None = None,
+        attributes: dict[str, str] | None = None,
     ) -> dict:
         """Run a workflow with optional input parameters.
 
@@ -202,6 +241,7 @@ class WorkflowService:
             headers: Optional additional HTTP headers (e.g., X-* for MCP propagation)
             tags: Optional tags to attach to the workflow execution trace in Langfuse.
             file_names: Optional list of file references provided as inputs to the run.
+            attributes: Optional analytics labels (string keys and values) fixed for this execution.
 
         Returns:
             dict: Created workflow execution details
@@ -214,6 +254,7 @@ class WorkflowService:
             propagate_headers=propagate_headers,
             headers=headers,
             tags=tags,
+            attributes=attributes,
         )
 
     def evaluate(self, workflow_id: str, request: WorkflowEvaluationRequest) -> dict:
@@ -279,6 +320,77 @@ class WorkflowService:
         return self._api.post(
             f"/v1/workflows/{workflow_id}/marketplace/unpublish", dict
         )
+
+    def list_versions(
+        self,
+        workflow_id: str,
+        page: int | None = None,
+        per_page: int | None = None,
+    ) -> WorkflowVersionHistoryResponse:
+        """List the saved revisions of a workflow, newest first.
+
+        ``page`` and ``per_page`` are sent as given and validated by the API; when
+        omitted the API returns its default first page.
+
+        Args:
+            workflow_id: ID of the workflow
+            page: Optional 0-based page number
+            per_page: Optional page size
+
+        Returns:
+            One page of revisions, each carrying its absolute ``revision_index``,
+            and the ``total_revisions`` count of the full history
+        """
+        params: dict[str, Any] = {}
+        if page is not None:
+            params["page"] = page
+        if per_page is not None:
+            params["per_page"] = per_page
+        return self._api.get(
+            f"/v1/workflows/{workflow_id}/versions",
+            WorkflowVersionHistoryResponse,
+            params=params or None,
+            wrap_response=False,
+        )
+
+    def rollback(
+        self,
+        workflow_id: str,
+        revision_index: int,
+        change_notes: str | None = None,
+    ) -> dict:
+        """Restore a workflow's configuration from an earlier revision.
+
+        The displaced configuration is recorded as a new revision, so a rollback
+        adds one entry to the history. The response carries ``disabled_mcp_servers``:
+        any link whose catalogue entry is unavailable is disabled instead of
+        blocking the rollback.
+
+        The backend's wrapper model serializes with ``alias_generator=to_camel``, so
+        the raw JSON carries ``disabledMcpServers`` even though each entry's own
+        fields stay snake_case; this method normalizes the top-level key back to
+        ``disabled_mcp_servers`` before returning, so callers never see the
+        backend's camelCase quirk.
+
+        Args:
+            workflow_id: ID of the workflow
+            revision_index: Absolute 0-based position of the target revision, as
+                reported by ``list_versions``
+            change_notes: Optional note stored with the new revision (max 1000 characters)
+
+        Returns:
+            The API confirmation message plus ``disabled_mcp_servers`` (snake_case)
+        """
+        request = WorkflowRollbackRequest(
+            revision_index=revision_index, change_notes=change_notes
+        )
+        raw = self._api.post(
+            f"/v1/workflows/{workflow_id}/versions/rollback",
+            dict,
+            json_data=request.model_dump(exclude_none=True),
+            wrap_response=False,
+        )
+        return WorkflowRollbackResponse.model_validate(raw).model_dump()
 
     def executions(self, workflow_id: str) -> WorkflowExecutionService:
         """Get workflow execution service for the specified workflow.

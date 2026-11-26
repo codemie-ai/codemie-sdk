@@ -109,6 +109,7 @@ class ProjectDetailResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     name: str
+    project_instance_id: UUID | None = None
     display_name: str | None = None
     description: str | None = None
     project_type: str
@@ -119,7 +120,17 @@ class ProjectDetailResponse(BaseModel):
     cost_center_id: UUID | None = None
     cost_center_name: str | None = None
     members: list[ProjectMember]
+    enforce_member_spend_limits: bool = False
+    chargeback_enabled: bool = False
     chargeback_attribution: str = "project"
+    allowed_models: list[str] | None = Field(
+        default=None,
+        description="Models the project is limited to; None means no restriction",
+    )
+    default_model: str | None = Field(
+        default=None,
+        description="Model the project's assistants and chats start on",
+    )
     cli_analytics_enabled: bool | None = None
 
 
@@ -179,6 +190,66 @@ class ProjectUpdateRequest(BaseModel):
     enforce_member_spend_limits: bool | None = None
     chargeback_attribution: str | None = None
     cli_analytics_enabled: bool | None = None
+
+
+class ProjectAllowedModelsUpdateRequest(BaseModel):
+    """Request to change the models a project may use and its default model."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    allowed_models: list[str] | None = None
+    default_model: str | None = None
+
+
+class ProjectAllowedModelsResponse(BaseModel):
+    """Project model settings after an update or a reset."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    name: str
+    display_name: str | None = None
+    description: str | None = None
+    project_type: str
+    created_by: str
+    created_at: datetime
+    cost_center_id: UUID | None = None
+    cost_center_name: str | None = None
+    allowed_models: list[str] | None = None
+    default_model: str | None = None
+
+
+class UserModelOverrideRequest(BaseModel):
+    """Request to set (replace) the models one project member may use."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    allowed_models: list[str]
+    default_model: str | None = None
+
+
+class UserModelOverrideBatchRequest(BaseModel):
+    """Request to grant or revoke the model override of several project members at once."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    operation: str
+    user_ids: list[str]
+    allowed_models: list[str] | None = None
+    default_model: str | None = None
+
+
+class UserModelOverrideResponse(BaseModel):
+    """The model override of one project member."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: UUID
+    user_id: str
+    project_name: str
+    allowed_models: list[str]
+    default_model: str | None = None
+    date: datetime | None = None
+    update_date: datetime | None = None
 
 
 class ProjectOwnershipUpdateRequest(BaseModel):

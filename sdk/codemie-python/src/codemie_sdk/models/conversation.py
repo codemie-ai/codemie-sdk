@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from codemie_sdk.models.assistant import ContextType
+from codemie_sdk.models.headroom import HeadroomSavings
 
 
 class Conversation(BaseModel):
@@ -25,6 +27,27 @@ class Conversation(BaseModel):
     assistant_ids: list[str]
     initial_assistant_id: str | None
     finished_at: datetime | None = None
+
+
+class ConversationMetrics(BaseModel):
+    """Token and cost totals of one conversation with an assistant or a workflow.
+
+    Returned by ``GET /v1/assistants/metrics/{conversation_id}``. The backend drops
+    ``None`` fields from the body, so every total is optional. The Headroom fields are
+    present only when Headroom saved tokens in the conversation.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    conversation_id: str
+    total_input_tokens: int | None = None
+    total_output_tokens: int | None = None
+    total_money_spent: float | None = None
+    total_classifier_cost_usd: float | None = None
+    money_spent_pending: bool | None = None
+    money_spent_unavailable: bool | None = None
+    headroom_tokens_saved: int | None = None
+    headroom_tokens_original: int | None = None
 
 
 class Mark(BaseModel):
@@ -94,6 +117,7 @@ class HistoryItem(BaseModel):
     executionId: str | None = None
     # WorkflowExecutionStatusEnum value, e.g. "In Progress"
     executionStatus: str | None = None
+    headroom: HeadroomSavings | None = None
 
 
 class ContextItem(BaseModel):
@@ -188,6 +212,7 @@ class ConversationDetails(BaseModel):
     category: str | None
     mcp_server_single_usage: bool | None = False
     finished_at: datetime | None = None
+    attributes: dict[str, str] | None = None
 
 
 class ConversationShareRequest(BaseModel):
@@ -371,6 +396,25 @@ class FeedbackCreateResponse(BaseModel):
     """Response for POST /v1/feedback: the id of the stored feedback entry."""
 
     id: str
+
+
+class FeedbackEntry(BaseModel):
+    """A stored feedback entry as returned by GET /v1/feedback and GET /v1/feedback/{id}."""
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    id: str
+    request: str
+    response: str
+    mark: FeedbackMark
+    conversation_id: str = Field(alias="conversationId")
+    comments: str | None = None
+    date: datetime | None = None
+    update_date: datetime | None = None
+    history: list[dict[str, Any]] | None = None
+    app_name: str | None = Field(default=None, alias="appName")
+    repo_name: str | None = Field(default=None, alias="repoName")
+    index_type: str | None = Field(default=None, alias="indexType")
 
 
 class FeedbackDeleteRequest(BaseModel):

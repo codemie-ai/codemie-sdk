@@ -2,6 +2,8 @@
 
 TypeScript/JavaScript SDK for CodeMie services. This SDK provides a comprehensive interface to interact with CodeMie services, including LLM (Large Language Models), assistants, workflows, and tools.
 
+See the [parity guide](../../docs/PARITY.md) for how this SDK relates to the Python SDK.
+
 ## Table of Contents
 
 - [CodeMie Node.js SDK](#codemie-nodejs-sdk)
@@ -15,6 +17,7 @@ TypeScript/JavaScript SDK for CodeMie services. This SDK provides a comprehensiv
     - [LLM Service](#llm-service)
     - [Assistant Service](#assistant-service)
       - [Core Methods](#core-methods)
+      - [Headroom (token compression)](#headroom-token-compression)
       - [Advanced Features](#advanced-features)
     - [Datasource Service](#datasource-service)
       - [Supported Datasource Types](#supported-datasource-types)
@@ -25,6 +28,8 @@ TypeScript/JavaScript SDK for CodeMie services. This SDK provides a comprehensiv
       - [Integration Types](#integration-types)
       - [Core Methods](#core-methods-2)
       - [Best Practices for Integrations](#best-practices-for-integrations)
+    - [Project Service](#project-service)
+    - [User Admin Methods](#user-admin-methods)
     - [Workflow Service](#workflow-service)
       - [Core Methods](#core-methods-3)
       - [Workflow Execution](#workflow-execution)
@@ -237,6 +242,47 @@ await client.assistants.update("assistant-id", params);
 5. **Delete Assistant**
 ```typescript
 await client.assistants.delete("assistant-id");
+```
+
+#### Headroom (token compression)
+
+Headroom compresses user messages and tool outputs before they reach the model. It takes effect on LangGraphAgent runs only. For AIToolsAgent runs the config is stored but has no effect. The backend feature must be enabled.
+
+Set it on an assistant. Leaving `headroom_config` out of an update keeps the stored value:
+```typescript
+const params: AssistantCreateParams = {
+  name: "My Assistant",
+  description: "Assistant description",
+  system_prompt: "Instructions.",
+  project: "my_project",
+  llm_model_type: "gpt-4o",
+  toolkits: [],
+  conversation_starters: [],
+  context: [],
+  mcp_servers: [],
+  assistant_ids: [],
+  headroom_config: { enabled: true, strategy: "balanced" }, // lossless | balanced | aggressive
+};
+await client.assistants.create(params);
+
+const assistant = await client.assistants.get("assistant-id");
+console.log(assistant.headroom_config);
+```
+
+For a workflow, add a top-level `headroom:` key to `yaml_config`. A per-assistant override inside `assistants[]` is also set in the YAML only. Read the result back with `client.workflows.get(...)`, which exposes `headroom_config` (every field optional).
+```yaml
+headroom:
+  enabled: true
+  strategy: aggressive
+```
+
+Message history items (`HistoryItem.headroom`) and `TokensUsage.headroom` carry the savings (`HeadroomSavings`: `tokens_original`, `tokens_compacted`, `tokens_saved`, `mode`, `strategy`, `calls`).
+
+Analytics methods return a 404 when the backend feature is disabled:
+```typescript
+const summary = await client.analytics.getHeadroomSummary({ time_period: "last_7_days" });
+const timeseries = await client.analytics.getHeadroomTimeseries({ time_period: "last_7_days" });
+const byStrategy = await client.analytics.getHeadroomByStrategy({ time_period: "last_7_days", page: 0, per_page: 20 });
 ```
 
 #### Advanced Features
@@ -687,6 +733,63 @@ await client.integrations.delete(
    - Regularly review and update integration settings
    - Use project-level integrations for team-wide settings
    - Use user-level integrations for personal settings
+
+### Project Service
+
+Manage projects and their members through `client.projects`. Method names are the camelCase form of the Python names; payload and query keys stay snake_case.
+
+```typescript
+const created = await client.projects.createProject({ name: 'my-project', description: 'Demo' });
+const page = await client.projects.listProjects({ page: 0, per_page: 20, search: 'my' });
+const detail = await client.projects.getProjectDetail('my-project');
+await client.projects.updateProject('my-project', { description: 'New text' });
+await client.projects.deleteProject('my-project');
+await client.projects.updateAllowedModels('my-project', { allowed_models: ['gpt-4o'], default_model: 'gpt-4o' });
+await client.projects.resetAllowedModels('my-project');
+const filtered = await client.projects.listProjects({ cost_center_ids: [costCenterId] });
+
+// Members
+await client.projects.assignUserToProject('my-project', userId, false);
+await client.projects.updateUserProjectAssignment('my-project', userId, true);
+await client.projects.removeUserFromProject('my-project', userId);
+await client.projects.transferOwnership('my-project', userId);
+
+// Bulk and CSV (csv is a Buffer)
+await client.projects.bulkAssignUsersToProject('my-project', [{ user_id: userId, is_project_admin: false }]);
+await client.projects.bulkRemoveUsersFromProject('my-project', [userId]);
+await client.projects.validateUsersFromCsv('my-project', csv);
+await client.projects.importUsersFromCsv('my-project', csv);
+
+// Existence check
+if (await client.projects.projectExists('my-project')) { /* ... */ }
+```
+
+Notes:
+
+- Bulk assign accepts 1 to 1000 users and bulk remove 1 to 100 ids; anything else throws a zod error before the request is sent.
+- A failed bulk call may be partly applied. Re-read the project members before retrying a remove.
+- `projectExists` returns `false` when the project is not found or not visible to the caller. Any 404 on that path counts as `false`, including one caused by a wrong base URL, a proxy or an older backend, so a misconfigured `apiDomain` reports every project as missing; other errors are rethrown. It reads the full project detail, not a lightweight probe.
+- Neither SDK sets a default request timeout; configure one on your side if you need it.
+
+### User Admin Methods
+
+`client.users` also exposes admin methods (admin rights required). The project methods here take `(userId, projectName)`, the reverse of the same-named `client.projects` methods.
+
+```typescript
+const users = await client.users.listAdminUsers(0, 20, 'smith');
+const user = await client.users.getAdminUser(userId);
+await client.users.updateAdminUser(userId, { /* admin-editable fields */ });
+const memberships = await client.users.getUserProjects(userId);
+await client.users.assignUserToProject(userId, 'my-project', false);
+await client.users.updateUserProjectRole(userId, 'my-project', true);
+await client.users.removeUserFromProject(userId, 'my-project');
+await client.users.setDefaultProject(userId, 'my-project');
+await client.users.clearDefaultProject(userId, 'my-project');
+await client.users.deactivateUser(userId);
+await client.users.reactivateUser(userId);
+await client.users.remapUser(oldUserId, newUserId); // SuperAdmin only
+const conv = await client.users.getAdminUserConversation(userId, conversationId);
+```
 
 ### Workflow Service
 
@@ -1164,6 +1267,10 @@ Then run the tests:
 ```bash
 npm run test:e2e
 ```
+
+#### Disabled Context Tools
+
+`disabled_context_tools` (list of default datasource tool names opted out, e.g. `["search_kb"]`) is accepted by `create`/`update` and returned on `Assistant` and `AssistantVersion` (defaults to `[]`). Omit it on update to leave the current value unchanged; pass `[]` to clear it.
 
 ### Assistant Versioning via SDK
 

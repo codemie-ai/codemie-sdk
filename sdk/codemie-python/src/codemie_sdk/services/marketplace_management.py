@@ -24,6 +24,12 @@ from urllib.parse import quote
 
 from ..models.marketplace_management import (
     MarketplaceAssistantsResponse,
+    MarketplaceAuditStatus,
+    MarketplaceCleanupBucket,
+    MarketplaceCleanupOrderBy,
+    MarketplaceCleanupReason,
+    MarketplaceCleanupResponse,
+    MarketplaceGateRule,
     MarketplaceDecisionRequest,
     MarketplaceForcePublishResponse,
     MarketplaceGateResult,
@@ -33,6 +39,8 @@ from ..models.marketplace_management import (
     MarketplaceReviewActionResponse,
     MarketplaceReviewDetail,
     MarketplaceStatusFilter,
+    MarketplaceUsageTier,
+    MarketplaceVerdictKind,
 )
 from ..utils import ApiRequestHandler, TokenSource
 
@@ -118,6 +126,77 @@ class MarketplaceManagementService:
             MarketplaceAssistantsResponse,
             params={key: value for key, value in params.items() if value is not None},
             wrap_response=False,
+        )
+
+    def list_cleanup(
+        self,
+        bucket: MarketplaceCleanupBucket | str | None = None,
+        q: str | None = None,
+        reason: MarketplaceCleanupReason | str | None = None,
+        tier: MarketplaceUsageTier | str | None = None,
+        verdict: MarketplaceVerdictKind | str | None = None,
+        mcp: str | None = None,
+        category: str | None = None,
+        cluster_id: int | None = None,
+        rule: MarketplaceGateRule | str | None = None,
+        order_by: MarketplaceCleanupOrderBy | str | None = None,
+        page: int = 1,
+        page_size: int = 50,
+    ) -> MarketplaceCleanupResponse:
+        """List the Cleanup table of the latest finished audit run.
+
+        Only published assistants appear. The list is empty until an audit has run.
+
+        Args:
+            bucket: Bucket to list; the server default is DELETE, ALL lists every bucket
+            q: Text filter on the assistant name
+            reason: Only rows with this cleanup reason
+            tier: Only rows in this usage tier
+            verdict: Only rows with this verdict kind
+            mcp: Only assistants using this MCP server
+            category: Only assistants in this category id
+            cluster_id: Only rows of this similarity cluster
+            rule: Only assistants that failed this quality check
+            order_by: Sort order; an unknown value falls back to the server default
+            page: Page number, starting at 1
+            page_size: Page size, 1 to 200
+        """
+        params = {
+            "bucket": _value(bucket),
+            "q": q,
+            "reason": _value(reason),
+            "tier": _value(tier),
+            "verdict": _value(verdict),
+            "mcp": mcp,
+            "category": category,
+            "cluster_id": cluster_id,
+            "rule": _value(rule),
+            "order_by": _value(order_by),
+            "page": page,
+            "page_size": page_size,
+        }
+        return self._api.get(
+            f"{_BASE}/cleanup",
+            MarketplaceCleanupResponse,
+            params={key: value for key, value in params.items() if value is not None},
+            wrap_response=False,
+        )
+
+    def start_audit(self) -> MarketplaceAuditStatus:
+        """Start an audit run in the background (HTTP 202) and return its status.
+
+        Only one run is active at a time: while another is in flight the server
+        refuses with HTTP 409, which raises ``requests.HTTPError``. Poll
+        ``get_audit_status`` until ``is_running`` is false.
+        """
+        return self._api.post(
+            f"{_BASE}/audit/run", MarketplaceAuditStatus, wrap_response=False
+        )
+
+    def get_audit_status(self) -> MarketplaceAuditStatus:
+        """Whether an audit is running, and how the most recent one ended."""
+        return self._api.get(
+            f"{_BASE}/audit/status", MarketplaceAuditStatus, wrap_response=False
         )
 
     def get_detail(self, entity_id: str) -> MarketplaceReviewDetail:
