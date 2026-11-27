@@ -8,6 +8,8 @@ from urllib.parse import quote, urlencode
 from typing import Callable, Literal, Tuple, Any
 from pathlib import Path
 
+import requests
+
 from ..models.common import PaginationParams
 from ..models.datasource import (
     DataSource,
@@ -373,6 +375,37 @@ class DatasourceService:
             f"/v1/index/provider/{quote(index_info_id, safe='')}",
             dict,
             json_data=request.to_body(),
+        )
+
+    def send_provider_callback(
+        self,
+        index_id: str,
+        payload: dict[str, Any],
+        otp: str | None = None,
+    ) -> requests.Response:
+        """POST /v1/callbacks/index/{index_id} - report a provider datasource result.
+
+        The route is anonymous: the external provider authenticates with the
+        one-time password it was given, so no Authorization header is sent.
+
+        Args:
+            index_id: ID of the provider datasource
+            payload: Callback body, e.g. ``{"status": "Completed"}``
+            otp: Value for the ``X-Callback-OTP`` header. ``None`` omits the
+                header; an empty string sends it empty.
+
+        Returns:
+            Raw Response object, not raised on HTTP errors, so the caller can
+            inspect a rejected callback (status code and ``detail``).
+        """
+        return self._api.post(
+            f"/v1/callbacks/index/{index_id}",
+            response_model=requests.Response,
+            json_data=payload,
+            wrap_response=False,
+            raise_on_error=False,
+            include_auth=False,
+            extra_headers=None if otp is None else {"X-Callback-OTP": otp},
         )
 
     def health_check(
