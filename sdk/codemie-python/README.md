@@ -700,7 +700,10 @@ result = client.integrations.delete(
 
 #### Credential Key Enums
 
-Each integration type with a defined key set has a `<Type>Keys` enum, and each select field has a `<Type><KeyName>Options` enum (for example `ExchangeKeys` and `ExchangeAuthTypeOptions`). Members are `StrEnum` members, so `str()`, f-strings and JSON all give the plain value.
+Credential keys such as `mailbox` are plain strings, so a typo is only caught when the platform rejects it. The SDK has enums with the correct keys and values, so your editor can autocomplete them.
+
+- `<Type>Keys` lists the credential keys of an integration type, for example `ExchangeKeys`.
+- `<Type><KeyName>Options` lists the allowed values of a select field, for example `ExchangeAuthTypeOptions`.
 
 ```python
 from codemie_sdk import CredentialValues, ExchangeAuthTypeOptions, ExchangeKeys
@@ -711,11 +714,13 @@ values = [
 ]
 ```
 
-- Key enums cover: Jira, Confluence, Git, Kubernetes, AWS, GCP, Keycloak, Azure, Elastic, OpenAPI, Email, AzureDevOps, Sonar, SQL, Telegram, ZephyrScale, ServiceNow, ReportPortal, Xray, SharePoint, XWiki and MSExchange. Option enums cover the select fields of A2A, Confluence, Email, Git, Jira, MSExchange, Scheduler, SharePoint, SQL and Webhook.
-- Types without a defined key set (Scheduler, Webhook, MCP, Plugin, FileSystem, DIAL, A2A, LiteLLM, GoogleOAuth, MSTeams) have no key enum.
-- `KEY_ENUMS` maps an integration type to its key enum. `OPTION_ENUMS` maps `(type, key name)` to an option enum. Both are read-only.
-- Plain strings still work. Unknown keys are not rejected by the SDK.
-- The enums are checked by a test against a committed snapshot of the backend's key sets, not against a live platform. A maintainer refreshes the snapshot in a separate change.
+The enums are optional. Enum members work like normal strings, and plain strings are still accepted. The SDK does not reject keys it does not know.
+
+**Key enums** are available for Jira, Confluence, Git, Kubernetes, AWS, GCP, Keycloak, Azure, Elastic, OpenAPI, Email, AzureDevOps, Sonar, SQL, Telegram, ZephyrScale, ServiceNow, ReportPortal, Xray, SharePoint, XWiki, MSExchange, Scheduler, Webhook, Plugin, FileSystem, DIAL, A2A, LiteLLM and MSTeams. For other integration types, use plain strings.
+
+**Option enums** are available for the select fields of A2A, Confluence, Email, Git, Jira, MSExchange, Scheduler, SharePoint, SQL and Webhook.
+
+To look enums up in code, use `KEY_ENUMS` (integration type to key enum) and `OPTION_ENUMS` (`(integration type, key name)` to option enum).
 
 #### Best Practices for Integrations
 

@@ -126,16 +126,8 @@ def test_detects_extra_type():
 
 
 NO_KEY_SET = {
-    CredentialTypes.PLUGIN,
-    CredentialTypes.FILESYSTEM,
-    CredentialTypes.SCHEDULER,
-    CredentialTypes.WEBHOOK,
-    CredentialTypes.DIAL,
-    CredentialTypes.A2A,
     CredentialTypes.MCP,
-    CredentialTypes.LITE_LLM,
     CredentialTypes.GOOGLE_OAUTH,
-    CredentialTypes.MS_TEAMS,
 }
 
 
