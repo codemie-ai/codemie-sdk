@@ -22,14 +22,19 @@ plain value and ``CredentialValues.key`` stays a ``str``.
 Two registries map enums to integration types: ``KEY_ENUMS`` and
 ``OPTION_ENUMS``. A test compares them with a committed snapshot of the
 backend's key sets (``tests/data/credential_snapshot.json``); it does not query
-a live platform.
+a live platform. To refresh the snapshot, re-read the key sets from the backend's
+tool configuration classes, update the JSON and its ``source.captured`` date, then
+rerun the test.
+
+``MsTeamsKeys.ASSISTANT_IDS`` and ``WebhookKeys.GITLAB_FILTER_MR_ACTIONS`` are
+UI-only keys in the snapshot: the UI defines them, the backend does not.
 
 Export decision: all enums and both registries are re-exported from
 ``codemie_sdk``. The module stays single-file while it is under ~800 lines.
 """
 
 from collections.abc import Mapping
-from enum import Enum, StrEnum
+from enum import StrEnum
 from types import MappingProxyType
 
 from .integration import CredentialTypes
@@ -411,7 +416,7 @@ class WebhookResourceTypeOptions(StrEnum):
     DATASOURCE = "datasource"
 
 
-KEY_ENUMS: Mapping[CredentialTypes, type[Enum]] = MappingProxyType(
+KEY_ENUMS: Mapping[CredentialTypes, type[StrEnum]] = MappingProxyType(
     {
         CredentialTypes.JIRA: JiraKeys,
         CredentialTypes.CONFLUENCE: ConfluenceKeys,
@@ -446,7 +451,7 @@ KEY_ENUMS: Mapping[CredentialTypes, type[Enum]] = MappingProxyType(
     }
 )
 
-OPTION_ENUMS: Mapping[tuple[CredentialTypes, str], type[Enum]] = MappingProxyType(
+OPTION_ENUMS: Mapping[tuple[CredentialTypes, str], type[StrEnum]] = MappingProxyType(
     {
         (CredentialTypes.A2A, "auth_type"): A2aAuthTypeOptions,
         (CredentialTypes.CONFLUENCE, "auth_type"): ConfluenceAuthTypeOptions,
