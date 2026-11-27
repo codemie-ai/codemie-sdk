@@ -43,6 +43,7 @@ class SkillBase(BaseModel):
     created_date: datetime = Field(alias="createdDate")
     enabled_builtin_subagents: list[str] = Field(default_factory=list)
     mcp_servers: list[MCPServerDetails] = Field(default_factory=list)
+    toolkits: list[dict] | None = None
 
 
 class SkillCompanionFileMetadata(BaseModel):
@@ -94,6 +95,7 @@ class SkillCreateRequest(BaseModel):
     enabled_builtin_subagents: list[str] | None = None
     mcp_servers: list[MCPServerDetails] | None = Field(default_factory=list)
     companion_files: list[SkillCompanionFilePayload] | None = None
+    toolkits: list[dict] | None = None
 
 
 class SkillUpdateRequest(BaseModel):
@@ -108,6 +110,7 @@ class SkillUpdateRequest(BaseModel):
     enabled_builtin_subagents: list[str] | None = None
     mcp_servers: list[MCPServerDetails] | None = None
     companion_files: list[SkillCompanionFilePayload] | None = None
+    toolkits: list[dict] | None = None
 
 
 class SkillImportRequest(BaseModel):
