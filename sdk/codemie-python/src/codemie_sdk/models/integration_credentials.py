@@ -32,8 +32,207 @@ from enum import Enum
 from .integration import CredentialTypes
 
 
+class JiraKeys(str, Enum):
+    """Credential keys of the Jira integration."""
+
+    URL = "url"
+    USERNAME = "username"
+    TOKEN = "token"
+    CLOUD = "cloud"
+    AUTH_TYPE = "auth_type"
+
+
+class ConfluenceKeys(str, Enum):
+    """Credential keys of the Confluence integration."""
+
+    URL = "url"
+    USERNAME = "username"
+    TOKEN = "token"
+    CLOUD = "cloud"
+    AUTH_TYPE = "auth_type"
+
+
+class GitKeys(str, Enum):
+    """Credential keys of the Git integration."""
+
+    AUTH_TYPE = "auth_type"
+    URL = "url"
+    TOKEN = "token"
+    APP_ID = "app_id"
+    PRIVATE_KEY = "private_key"
+    INSTALLATION_ID = "installation_id"
+
+
+class KubernetesKeys(str, Enum):
+    """Credential keys of the Kubernetes integration."""
+
+    URL = "url"
+    TOKEN = "token"
+    VERIFY_SSL = "verify_ssl"
+
+
+class AwsKeys(str, Enum):
+    """Credential keys of the AWS integration."""
+
+    REGION = "region"
+    ACCESS_KEY_ID = "access_key_id"
+    SECRET_ACCESS_KEY = "secret_access_key"
+    SESSION_TOKEN = "session_token"
+
+
+class GcpKeys(str, Enum):
+    """Credential keys of the GCP integration."""
+
+    SERVICE_ACCOUNT_KEY = "service_account_key"
+
+
+class KeycloakKeys(str, Enum):
+    """Credential keys of the Keycloak integration."""
+
+    BASE_URL = "base_url"
+    REALM = "realm"
+    CLIENT_ID = "client_id"
+    CLIENT_SECRET = "client_secret"
+    TIMEOUT = "timeout"
+
+
+class AzureKeys(str, Enum):
+    """Credential keys of the Azure integration."""
+
+    SUBSCRIPTION_ID = "subscription_id"
+    TENANT_ID = "tenant_id"
+    CLIENT_ID = "client_id"
+    CLIENT_SECRET = "client_secret"
+
+
+class ElasticKeys(str, Enum):
+    """Credential keys of the Elastic integration."""
+
+    URL = "url"
+    API_KEY = "api_key"
+
+
+class OpenApiKeys(str, Enum):
+    """Credential keys of the OpenAPI integration."""
+
+    SPEC = "spec"
+    IS_BASIC_AUTH = "is_basic_auth"
+    USERNAME = "username"
+    API_KEY = "api_key"
+    TIMEOUT = "timeout"
+    AUTH_HEADER_NAME = "auth_header_name"
+
+
+class EmailKeys(str, Enum):
+    """Credential keys of the Email integration."""
+
+    URL = "url"
+    AUTH_TYPE = "auth_type"
+    SMTP_USERNAME = "smtp_username"
+    SMTP_PASSWORD = "smtp_password"
+    OAUTH_FROM_EMAIL = "oauth_from_email"
+    OAUTH_CLIENT_ID = "oauth_client_id"
+    OAUTH_CLIENT_SECRET = "oauth_client_secret"
+    OAUTH_TENANT_ID = "oauth_tenant_id"
+    OAUTH_AUTHORITY = "oauth_authority"
+    OAUTH_SCOPE = "oauth_scope"
+
+
+class AzureDevOpsKeys(str, Enum):
+    """Credential keys of the AzureDevOps integration."""
+
+    URL = "url"
+    TOKEN = "token"
+    ORGANIZATION_URL = "organization_url"
+    PROJECT = "project"
+    LIMIT = "limit"
+    ORGANIZATION = "organization"
+    API_VERSION = "api_version"
+
+
+class SonarKeys(str, Enum):
+    """Credential keys of the Sonar integration."""
+
+    URL = "url"
+    TOKEN = "token"
+    SONAR_PROJECT_NAME = "sonar_project_name"
+
+
+class SqlKeys(str, Enum):
+    """Credential keys of the SQL integration."""
+
+    DIALECT = "dialect"
+    HOST = "host"
+    PORT = "port"
+    USERNAME = "username"
+    PASSWORD = "password"
+    DATABASE_NAME = "database_name"
+    TOKEN = "token"
+    ORG = "org"
+    BUCKET = "bucket"
+    VERIFY_SSL = "verify_ssl"
+
+
+class TelegramKeys(str, Enum):
+    """Credential keys of the Telegram integration."""
+
+    BOT_TOKEN = "bot_token"
+
+
+class ZephyrScaleKeys(str, Enum):
+    """Credential keys of the ZephyrScale integration."""
+
+    URL = "url"
+    TOKEN = "token"
+
+
+class ServiceNowKeys(str, Enum):
+    """Credential keys of the ServiceNow integration."""
+
+    URL = "url"
+    API_KEY = "api_key"
+
+
+class ReportPortalKeys(str, Enum):
+    """Credential keys of the ReportPortal integration."""
+
+    URL = "url"
+    API_KEY = "api_key"
+    PROJECT = "project"
+
+
+class XrayKeys(str, Enum):
+    """Credential keys of the Xray integration."""
+
+    BASE_URL = "base_url"
+    CLIENT_ID = "client_id"
+    CLIENT_SECRET = "client_secret"
+    LIMIT = "limit"
+    VERIFY_SSL = "verify_ssl"
+    TIMEOUT = "timeout"
+
+
+class SharePointKeys(str, Enum):
+    """Credential keys of the SharePoint integration."""
+
+    URL = "url"
+    AUTH_TYPE = "auth_type"
+    TENANT_ID = "tenant_id"
+    CLIENT_ID = "client_id"
+    CLIENT_SECRET = "client_secret"
+
+
+class XWikiKeys(str, Enum):
+    """Credential keys of the XWiki integration."""
+
+    URL = "url"
+    USERNAME = "username"
+    TOKEN = "token"
+    USE_BEARER = "use_bearer"
+
+
 class ExchangeKeys(str, Enum):
-    """Credential keys of the MS Exchange integration."""
+    """Credential keys of the MSExchange integration."""
 
     AUTH_TYPE = "auth_type"
     MAILBOX = "mailbox"
@@ -45,17 +244,112 @@ class ExchangeKeys(str, Enum):
     OAUTH_CLIENT_SECRET = "oauth_client_secret"
 
 
-class ExchangeAuthTypeOptions(str, Enum):
-    """Stored values of the MS Exchange ``auth_type`` select."""
+class A2aAuthTypeOptions(str, Enum):
+    """Stored values of the A2A ``auth_type`` select."""
 
-    NTLM = "ntlm"
+    APIKEY = "apikey"
+    BASIC = "basic"
+    BEARER = "bearer"
+    AWS_SIGNATURE = "aws_signature"
+
+
+class EmailAuthTypeOptions(str, Enum):
+    """Stored values of the Email ``auth_type`` select."""
+
+    BASIC = "basic"
     OAUTH_AZURE = "oauth_azure"
 
 
+class GitAuthTypeOptions(str, Enum):
+    """Stored values of the Git ``auth_type`` select."""
+
+    PAT = "pat"
+    GITHUB_APP = "github_app"
+
+
+class ExchangeAuthTypeOptions(str, Enum):
+    """Stored values of the MSExchange ``auth_type`` select."""
+
+    OAUTH_AZURE = "oauth_azure"
+    NTLM = "ntlm"
+
+
+class SchedulerResourceTypeOptions(str, Enum):
+    """Stored values of the Scheduler ``resource_type`` select."""
+
+    ASSISTANT = "assistant"
+    WORKFLOW = "workflow"
+    DATASOURCE = "datasource"
+
+
+class SharePointAuthTypeOptions(str, Enum):
+    """Stored values of the SharePoint ``auth_type`` select."""
+
+    APP = "app"
+    OAUTH = "oauth"
+
+
+class SqlDialectOptions(str, Enum):
+    """Stored values of the SQL ``dialect`` select."""
+
+    MYSQL = "mysql"
+    POSTGRES = "postgres"
+    INFLUXDB = "influxdb"
+    MSSQL = "mssql"
+
+
+class WebhookGitlabEventFilterOptions(str, Enum):
+    """Stored values of the Webhook ``gitlab_event_filter`` select."""
+
+    OPEN = "open"
+    UPDATE = "update"
+    CLOSE = "close"
+    REOPEN = "reopen"
+    MERGE = "merge"
+    APPROVED_UNAPPROVED = "approved,unapproved"
+
+
+class WebhookResourceTypeOptions(str, Enum):
+    """Stored values of the Webhook ``resource_type`` select."""
+
+    ASSISTANT = "assistant"
+    WORKFLOW = "workflow"
+    DATASOURCE = "datasource"
+
+
 KEY_ENUMS: dict[CredentialTypes, type[Enum]] = {
+    CredentialTypes.JIRA: JiraKeys,
+    CredentialTypes.CONFLUENCE: ConfluenceKeys,
+    CredentialTypes.GIT: GitKeys,
+    CredentialTypes.KUBERNETES: KubernetesKeys,
+    CredentialTypes.AWS: AwsKeys,
+    CredentialTypes.GCP: GcpKeys,
+    CredentialTypes.KEYCLOAK: KeycloakKeys,
+    CredentialTypes.AZURE: AzureKeys,
+    CredentialTypes.ELASTIC: ElasticKeys,
+    CredentialTypes.OPENAPI: OpenApiKeys,
+    CredentialTypes.EMAIL: EmailKeys,
+    CredentialTypes.AZURE_DEVOPS: AzureDevOpsKeys,
+    CredentialTypes.SONAR: SonarKeys,
+    CredentialTypes.SQL: SqlKeys,
+    CredentialTypes.TELEGRAM: TelegramKeys,
+    CredentialTypes.ZEPHYR_SCALE: ZephyrScaleKeys,
+    CredentialTypes.SERVICE_NOW: ServiceNowKeys,
+    CredentialTypes.REPORT_PORTAL: ReportPortalKeys,
+    CredentialTypes.XRAY: XrayKeys,
+    CredentialTypes.SHAREPOINT: SharePointKeys,
+    CredentialTypes.XWIKI: XWikiKeys,
     CredentialTypes.MS_EXCHANGE: ExchangeKeys,
 }
 
 OPTION_ENUMS: dict[tuple[CredentialTypes, str], type[Enum]] = {
+    (CredentialTypes.A2A, "auth_type"): A2aAuthTypeOptions,
+    (CredentialTypes.EMAIL, "auth_type"): EmailAuthTypeOptions,
+    (CredentialTypes.GIT, "auth_type"): GitAuthTypeOptions,
     (CredentialTypes.MS_EXCHANGE, "auth_type"): ExchangeAuthTypeOptions,
+    (CredentialTypes.SCHEDULER, "resource_type"): SchedulerResourceTypeOptions,
+    (CredentialTypes.SHAREPOINT, "auth_type"): SharePointAuthTypeOptions,
+    (CredentialTypes.SQL, "dialect"): SqlDialectOptions,
+    (CredentialTypes.WEBHOOK, "gitlab_event_filter"): WebhookGitlabEventFilterOptions,
+    (CredentialTypes.WEBHOOK, "resource_type"): WebhookResourceTypeOptions,
 }

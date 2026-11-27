@@ -115,3 +115,23 @@ def test_detects_extra_type():
     mutated = copy.deepcopy(SNAPSHOT)
     mutated["types"]["Jira"] = {"keys": ["url"]}
     assert any("Jira" in p for p in compare_registries(mutated))
+
+
+NO_KEY_SET = {
+    CredentialTypes.PLUGIN,
+    CredentialTypes.FILESYSTEM,
+    CredentialTypes.SCHEDULER,
+    CredentialTypes.WEBHOOK,
+    CredentialTypes.DIAL,
+    CredentialTypes.A2A,
+    CredentialTypes.MCP,
+    CredentialTypes.LITE_LLM,
+    CredentialTypes.GOOGLE_OAUTH,
+    CredentialTypes.MS_TEAMS,
+}
+
+
+def test_every_credential_type_has_key_enum_or_is_listed_without_one():
+    covered = set(KEY_ENUMS) | NO_KEY_SET
+    assert covered == set(CredentialTypes)
+    assert not set(KEY_ENUMS) & NO_KEY_SET
