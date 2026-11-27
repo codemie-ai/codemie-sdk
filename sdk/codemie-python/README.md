@@ -700,7 +700,7 @@ result = client.integrations.delete(
 
 #### Credential Key Enums
 
-Each integration type with a defined key set has a `<Type>Keys` enum, and each select field has a `<Type><KeyName>Options` enum (for example `ExchangeKeys` and `ExchangeAuthTypeOptions`). Members are `str` enums, so they serialize exactly like plain strings.
+Each integration type with a defined key set has a `<Type>Keys` enum, and each select field has a `<Type><KeyName>Options` enum (for example `ExchangeKeys` and `ExchangeAuthTypeOptions`). Members are `StrEnum` members, so `str()`, f-strings and JSON all give the plain value.
 
 ```python
 from codemie_sdk import CredentialValues, ExchangeAuthTypeOptions, ExchangeKeys
@@ -711,9 +711,9 @@ values = [
 ]
 ```
 
-- Key enums cover: Jira, Confluence, Git, Kubernetes, AWS, GCP, Keycloak, Azure, Elastic, OpenAPI, Email, AzureDevOps, Sonar, SQL, Telegram, ZephyrScale, ServiceNow, ReportPortal, Xray, SharePoint, XWiki and MSExchange. Option enums cover the select fields of A2A, Email, Git, MSExchange, Scheduler, SharePoint, SQL and Webhook.
+- Key enums cover: Jira, Confluence, Git, Kubernetes, AWS, GCP, Keycloak, Azure, Elastic, OpenAPI, Email, AzureDevOps, Sonar, SQL, Telegram, ZephyrScale, ServiceNow, ReportPortal, Xray, SharePoint, XWiki and MSExchange. Option enums cover the select fields of A2A, Confluence, Email, Git, Jira, MSExchange, Scheduler, SharePoint, SQL and Webhook.
 - Types without a defined key set (Scheduler, Webhook, MCP, Plugin, FileSystem, DIAL, A2A, LiteLLM, GoogleOAuth, MSTeams) have no key enum.
-- `KEY_ENUMS` maps an integration type to its key enum. `OPTION_ENUMS` maps `(type, key name)` to an option enum.
+- `KEY_ENUMS` maps an integration type to its key enum. `OPTION_ENUMS` maps `(type, key name)` to an option enum. Both are read-only.
 - Plain strings still work. Unknown keys are not rejected by the SDK.
 - The key sets come from a snapshot of the platform, checked by a test. A maintainer refreshes the snapshot in a separate change.
 

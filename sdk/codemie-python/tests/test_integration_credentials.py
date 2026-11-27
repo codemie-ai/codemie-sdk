@@ -84,11 +84,11 @@ def test_registries_match_snapshot():
 
 def test_type_name_map_is_explicit_and_valid():
     name_map = SNAPSHOT["type_name_map"]
-    assert set(name_map) == {
-        "OPEN_API",
-        "FILE_SYSTEM",
-        "SERVICENOW",
-        "ENVIRONMENT_VARS",
+    assert name_map == {
+        "OPEN_API": "OPENAPI",
+        "FILE_SYSTEM": "FILESYSTEM",
+        "SERVICENOW": "SERVICE_NOW",
+        "ENVIRONMENT_VARS": "MCP",
     }
     for target in name_map.values():
         assert target in CredentialTypes.__members__
@@ -149,3 +149,20 @@ def test_enums_exported_at_top_level():
         assert name in codemie_sdk.__all__, name
     assert codemie_sdk.KEY_ENUMS is module.KEY_ENUMS
     assert codemie_sdk.OPTION_ENUMS is module.OPTION_ENUMS
+
+
+def test_members_behave_as_plain_strings():
+    from codemie_sdk.models.integration_credentials import ExchangeKeys
+
+    assert str(ExchangeKeys.MAILBOX) == "mailbox"
+    assert f"{ExchangeKeys.MAILBOX}" == "mailbox"
+    assert ExchangeKeys.MAILBOX == "mailbox"
+
+
+def test_registries_are_read_only():
+    import pytest
+
+    with pytest.raises(TypeError):
+        KEY_ENUMS[CredentialTypes.JIRA] = None
+    with pytest.raises(TypeError):
+        OPTION_ENUMS[(CredentialTypes.JIRA, "auth_type")] = None
