@@ -20,8 +20,9 @@ values of a select field. Members are ``StrEnum`` members, so ``str()``, f-strin
 plain value and ``CredentialValues.key`` stays a ``str``.
 
 Two registries map enums to integration types: ``KEY_ENUMS`` and
-``OPTION_ENUMS``. A drift test compares them with a committed snapshot of the
-platform's key sets (``tests/data/credential_snapshot.json``).
+``OPTION_ENUMS``. A test compares them with a committed snapshot of the
+backend's key sets (``tests/data/credential_snapshot.json``); it does not query
+a live platform.
 
 Export decision: all enums and both registries are re-exported from
 ``codemie_sdk``. The module stays single-file while it is under ~800 lines.

@@ -52,12 +52,14 @@ def compare_registries(snapshot: dict) -> list[str]:
         "key enum types", snap_key_types, {t.value for t in KEY_ENUMS}
     )
     for cred_type, enum_cls in KEY_ENUMS.items():
-        if cred_type.value in types:
-            problems += _set_diff(
-                f"{cred_type.value} keys",
-                set(types[cred_type.value].get("keys", [])),
-                _values(enum_cls),
-            )
+        if cred_type.value not in types:
+            problems.append(f"{cred_type.value}: key enum type missing from snapshot")
+            continue
+        problems += _set_diff(
+            f"{cred_type.value} keys",
+            set(types[cred_type.value].get("keys", [])),
+            _values(enum_cls),
+        )
 
     snap_selects = {
         (name, key) for name, entry in types.items() for key in entry.get("selects", {})
@@ -111,6 +113,12 @@ def test_detects_removed_option():
     assert any("ntlm" in p for p in compare_registries(mutated))
 
 
+def test_detects_key_enum_type_missing_from_snapshot():
+    mutated = copy.deepcopy(SNAPSHOT)
+    del mutated["types"]["MSExchange"]
+    assert any("missing from snapshot" in p for p in compare_registries(mutated))
+
+
 def test_detects_extra_type():
     mutated = copy.deepcopy(SNAPSHOT)
     mutated["types"]["Jira"] = {"keys": ["url"]}
@@ -144,6 +152,17 @@ def test_enums_exported_at_top_level():
     expected = {"KEY_ENUMS", "OPTION_ENUMS", "CredentialTypes", "CredentialValues"}
     expected |= set(enum_cls.__name__ for enum_cls in KEY_ENUMS.values())
     expected |= set(enum_cls.__name__ for enum_cls in OPTION_ENUMS.values())
+    defined = {
+        name
+        for name, obj in vars(module).items()
+        if isinstance(obj, type)
+        and issubclass(obj, Enum)
+        and obj.__module__ == module.__name__
+    }
+    registered = {c.__name__ for c in KEY_ENUMS.values()} | {
+        c.__name__ for c in OPTION_ENUMS.values()
+    }
+    assert defined == registered
     for name in expected:
         assert hasattr(codemie_sdk, name), name
         assert name in codemie_sdk.__all__, name

@@ -715,7 +715,7 @@ values = [
 - Types without a defined key set (Scheduler, Webhook, MCP, Plugin, FileSystem, DIAL, A2A, LiteLLM, GoogleOAuth, MSTeams) have no key enum.
 - `KEY_ENUMS` maps an integration type to its key enum. `OPTION_ENUMS` maps `(type, key name)` to an option enum. Both are read-only.
 - Plain strings still work. Unknown keys are not rejected by the SDK.
-- The key sets come from a snapshot of the platform, checked by a test. A maintainer refreshes the snapshot in a separate change.
+- The enums are checked by a test against a committed snapshot of the backend's key sets, not against a live platform. A maintainer refreshes the snapshot in a separate change.
 
 #### Best Practices for Integrations
 
