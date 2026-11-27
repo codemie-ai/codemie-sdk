@@ -135,3 +135,17 @@ def test_every_credential_type_has_key_enum_or_is_listed_without_one():
     covered = set(KEY_ENUMS) | NO_KEY_SET
     assert covered == set(CredentialTypes)
     assert not set(KEY_ENUMS) & NO_KEY_SET
+
+
+def test_enums_exported_at_top_level():
+    import codemie_sdk
+    from codemie_sdk.models import integration_credentials as module
+
+    expected = {"KEY_ENUMS", "OPTION_ENUMS", "CredentialTypes", "CredentialValues"}
+    expected |= set(enum_cls.__name__ for enum_cls in KEY_ENUMS.values())
+    expected |= set(enum_cls.__name__ for enum_cls in OPTION_ENUMS.values())
+    for name in expected:
+        assert hasattr(codemie_sdk, name), name
+        assert name in codemie_sdk.__all__, name
+    assert codemie_sdk.KEY_ENUMS is module.KEY_ENUMS
+    assert codemie_sdk.OPTION_ENUMS is module.OPTION_ENUMS

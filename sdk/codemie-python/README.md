@@ -25,6 +25,7 @@ See the [parity guide](../../docs/PARITY.md) for how this SDK relates to the Nod
   - [Integration Service](#integration-service)
     - [Integration Types](#integration-types)
     - [Core Methods](#core-methods-2)
+    - [Credential Key Enums](#credential-key-enums)
     - [Best Practices for Integrations](#best-practices-for-integrations)
   - [Project Service](#project-service)
   - [Workflow Service](#workflow-service)
@@ -696,6 +697,25 @@ result = client.integrations.delete(
     setting_type=IntegrationType.USER
 )
 ```
+
+#### Credential Key Enums
+
+Each integration type with a defined key set has a `<Type>Keys` enum, and each select field has a `<Type><KeyName>Options` enum (for example `ExchangeKeys` and `ExchangeAuthTypeOptions`). Members are `str` enums, so they serialize exactly like plain strings.
+
+```python
+from codemie_sdk import CredentialValues, ExchangeAuthTypeOptions, ExchangeKeys
+
+values = [
+    CredentialValues(key=ExchangeKeys.AUTH_TYPE, value=ExchangeAuthTypeOptions.NTLM),
+    CredentialValues(key=ExchangeKeys.MAILBOX, value="user@example.com"),
+]
+```
+
+- Key enums cover: Jira, Confluence, Git, Kubernetes, AWS, GCP, Keycloak, Azure, Elastic, OpenAPI, Email, AzureDevOps, Sonar, SQL, Telegram, ZephyrScale, ServiceNow, ReportPortal, Xray, SharePoint, XWiki and MSExchange. Option enums cover the select fields of A2A, Email, Git, MSExchange, Scheduler, SharePoint, SQL and Webhook.
+- Types without a defined key set (Scheduler, Webhook, MCP, Plugin, FileSystem, DIAL, A2A, LiteLLM, GoogleOAuth, MSTeams) have no key enum.
+- `KEY_ENUMS` maps an integration type to its key enum. `OPTION_ENUMS` maps `(type, key name)` to an option enum.
+- Plain strings still work. Unknown keys are not rejected by the SDK.
+- The key sets come from a snapshot of the platform, checked by a test. A maintainer refreshes the snapshot in a separate change.
 
 #### Best Practices for Integrations
 
