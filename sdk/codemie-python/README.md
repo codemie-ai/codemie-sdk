@@ -25,6 +25,7 @@ See the [parity guide](../../docs/PARITY.md) for how this SDK relates to the Nod
   - [Integration Service](#integration-service)
     - [Integration Types](#integration-types)
     - [Core Methods](#core-methods-2)
+    - [Credential Key Enums](#credential-key-enums)
     - [Best Practices for Integrations](#best-practices-for-integrations)
   - [Project Service](#project-service)
   - [Workflow Service](#workflow-service)
@@ -696,6 +697,30 @@ result = client.integrations.delete(
     setting_type=IntegrationType.USER
 )
 ```
+
+#### Credential Key Enums
+
+Credential keys such as `mailbox` are plain strings, so a typo is only caught when the platform rejects it. The SDK has enums with the correct keys and values, so your editor can autocomplete them.
+
+- `<Type>Keys` lists the credential keys of an integration type, for example `ExchangeKeys`.
+- `<Type><KeyName>Options` lists the allowed values of a select field, for example `ExchangeAuthTypeOptions`.
+
+```python
+from codemie_sdk import CredentialValues, ExchangeAuthTypeOptions, ExchangeKeys
+
+values = [
+    CredentialValues(key=ExchangeKeys.AUTH_TYPE, value=ExchangeAuthTypeOptions.NTLM),
+    CredentialValues(key=ExchangeKeys.MAILBOX, value="user@example.com"),
+]
+```
+
+The enums are optional. Enum members work like normal strings, and plain strings are still accepted. The SDK does not reject keys it does not know.
+
+**Key enums** are available for Jira, Confluence, Git, Kubernetes, AWS, GCP, Keycloak, Azure, Elastic, OpenAPI, Email, AzureDevOps, Sonar, SQL, Telegram, ZephyrScale, ServiceNow, ReportPortal, Xray, SharePoint, XWiki, MSExchange, Scheduler, Webhook, Plugin, FileSystem, DIAL, A2A, LiteLLM and MSTeams. For other integration types, use plain strings.
+
+**Option enums** are available for the select fields of A2A, Confluence, Email, Git, Jira, MSExchange, Scheduler, SharePoint, SQL and Webhook.
+
+To look enums up in code, use `KEY_ENUMS` (integration type to key enum) and `OPTION_ENUMS` (`(integration type, key name)` to option enum).
 
 #### Best Practices for Integrations
 

@@ -19,6 +19,7 @@ The Python SDK (`sdk/codemie-python`) and the Node.js SDK (`sdk/codemie-nodejs`)
 | Path segments | Not URL-encoded by the SDK. | Encoded with `encodeURIComponent`. |
 | Bulk remove / assign limits | No client-side cap on `bulk_remove_users_from_project`. | `bulkRemoveUsersFromProject` accepts 1 to 100 ids and `bulkAssignUsersToProject` 1 to 1000 users; anything else throws a zod error before the request. This cap is the Node contract. Python should adopt the same cap, or the backend should enforce it, to close the divergence. |
 | `project_exists` | Returns `False` only on a 404, re-raises other errors. | `projectExists` does the same with `NotFoundError`. |
+| Integration credential enums | `<Type>Keys` and `<Type><KeyName>Options` enums, `KEY_ENUMS` and `OPTION_ENUMS` list the credential keys and select options per integration type. | Not available yet; keys are plain strings. A follow-up change adds them. |
 
 ## Services and methods
 
