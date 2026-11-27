@@ -459,7 +459,10 @@ jira_request = JiraDataSourceRequest(
     name="jira_kb",
     project_name="my_project",
     description="Jira project",
-    jql="project = 'MYPROJECT'"
+    jql="project = 'MYPROJECT'",
+    # Optional, off by default. Changing either on update triggers a full reindex.
+    include_attachments=True,
+    include_comments=True
 )
 result = client.datasources.create(jira_request)
 

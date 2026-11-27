@@ -222,12 +222,14 @@ export class DatasourceMapper {
     };
   }
 
-  /** Maps Jira-specific parameters, transforming JQL (Jira Query Language) filter configuration */
+  /** Maps Jira-specific parameters: the JQL filter and which issue content to index */
   private static mapJiraDataSourceParams<
     T extends JiraDataSourceCreateParams | JiraDataSourceUpdateParams,
   >(params: T) {
     return {
       jql: params.jql,
+      include_attachments: params.include_attachments,
+      include_comments: params.include_comments,
     };
   }
 
@@ -328,6 +330,8 @@ export class DatasourceMapper {
       wiql_query: params.wiql_query,
       organization: params.organization,
       project: params.project,
+      include_attachments: params.include_attachments,
+      include_comments: params.include_comments,
     };
   }
 

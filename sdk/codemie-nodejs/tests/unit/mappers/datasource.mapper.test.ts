@@ -831,3 +831,106 @@ describe('DatasourceMapper FAQ (knowledge_base_git_faq)', () => {
     });
   });
 });
+
+describe("DatasourceMapper include_attachments / include_comments", () => {
+  const common = {
+    name: "ds",
+    project_name: "test-project",
+    description: "d",
+    shared_with_project: false,
+    setting_id: null,
+  };
+
+  it("sends both flags on JIRA create", () => {
+    const params: DataSourceCreateParams = {
+      ...common,
+      type: DataSourceType.JIRA,
+      jql: "project = TEST",
+      include_attachments: true,
+      include_comments: false,
+    };
+
+    const body = JSON.parse(JSON.stringify(DatasourceMapper.mapDatasourceCreateToDto(params)));
+
+    expect(body).toMatchObject({ jql: "project = TEST", include_attachments: true, include_comments: false });
+  });
+
+  it("omits unset flags on JIRA create so the backend default applies", () => {
+    const params: DataSourceCreateParams = { ...common, type: DataSourceType.JIRA, jql: "project = TEST" };
+
+    const body = JSON.parse(JSON.stringify(DatasourceMapper.mapDatasourceCreateToDto(params)));
+
+    expect(body).not.toHaveProperty("include_attachments");
+    expect(body).not.toHaveProperty("include_comments");
+  });
+
+  it("sends only the changed flag on JIRA update so the other keeps its stored value", () => {
+    const params: DataSourceUpdateParams = {
+      name: "ds",
+      project_name: "test-project",
+      type: DataSourceType.JIRA,
+      include_comments: false,
+    };
+
+    const body = JSON.parse(JSON.stringify(DatasourceMapper.mapDatasourceUpdateToDto(params)));
+
+    expect(body.include_comments).toBe(false);
+    expect(body).not.toHaveProperty("include_attachments");
+  });
+
+  it("sends both flags on AZURE_DEVOPS_WORK_ITEM create", () => {
+    const params: DataSourceCreateParams = {
+      ...common,
+      type: DataSourceType.AZURE_DEVOPS_WORK_ITEM,
+      include_attachments: false,
+      include_comments: true,
+    };
+
+    const body = JSON.parse(JSON.stringify(DatasourceMapper.mapDatasourceCreateToDto(params)));
+
+    expect(body).toMatchObject({ include_attachments: false, include_comments: true });
+  });
+
+  it("omits unset flags on AZURE_DEVOPS_WORK_ITEM update so the stored values are kept", () => {
+    const params: DataSourceUpdateParams = {
+      name: "ds",
+      project_name: "test-project",
+      type: DataSourceType.AZURE_DEVOPS_WORK_ITEM,
+      wiql_query: "SELECT * FROM WorkItems",
+    };
+
+    const body = JSON.parse(JSON.stringify(DatasourceMapper.mapDatasourceUpdateToDto(params)));
+
+    expect(body).not.toHaveProperty("include_attachments");
+    expect(body).not.toHaveProperty("include_comments");
+  });
+
+  it("does not add the flags to XRAY", () => {
+    const params: DataSourceCreateParams = { ...common, type: DataSourceType.XRAY, jql: "project = TEST" };
+
+    const body = DatasourceMapper.mapDatasourceCreateToDto(params);
+
+    expect(Object.keys(body)).not.toContain("include_attachments");
+    expect(Object.keys(body)).not.toContain("include_comments");
+  });
+
+  it("keeps the stored flags in the JIRA response", () => {
+    const apiResponse: DataSourceResponse = {
+      id: "ds-jira-1",
+      project_name: "test-project",
+      repo_name: "jira-source",
+      index_type: DataSourceType.JIRA,
+      completed: true,
+      date: "2025-02-01",
+      created_by: { username: "user", name: "User" },
+      project_space_visible: false,
+      update_date: "2025-02-02",
+      user_abilities: ["read"],
+      jira: { jql: "project = TEST", include_attachments: true, include_comments: false },
+    };
+
+    const result = DatasourceMapper.mapDatasourceResponse(apiResponse);
+
+    expect(result.jira).toEqual({ jql: "project = TEST", include_attachments: true, include_comments: false });
+  });
+});

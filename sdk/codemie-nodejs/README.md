@@ -482,7 +482,10 @@ const jiraParams: JiraDataSourceCreateParams = {
   description: "Jira project",
   shared_with_project: true,
   setting_id: null,
-  jql: "project = 'MYPROJECT'"
+  jql: "project = 'MYPROJECT'",
+  // Optional, off by default. Changing either on update triggers a full reindex.
+  include_attachments: true,
+  include_comments: true
 };
 await client.datasources.create(jiraParams);
 

@@ -67,6 +67,17 @@ export interface Jira {
   jql: string;
 }
 
+/**
+ * Which issue content a Jira datasource indexes besides the issue itself.
+ * Omitted on update keeps the stored value; omitted on create leaves both off.
+ */
+export interface JiraIncludeFlags {
+  /** Index issue attachments as separate documents */
+  include_attachments?: boolean;
+  /** Index issue comments as separate documents */
+  include_comments?: boolean;
+}
+
 /** Google-specific configuration */
 export interface Google {
   googleDoc: string;
@@ -112,6 +123,10 @@ export interface AzureDevOpsWorkItem {
   wiql_query?: string;
   organization?: string;
   project?: string;
+  /** Index work item attachments. Omitted on update keeps the stored value; on create uses the deployment default */
+  include_attachments?: boolean;
+  /** Index work item comments. Omitted on update keeps the stored value; on create uses the deployment default */
+  include_comments?: boolean;
 }
 
 /** SharePoint authentication type */
@@ -204,7 +219,7 @@ export interface BaseDataSourceCreateDto {
 export interface ConfluenceDataSourceCreateDto extends BaseDataSourceCreateDto, Confluence {
   type: typeof DataSourceType.CONFLUENCE;
 }
-export interface JiraDataSourceCreateDto extends BaseDataSourceCreateDto, Jira {
+export interface JiraDataSourceCreateDto extends BaseDataSourceCreateDto, Jira, JiraIncludeFlags {
   type: typeof DataSourceType.JIRA;
 }
 export interface GoogleDataSourceCreateDto extends BaseDataSourceCreateDto, Google {
@@ -265,7 +280,10 @@ export interface ConfluenceDataSourceUpdateDto
     Partial<Confluence> {
   type: typeof DataSourceType.CONFLUENCE;
 }
-export interface JiraDataSourceUpdateDto extends BaseDataSourceUpdateDto, Partial<Jira> {
+export interface JiraDataSourceUpdateDto
+  extends BaseDataSourceUpdateDto,
+    Partial<Jira>,
+    JiraIncludeFlags {
   type: typeof DataSourceType.JIRA;
 }
 export interface GoogleDataSourceUpdateDto extends BaseDataSourceUpdateDto, Partial<Google> {
@@ -391,7 +409,7 @@ export interface BaseDataSourceResponse {
   /** Token usage statistics */
   tokens_usage?: TokensUsage;
   /** Jira-specific configuration */
-  jira?: Jira;
+  jira?: Jira & JiraIncludeFlags;
   /** Confluence-specific configuration */
   confluence?: Confluence;
   /** Google document link */
@@ -470,7 +488,7 @@ export interface DataSource {
   code?: Partial<Code>;
   git_faq?: Partial<GitFaq>;
   /** Jira-specific configuration */
-  jira?: Jira;
+  jira?: Jira & JiraIncludeFlags;
   /** Confluence-specific configuration */
   confluence?: Confluence;
   /** Google document link */
@@ -587,7 +605,10 @@ export interface ConfluenceDataSourceCreateParams
     BaseConfluenceParams {
   type: typeof DataSourceType.CONFLUENCE;
 }
-export interface JiraDataSourceCreateParams extends BaseDataSourceCreateParams, BaseJiraParams {
+export interface JiraDataSourceCreateParams
+  extends BaseDataSourceCreateParams,
+    BaseJiraParams,
+    JiraIncludeFlags {
   type: typeof DataSourceType.JIRA;
 }
 export interface GoogleDataSourceCreateParams extends BaseDataSourceCreateParams, BaseGoogleParams {
@@ -673,7 +694,8 @@ export interface ConfluenceDataSourceUpdateParams
 }
 export interface JiraDataSourceUpdateParams
   extends BaseDataSourceUpdateParams,
-    Partial<BaseJiraParams> {
+    Partial<BaseJiraParams>,
+    JiraIncludeFlags {
   type: typeof DataSourceType.JIRA;
 }
 export interface GoogleDataSourceUpdateParams

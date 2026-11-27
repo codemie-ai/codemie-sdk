@@ -100,6 +100,9 @@ class Jira(BaseModel):
 
     jql: str | None = None
     custom_fields: list[str] | None = None
+    # None keeps the stored value on update and leaves the backend default (off) on create.
+    include_attachments: bool | None = None
+    include_comments: bool | None = None
 
     model_config = ConfigDict(extra="ignore")
 
@@ -137,6 +140,9 @@ class AzureDevOpsWorkItem(BaseModel):
     wiql_query: str | None = None
     organization: str | None = None
     project: str | None = None
+    # None keeps the stored value on update and uses the deployment default on create.
+    include_attachments: bool | None = None
+    include_comments: bool | None = None
 
     model_config = ConfigDict(extra="ignore")
 
